@@ -1,5 +1,5 @@
 /*
- * IAM_bchainBTC.c
+ * UID_bchainBTC.c
  *
  *  Created on: 5/aug/2016
  *      Author: M. Palumbi
@@ -22,14 +22,14 @@
 #include <curl/curl.h>
 #include <pthread.h>
 #include "sha2.h"
-#include "IAM_utils.h"
-#include "IAM_globals.h"
-#include "IAM_identity.h"
-#include "IAM_bchainBTC.h"
+#include "UID_utils.h"
+#include "UID_globals.h"
+#include "UID_identity.h"
+#include "UID_bchainBTC.h"
 #include "yajl/yajl_parse.h"
 
 // double buffer for contract cache
-// IAM_getContracts may fill seconb while current is read
+// UID_getContracts may fill seconb while current is read
 cache_buffer cache0 = { { { {0},{0},{0},{0},0 } }, 0, PTHREAD_MUTEX_INITIALIZER };
 cache_buffer cache1 = { { { {0},{0},{0},{0},0 } }, 0, PTHREAD_MUTEX_INITIALIZER };
 
@@ -82,7 +82,7 @@ uint8_t * sha256sha256_padded64(char *str, uint8_t hash[32] )
 extern  yajl_callbacks callbacks;
 
 
-cache_buffer *IAM_getContracts(IAM_Identity *localIdentity)
+cache_buffer *UID_getContracts(UID_Identity *localIdentity)
 {
     CURL *curl;
     char url[256];
@@ -127,15 +127,15 @@ clean_ret:
     return current;
 }
 
-static IAM_SecurityProfile goodContract;
+static UID_SecurityProfile goodContract;
 
 // retrives the matching contract from the Contracts Cache
-IAM_SecurityProfile *IAM_matchContract(BTC_Address serviceUserAddress)
+UID_SecurityProfile *UID_matchContract(BTC_Address serviceUserAddress)
 {
     int i;
     uint_fast8_t hash[32];
     cache_buffer *ptr = current ;
-    IAM_SecurityProfile *ret_val = NULL;
+    UID_SecurityProfile *ret_val = NULL;
 
     sha256sha256_padded64((char *)serviceUserAddress, hash);
 

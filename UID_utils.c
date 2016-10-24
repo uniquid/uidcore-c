@@ -1,5 +1,5 @@
 /*
- * IAM_utils.c
+ * UID_utils.c
  *
  *  Created on: 29/lug/2016
  *      Author: M. Palumbi
@@ -24,7 +24,7 @@
 #include "ecdsa.h"
 #include "secp256k1.h"
 #include "base58.h"
-#include "IAM_utils.h"
+#include "UID_utils.h"
 
 // buf must be provided at least strlen(str) / 2 bytes long
 uint8_t *fromhex(const char *str, uint8_t *buf)

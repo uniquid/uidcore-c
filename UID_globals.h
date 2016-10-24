@@ -1,13 +1,13 @@
 /*
- * IAM_tokens.h
+ * UID_tokens.h
  *
  *  Created on: 3/aug/2016
  *      Author: M. Palumbi
  */
  
  
-#ifndef __IAM_GLOBALS_H
-#define __IAM_GLOBALS_H
+#ifndef __UID_GLOBALS_H
+#define __UID_GLOBALS_H
 
 
 
@@ -26,7 +26,7 @@ typedef struct
 {
     BTC_PrivateKey privateKey;
     BTC_PublicKey publicKey;
-} IAM_KeyPair;
+} UID_KeyPair;
 
 
 #endif

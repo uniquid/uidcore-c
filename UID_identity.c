@@ -1,5 +1,5 @@
 /*
- * IAM_identity.c
+ * UID_identity.c
  *
  *  Created on: 1/aug/2016
  *      Author: M. Palumbi
@@ -23,15 +23,15 @@
 #include <time.h>
 #include "curves.h"
 #include "bip32.h"
-#include "IAM_utils.h"
-#include "IAM_identity.h"
+#include "UID_utils.h"
+#include "UID_identity.h"
 
-IAM_Identity *IAM_fill_Identity(
+UID_Identity *UID_fill_Identity(
     BTC_PrivateKey privateKey,
     BTC_PublicKey publicKey,
     BTC_Address address,  // address  base58 coded
     uint64_t    balance,    // bitcoin balance in Satoshi (10e-8 BTC)
-    IAM_Identity *identity)
+    UID_Identity *identity)
 {
     memcpy (identity->keyPair.privateKey, privateKey, sizeof(BTC_PrivateKey));
     memcpy (identity->keyPair.publicKey, publicKey, sizeof(BTC_PublicKey));
@@ -43,12 +43,12 @@ IAM_Identity *IAM_fill_Identity(
     return identity;
 }
 
-static IAM_Identity identity;
+static UID_Identity identity;
 char *identityDB = NULL;
 
 static char lbuffer[1024];
 
-IAM_Identity *IAM_getLocalIdentity(char *keypriv_h, BTC_Address orchestrator)
+UID_Identity *UID_getLocalIdentity(char *keypriv_h, BTC_Address orchestrator)
 {
     char privateKey[sizeof(BTC_PrivateKey)*2 + 1]; 
     BTC_Address orchestrator_b;
