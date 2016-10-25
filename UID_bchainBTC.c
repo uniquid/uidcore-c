@@ -113,7 +113,7 @@ clean_ret:
     return current;
 }
 
-static UID_SecurityProfile goodContract;
+static UID_SecurityProfile goodContract; //TODO warning non reantrant code!!!
 
 // retrives the matching contract from the Contracts Cache
 UID_SecurityProfile *UID_matchContract(BTC_Address serviceUserAddress)
@@ -131,6 +131,31 @@ UID_SecurityProfile *UID_matchContract(BTC_Address serviceUserAddress)
             //if ((ptr->contractsCache)[i].profile == 0) break; // profile == 0 contract revoked! return NULL
             memcpy(&goodContract,  (ptr->contractsCache) + i, sizeof(goodContract)); // copy to goodContract
             ret_val = &goodContract; // return pointer to it
+            break;
+        }
+    }
+
+    pthread_mutex_unlock(&(ptr->in_use));  // unlock the resource
+    return ret_val;
+}
+
+static UID_ClientProfile clientContract; //TODO warning non reantrant code!!!
+
+// retrives the matching contract from the client Cache
+UID_ClientProfile *UID_matchProvider(char *name)
+{
+    int i;
+    cache_buffer *ptr = current ;
+    UID_ClientProfile *ret_val = NULL;
+
+    pthread_mutex_lock(&(ptr->in_use));  // lock the resource
+
+    for(i=0; i<(ptr->validClientEntries); i++)
+    {
+        if (strcmp((ptr->clientCache)[i].serviceProviderName, name) == 0)
+        {   // found the contract
+            memcpy(&clientContract,  (ptr->clientCache) + i, sizeof(clientContract)); // copy to clientContract
+            ret_val = &clientContract; // return pointer to it
             break;
         }
     }

@@ -9,8 +9,9 @@
 #ifndef __UID_BCHAINBTC_H
 #define __UID_BCHAINBTC_H
 
-#include "UID_globals.h"
 #include "stdint.h"
+#include "UID_globals.h"
+#include "UID_identity.h"
 
 #define CONTRACTS_CACHE_SIZE 200 // number of locally cached contracts
 #define CLIENT_CACHE_SIZE 50 // number of locally cached client contracts
@@ -40,8 +41,7 @@ typedef struct {
 
 cache_buffer *UID_getContracts(UID_Identity *localIdentity);
 UID_SecurityProfile *UID_matchContract(BTC_Address serviceUserAddress);
-
-uint8_t * sha256sha256_padded64(char *str, uint8_t hash[32] );
+UID_ClientProfile *UID_matchProvider(char *name);
 
 #endif
 
