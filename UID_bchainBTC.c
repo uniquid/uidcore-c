@@ -30,8 +30,8 @@
 
 // double buffer for contract cache
 // UID_getContracts may fill seconb while current is read
-cache_buffer cache0 = { { { {0},{0},{0},{0},0 } }, 0, PTHREAD_MUTEX_INITIALIZER };
-cache_buffer cache1 = { { { {0},{0},{0},{0},0 } }, 0, PTHREAD_MUTEX_INITIALIZER };
+cache_buffer cache0 = { { { {0},{0},{0} } }, 0, { { {0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER };
+cache_buffer cache1 = { { { {0},{0},{0} } }, 0, { { {0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER };
 
 cache_buffer *current = &cache0;
 cache_buffer *secondb = &cache1;
@@ -66,20 +66,6 @@ static size_t parse_txs(void *buffer, size_t size, size_t nmemb, void *ctx)
     return nmemb;
 }
 
-uint8_t * sha256sha256_padded64(char *str, uint8_t hash[32] )
-{
-	uint8_t buff[64] = {0};
-    
-    strncpy((char *)buff, str, 64);
-    SHA256_CTX ctx;
-	sha256_Init(&ctx);
-	sha256_Update(&ctx, buff, 64);
-	sha256_Final(&ctx, hash);
-	sha256_Raw(hash, 32, hash);
-    return hash;
-}
-
-extern  yajl_callbacks callbacks;
 
 
 cache_buffer *UID_getContracts(UID_Identity *localIdentity)
@@ -133,19 +119,16 @@ static UID_SecurityProfile goodContract;
 UID_SecurityProfile *UID_matchContract(BTC_Address serviceUserAddress)
 {
     int i;
-    uint_fast8_t hash[32];
     cache_buffer *ptr = current ;
     UID_SecurityProfile *ret_val = NULL;
-
-    sha256sha256_padded64((char *)serviceUserAddress, hash);
 
     pthread_mutex_lock(&(ptr->in_use));  // lock the resource
 
     for(i=0; i<(ptr->validCacheEntries); i++)
     {
-        if (memcmp((ptr->contractsCache)[i].serviceUserAddress, hash, 32) == 0)
+        if (strcmp((ptr->contractsCache)[i].serviceUserAddress, serviceUserAddress) == 0)
         {   // found the contract
-            if ((ptr->contractsCache)[i].profile == 0) break; // profile == 0 contract revoked! return NULL
+            //if ((ptr->contractsCache)[i].profile == 0) break; // profile == 0 contract revoked! return NULL
             memcpy(&goodContract,  (ptr->contractsCache) + i, sizeof(goodContract)); // copy to goodContract
             ret_val = &goodContract; // return pointer to it
             break;

@@ -13,22 +13,28 @@
 #include "stdint.h"
 
 #define CONTRACTS_CACHE_SIZE 200 // number of locally cached contracts
+#define CLIENT_CACHE_SIZE 50 // number of locally cached client contracts
+#define PROFILE_SIZE 40 // OP_RETURN lenght...
 
-typedef struct 
+typedef struct
 {
-    BTC_Address identityProviderAddress;
-    BTC_Address serviceUserAddress; // for compatibility with Stefac implementation
-                                    // we store (in binary form) the sha256sha256 of the ascii
-                                    // bitcoin base58 rappresentation of the address padded with 
-                                    // binary 0 to te lenght of 64 bytes
+    BTC_Address serviceUserAddress;
     BTC_Address serviceProviderAddress;
-    BTC_Address contractAddress;
-    uint8_t     profile;
+    uint8_t     profile[PROFILE_SIZE];
 } UID_SecurityProfile;
+
+typedef struct
+{
+    char serviceProviderName[16];
+    BTC_Address serviceProviderAddress;
+    BTC_Address serviceUserAddress;
+} UID_ClientProfile;
 
 typedef struct {
     UID_SecurityProfile contractsCache[CONTRACTS_CACHE_SIZE];
     int validCacheEntries;
+    UID_ClientProfile clientCache[CLIENT_CACHE_SIZE];
+    int validClientEntries;
     pthread_mutex_t in_use;
 } cache_buffer;
 
