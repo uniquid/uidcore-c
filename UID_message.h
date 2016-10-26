@@ -22,8 +22,11 @@ typedef struct {
     BTC_Address myid;
 } UID_server_channel_ctx;
 
-#define UID_MESSAGE_OK 0
-#define UID_OPEN_CHANNEL_NOT_FOUND 1
+#define UID_MSG_OK 0
+#define UID_MSG_NOT_FOUND 1
+#define UID_MSG_GEN_ALLOC_FAIL 2
+#define UID_MSG_GEN_FAIL 3
+#define UID_MSG_SMALL_BUFFER 4
 
 // client side functions
 int UID_open_channel(char *dest_name, UID_client_channel_ctx *channel_ctx);
