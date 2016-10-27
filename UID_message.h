@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "UID_globals.h"
+#include "UID_bchainBTC.h"
 
 typedef struct {
     BTC_Address peerid;
@@ -18,8 +19,7 @@ typedef struct {
 } UID_client_channel_ctx;
 
 typedef struct {
-    BTC_Address peerid;
-    BTC_Address myid;
+    UID_SecurityProfile contract;
 } UID_server_channel_ctx;
 
 #define UID_MSG_OK 0
