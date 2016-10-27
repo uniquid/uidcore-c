@@ -27,6 +27,8 @@ typedef struct {
 #define UID_MSG_GEN_ALLOC_FAIL 2
 #define UID_MSG_GEN_FAIL 3
 #define UID_MSG_SMALL_BUFFER 4
+#define UID_MSG_JPARSE_ERROR 5
+#define UID_MSG_NO_CONTRACT 6
 
 // client side functions
 int UID_open_channel(char *dest_name, UID_client_channel_ctx *channel_ctx);
@@ -35,7 +37,7 @@ int UID_parse_result(uint8_t *buffer, size_t size, UID_client_channel_ctx *chann
 int UID_close_channel(UID_client_channel_ctx *channel_ctx);
 
 // provider side functions
-int UID_accept_channel(UID_server_channel_ctx *channel_ctx, int8_t *in_msg, size_t in_size, int8_t *first_msg, size_t *out_size);
+int UID_accept_channel(uint8_t *in_msg, size_t in_size, UID_server_channel_ctx *channel_ctx, uint8_t *first_msg, size_t *out_size);
 int UID_perform_request(uint8_t *buffer, size_t size, uint8_t response, size_t *rsize, UID_server_channel_ctx *channel_ctx);
 int UID_close_server_channel(UID_server_channel_ctx *channel_ctx);
 

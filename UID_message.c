@@ -21,6 +21,7 @@
 #include <time.h>
 
 #include "yajl/yajl_gen.h"
+#include "yajl/yajl_tree.h"
 #include "UID_message.h"
 #include "UID_bchainBTC.h"
 
@@ -36,8 +37,6 @@ int UID_open_channel(char *dest_name, UID_client_channel_ctx *channel_ctx)
 
 int UID_format_request(uint8_t *buffer, size_t *size, UID_client_channel_ctx *channel_ctx, int method, char *params, int *id)
 {
-(void)channel_ctx;(void)params;(void)id;(void)method;
-
     yajl_gen g;
     const uint8_t *json;
     size_t sz;
@@ -80,5 +79,37 @@ clean:
     yajl_gen_clear(g);
     yajl_gen_free(g);
 
+    return ret;
+}
+
+int UID_accept_channel(uint8_t *in_msg, size_t in_size, UID_server_channel_ctx *channel_ctx, uint8_t *first_msg, size_t *out_size)
+{
+    yajl_val node, v;
+    char *s;
+    UID_SecurityProfile *contract;
+    int ret;
+
+    // parse message
+	node = yajl_tree_parse((char *)in_msg, NULL, 0);
+    if (node == NULL) return UID_MSG_JPARSE_ERROR;
+
+    ret = UID_MSG_JPARSE_ERROR;
+    const char * sender[] = { "sender", (const char *) 0 };
+    v = yajl_tree_get(node, sender, yajl_t_string);
+    if (v == NULL) goto clean_return;
+    s =  YAJL_GET_STRING(v);
+
+    ret = UID_MSG_NO_CONTRACT;
+    contract = UID_matchContract(s);
+    if (NULL == contract) goto clean_return;
+    memcpy(&(channel_ctx->contract), contract, sizeof(channel_ctx->contract));
+
+    ret = UID_MSG_SMALL_BUFFER;
+    if (in_size > *out_size) goto clean_return;
+    memcpy(first_msg, in_msg, in_size);
+
+    ret = UID_MSG_OK;
+clean_return:
+    yajl_tree_free(node);
     return ret;
 }
