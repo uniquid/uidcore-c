@@ -17,11 +17,13 @@
 #define CLIENT_CACHE_SIZE 50 // number of locally cached client contracts
 #define PROFILE_SIZE 40 // OP_RETURN lenght...
 
+typedef uint8_t UID_smart_contract[PROFILE_SIZE];
+
 typedef struct
 {
     BTC_Address serviceUserAddress;
     BTC_Address serviceProviderAddress;
-    uint8_t     profile[PROFILE_SIZE];
+    UID_smart_contract profile;
 } UID_SecurityProfile;
 
 typedef struct
