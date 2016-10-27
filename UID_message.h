@@ -38,7 +38,7 @@ int UID_close_channel(UID_client_channel_ctx *channel_ctx);
 
 // provider side functions
 int UID_accept_channel(uint8_t *in_msg, size_t in_size, UID_server_channel_ctx *channel_ctx, uint8_t *first_msg, size_t *out_size);
-int UID_perform_request(uint8_t *buffer, size_t size, uint8_t response, size_t *rsize, UID_server_channel_ctx *channel_ctx);
+int UID_perform_request(uint8_t *buffer, size_t size, uint8_t *response, size_t *rsize, UID_server_channel_ctx *channel_ctx);
 int UID_close_server_channel(UID_server_channel_ctx *channel_ctx);
 
 
