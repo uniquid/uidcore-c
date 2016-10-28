@@ -32,6 +32,7 @@ int UID_open_channel(char *dest_name, UID_client_channel_ctx *channel_ctx)
 
 	if (NULL == (provider = UID_matchProvider(dest_name))) return UID_MSG_NOT_FOUND;
     strncpy(channel_ctx->myid, provider->serviceUserAddress, sizeof(channel_ctx->myid));
+    strncpy(channel_ctx->peerid, provider->serviceProviderAddress, sizeof(channel_ctx->peerid));
 
     return UID_MSG_OK;
 }
@@ -100,7 +101,7 @@ int UID_accept_channel(uint8_t *in_msg, size_t in_size, UID_server_channel_ctx *
     if (v == NULL) goto clean_return;
     s =  YAJL_GET_STRING(v);
 
-    ret = UID_MSG_NO_CONTRACT;
+    ret = UID_MSG_NO_CONTRACT;  // We dont have a contract. we dont send any answer...
     contract = UID_matchContract(s);
     if (NULL == contract) goto clean_return;
     memcpy(&(channel_ctx->contract), contract, sizeof(channel_ctx->contract));
@@ -108,6 +109,7 @@ int UID_accept_channel(uint8_t *in_msg, size_t in_size, UID_server_channel_ctx *
     ret = UID_MSG_SMALL_BUFFER;
     if (in_size > *out_size) goto clean_return;
     memcpy(first_msg, in_msg, in_size);
+    *out_size = in_size;
 
     ret = UID_MSG_OK;
 clean_return:
@@ -128,6 +130,14 @@ int UID_perform_request(uint8_t *buffer, size_t size, uint8_t *response, size_t 
     // parse message
 	node = yajl_tree_parse((char *)buffer, NULL, 0);
     if (node == NULL) return UID_MSG_JPARSE_ERROR;
+
+    ret = UID_MSG_JPARSE_ERROR;
+    const char * sender[] = { "sender", (const char *) 0 };
+    v = yajl_tree_get(node, sender, yajl_t_string);
+    if (v == NULL) goto clean_return;
+    char *s =  YAJL_GET_STRING(v);
+    ret = UID_MSG_INVALID_SENDER;
+    if (strcmp(s,channel_ctx->contract.serviceUserAddress)) goto clean_return;
 
     ret = UID_MSG_JPARSE_ERROR;
     const char * _method[] = { "body", "method", (const char *) 0 };

@@ -29,6 +29,7 @@ typedef struct {
 #define UID_MSG_SMALL_BUFFER 4
 #define UID_MSG_JPARSE_ERROR 5
 #define UID_MSG_NO_CONTRACT 6
+#define UID_MSG_INVALID_SENDER 7
 
 // client side functions
 int UID_open_channel(char *dest_name, UID_client_channel_ctx *channel_ctx);
