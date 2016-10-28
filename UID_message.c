@@ -181,3 +181,67 @@ clean_return:
     if (NULL != g) yajl_gen_free(g);
     return ret;
 }
+
+int UID_parse_result(uint8_t *buffer, size_t size, UID_client_channel_ctx *channel_ctx, char *res, size_t rsize, int id)
+{
+(void)buffer;(void)size;(void)channel_ctx;(void)res;(void)rsize;(void)id;
+    yajl_val node, v;
+    int ret;
+
+    // parse message
+	node = yajl_tree_parse((char *)buffer, NULL, 0);
+    if (node == NULL) return UID_MSG_JPARSE_ERROR;
+
+// check the sender
+    ret = UID_MSG_JPARSE_ERROR;
+    const char * sender[] = { "sender", (const char *) 0 };
+    v = yajl_tree_get(node, sender, yajl_t_string);
+    if (v == NULL) goto clean_return;
+    char *s =  YAJL_GET_STRING(v);
+    ret = UID_MSG_INVALID_SENDER;
+    if (strcmp(s,channel_ctx->peerid)) goto clean_return;
+
+// check id!!!
+    ret = UID_MSG_JPARSE_ERROR;
+    const char * _id[] = { "body", "id", (const char *) 0 };
+    v = yajl_tree_get(node, _id, yajl_t_number);
+    if (v == NULL) goto clean_return;
+    ret = UID_MSG_ID_MISMATCH;
+    if (id != YAJL_GET_INTEGER(v)) goto clean_return;
+
+// get the error
+    ret = UID_MSG_JPARSE_ERROR;
+    const char * _error[] = { "body", "error", (const char *) 0 };
+    v = yajl_tree_get(node, _error, yajl_t_number);
+    if (v == NULL) goto clean_return;
+    ret = UID_MSG_RPC_ERROR | YAJL_GET_INTEGER(v);
+    if (UID_MSG_RPC_ERROR != ret) goto clean_return; //return the RPC error
+
+//get the result
+    ret = UID_MSG_JPARSE_ERROR;
+    const char * _result[] = { "body", "result", (const char *) 0 };
+    v = yajl_tree_get(node, _result, yajl_t_string);
+    if (v == NULL) goto clean_return;
+    char *result =  YAJL_GET_STRING(v);
+
+    ret = UID_MSG_SMALL_BUFFER;
+    if (strlen(result) >= rsize) goto clean_return;
+    strncpy(res, result, rsize);
+
+    ret = UID_MSG_OK;
+clean_return:
+    if (NULL != node) yajl_tree_free(node);
+    return ret;
+}
+
+int UID_close_channel(UID_client_channel_ctx *channel_ctx)
+{
+    (void)channel_ctx;
+    return UID_MSG_OK;
+}
+
+int UID_close_server_channel(UID_server_channel_ctx *channel_ctx)
+{
+    (void)channel_ctx;
+    return UID_MSG_OK;
+}

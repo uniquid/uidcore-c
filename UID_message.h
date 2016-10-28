@@ -30,11 +30,13 @@ typedef struct {
 #define UID_MSG_JPARSE_ERROR 5
 #define UID_MSG_NO_CONTRACT 6
 #define UID_MSG_INVALID_SENDER 7
+#define UID_MSG_ID_MISMATCH 8
+#define UID_MSG_RPC_ERROR 0x100
 
 // client side functions
 int UID_open_channel(char *dest_name, UID_client_channel_ctx *channel_ctx);
 int UID_format_request(uint8_t *buffer, size_t *size, UID_client_channel_ctx *channel_ctx, int method, char *params, int *id);
-int UID_parse_result(uint8_t *buffer, size_t size, UID_client_channel_ctx *channel_ctx, char *res, int id);
+int UID_parse_result(uint8_t *buffer, size_t size, UID_client_channel_ctx *channel_ctx, char *res, size_t rsize, int id);
 int UID_close_channel(UID_client_channel_ctx *channel_ctx);
 
 // provider side functions
