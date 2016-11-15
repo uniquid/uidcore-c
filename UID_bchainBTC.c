@@ -56,7 +56,8 @@ typedef struct  {
 // calls yajl_parse to parse the data just received
 static size_t parse_txs(void *buffer, size_t size, size_t nmemb, void *ctx)
 {
-    printf("curl callback called with size = %d nmemb = %d\n", size, nmemb);
+    (void)size;(void)nmemb;
+    //printf("curl callback called with size = %d nmemb = %d\n", size, nmemb);
     if (((parse_context *)ctx)->hand == NULL)
     {
         sscanf(buffer, "{\"totalItems\":%d", &(((parse_context *)ctx)->totalItems));    
