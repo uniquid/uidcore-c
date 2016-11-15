@@ -16,7 +16,7 @@ UID_user_callback UID_callbacks[UID_RPC_TABLE_SIZE] = {
     NULL
 };
 
-int UID_register_user_calback(int index, UID_user_callback callback)
+int UID_register_user_callback(int index, UID_user_callback callback)
 {
     if (index < UID_RPC_RESERVED) return UID_DISPATCH_RESERVED;
     if (NULL != UID_callbacks[index]) return UID_DISPATCH_INUSE;

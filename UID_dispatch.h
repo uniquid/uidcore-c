@@ -22,7 +22,7 @@
 
 typedef void (*UID_user_callback)(char *param, char *result, size_t size);
 
-int UID_register_user_calback(int index, UID_user_callback callback);
+int UID_register_user_callback(int index, UID_user_callback callback);
 
 int UID_dispatch(int method, char *params, char *result, size_t size, UID_smart_contract smart_contract);
 
