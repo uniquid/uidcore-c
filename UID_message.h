@@ -16,7 +16,7 @@
 typedef struct {
     BTC_Address peerid;
     BTC_Address myid;
-} UID_client_channel_ctx;
+} UID_ClientChannelCtx;
 
 typedef struct {
     UID_SecurityProfile contract;
@@ -34,10 +34,10 @@ typedef struct {
 #define UID_MSG_RPC_ERROR 0x100
 
 // client side functions
-int UID_open_channel(char *dest_name, UID_client_channel_ctx *channel_ctx);
-int UID_format_request(uint8_t *buffer, size_t *size, UID_client_channel_ctx *channel_ctx, int method, char *params, int *id);
-int UID_parse_result(uint8_t *buffer, size_t size, UID_client_channel_ctx *channel_ctx, char *res, size_t rsize, int id);
-int UID_close_channel(UID_client_channel_ctx *channel_ctx);
+int UID_openChannel(char *destMachine, UID_ClientChannelCtx *ctx);
+int UID_format_request(uint8_t *buffer, size_t *size, UID_ClientChannelCtx *ctx, int method, char *params, int *id);
+int UID_parse_result(uint8_t *buffer, size_t size, UID_ClientChannelCtx *ctx, char *res, size_t rsize, int id);
+int UID_close_channel(UID_ClientChannelCtx *ctx);
 
 // provider side functions
 int UID_accept_channel(uint8_t *in_msg, size_t in_size, UID_server_channel_ctx *channel_ctx, uint8_t *first_msg, size_t *out_size);

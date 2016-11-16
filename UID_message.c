@@ -26,18 +26,18 @@
 #include "UID_bchainBTC.h"
 #include "UID_dispatch.h"
 
-int UID_open_channel(char *dest_name, UID_client_channel_ctx *channel_ctx)
+int UID_openChannel(char *destMachine, UID_ClientChannelCtx *ctx)
 {
     UID_ClientProfile *provider;
 
-	if (NULL == (provider = UID_matchProvider(dest_name))) return UID_MSG_NOT_FOUND;
-    strncpy(channel_ctx->myid, provider->serviceUserAddress, sizeof(channel_ctx->myid));
-    strncpy(channel_ctx->peerid, provider->serviceProviderAddress, sizeof(channel_ctx->peerid));
+	if (NULL == (provider = UID_matchProvider(destMachine))) return UID_MSG_NOT_FOUND;
+    strncpy(ctx->myid, provider->serviceUserAddress, sizeof(ctx->myid));
+    strncpy(ctx->peerid, provider->serviceProviderAddress, sizeof(ctx->peerid));
 
     return UID_MSG_OK;
 }
 
-int UID_format_request(uint8_t *buffer, size_t *size, UID_client_channel_ctx *channel_ctx, int method, char *params, int *id)
+int UID_format_request(uint8_t *buffer, size_t *size, UID_ClientChannelCtx *ctx, int method, char *params, int *id)
 {
     yajl_gen g;
     const uint8_t *json;
@@ -71,7 +71,7 @@ int UID_format_request(uint8_t *buffer, size_t *size, UID_client_channel_ctx *ch
     ret = UID_MSG_GEN_FAIL;
     if (yajl_gen_status_ok != yajl_gen_string(g, (uint8_t *)params, strlen(params))) goto clean;
     if (yajl_gen_status_ok != yajl_gen_get_buf(g, &json, &sz)) goto clean; //get the buffer
-    sz = snprintf((char *)buffer, *size, "{\"sender\":\"%s\",\"body\":{\"method\":%d,\"params\":%s,\"id\":%d}}", channel_ctx->myid, method, json, *id);
+    sz = snprintf((char *)buffer, *size, "{\"sender\":\"%s\",\"body\":{\"method\":%d,\"params\":%s,\"id\":%d}}", ctx->myid, method, json, *id);
     ret = UID_MSG_SMALL_BUFFER;
     if (sz >= *size) goto clean;
     *size = sz + 1;  // add the end of string
@@ -182,9 +182,9 @@ clean_return:
     return ret;
 }
 
-int UID_parse_result(uint8_t *buffer, size_t size, UID_client_channel_ctx *channel_ctx, char *res, size_t rsize, int id)
+int UID_parse_result(uint8_t *buffer, size_t size, UID_ClientChannelCtx *ctx, char *res, size_t rsize, int id)
 {
-(void)buffer;(void)size;(void)channel_ctx;(void)res;(void)rsize;(void)id;
+(void)size;
     yajl_val node, v;
     int ret;
 
@@ -199,7 +199,7 @@ int UID_parse_result(uint8_t *buffer, size_t size, UID_client_channel_ctx *chann
     if (v == NULL) goto clean_return;
     char *s =  YAJL_GET_STRING(v);
     ret = UID_MSG_INVALID_SENDER;
-    if (strcmp(s,channel_ctx->peerid)) goto clean_return;
+    if (strcmp(s,ctx->peerid)) goto clean_return;
 
 // check id!!!
     ret = UID_MSG_JPARSE_ERROR;
@@ -234,9 +234,9 @@ clean_return:
     return ret;
 }
 
-int UID_close_channel(UID_client_channel_ctx *channel_ctx)
+int UID_close_channel(UID_ClientChannelCtx *ctx)
 {
-    (void)channel_ctx;
+    (void)ctx;
     return UID_MSG_OK;
 }
 
