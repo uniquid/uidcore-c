@@ -36,7 +36,7 @@ typedef struct {
 // client side functions
 int UID_openChannel(char *destMachine, UID_ClientChannelCtx *ctx);
 int UID_formatReqMsg(char *sender, int method, char *params, uint8_t *msg, size_t *size, int *sID);
-int UID_parse_result(uint8_t *buffer, size_t size, UID_ClientChannelCtx *ctx, char *res, size_t rsize, int id);
+int UID_parseRespMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *error, char *result, size_t rsize, int *sID);
 int UID_close_channel(UID_ClientChannelCtx *ctx);
 
 // provider side functions
