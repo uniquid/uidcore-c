@@ -37,14 +37,14 @@ int UID_openChannel(char *destMachine, UID_ClientChannelCtx *ctx)
     return UID_MSG_OK;
 }
 
-int UID_format_request(uint8_t *buffer, size_t *size, UID_ClientChannelCtx *ctx, int method, char *params, int *id)
+int UID_formatReqMsg(char *sender, int method, char *params, uint8_t *msg, size_t *size, int *sID)
 {
     yajl_gen g;
     const uint8_t *json;
     size_t sz;
     int ret;
 
-    *id = time(NULL);
+    *sID = time(NULL);
 
     g = yajl_gen_alloc(NULL);
     if (NULL == g) return UID_MSG_GEN_ALLOC_FAIL;
@@ -64,14 +64,14 @@ int UID_format_request(uint8_t *buffer, size_t *size, UID_ClientChannelCtx *ctx,
         yajl_gen_map_close(g);
     yajl_gen_map_close(g);
 
-    yajl_gen_get_buf(g, &json, &sz); //get the buffer
+    yajl_gen_get_buf(g, &json, &sz); //get the msg
     //if(sz > size) return
-    strncpy((char *)buffer, (char *)json, *size);
+    strncpy((char *)msg, (char *)json, *size);
 */
     ret = UID_MSG_GEN_FAIL;
     if (yajl_gen_status_ok != yajl_gen_string(g, (uint8_t *)params, strlen(params))) goto clean;
-    if (yajl_gen_status_ok != yajl_gen_get_buf(g, &json, &sz)) goto clean; //get the buffer
-    sz = snprintf((char *)buffer, *size, "{\"sender\":\"%s\",\"body\":{\"method\":%d,\"params\":%s,\"id\":%d}}", ctx->myid, method, json, *id);
+    if (yajl_gen_status_ok != yajl_gen_get_buf(g, &json, &sz)) goto clean; //format params string
+    sz = snprintf((char *)msg, *size, "{\"sender\":\"%s\",\"body\":{\"method\":%d,\"params\":%s,\"id\":%d}}", sender, method, json, *sID);
     ret = UID_MSG_SMALL_BUFFER;
     if (sz >= *size) goto clean;
     *size = sz + 1;  // add the end of string
