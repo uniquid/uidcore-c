@@ -67,6 +67,36 @@ static size_t parse_txs(void *buffer, size_t size, size_t nmemb, void *ctx)
     return nmemb;
 }
 
+#if DUMMY_CACHE
+void fillDummyCache(void)
+// fill the Contractrs Cache
+{
+    // fill the dummy cache
+    // user (bip32.org Passphrase user weak hash)
+    // tprv8ZgxMBicQKsPfMnootPTR6b8KjS1FbN3ikSynKf1wM7Y7cv8RipNDpdDtr2BuT8EKNsVjKvVe1iZc83J7SRu4gvjGiu8bKxhrRuKZfJXMtZ
+    // user1
+    // tprv8ZgxMBicQKsPeNN7y2mmmFJf6Mh2FLzzNmHn67gmy7CjwQYucmHwdjFugaFU8A1NwMJWjWrC46fxcTUaSYTLpn7H8oyUYneegarrfvHQYF1
+    // provider (bip32.org Passphrase provider weak hash)
+    // tprv8ZgxMBicQKsPdLmDgjo8Ed2U8c93oN4kJx2B2UfWmB878YcKiBCWu1WnrDqWZxSCzg9fsZASieJajf3nsckqbboJei53SrfqqEwcFz8sUhr
+    strncpy(secondb->contractsCache[0].serviceUserAddress, "my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV", sizeof(BTC_Address));          // user     m/0'/0/0
+    strncpy(secondb->contractsCache[0].serviceProviderAddress, "mw5oLLjxSNsPRdDgArCZseGEQJVdNYNK5U", sizeof(BTC_Address));      // provider m/0'/0/0
+    memset(secondb->contractsCache[0].profile, 0, sizeof(secondb->contractsCache[0].profile));
+    strncpy(secondb->contractsCache[1].serviceUserAddress, "myUFCeVGwkJv3PXy4zc1KSWRT8dC5iTvhU", sizeof(BTC_Address));          // user1    m/0'/0/1
+    strncpy(secondb->contractsCache[1].serviceProviderAddress, "mtEQ22KCcjpz73hWfNvJoq6tqMEcRUKk3m", sizeof(BTC_Address));      // provider m/0'/0/1
+    memset(secondb->contractsCache[1].profile, 0xFF, sizeof(secondb->contractsCache[1].profile));
+    secondb->validCacheEntries = 2;
+    strncpy(secondb->clientCache[0].serviceProviderName, "LocalMachine", sizeof(((UID_ClientProfile *)0)->serviceProviderName));
+    strncpy(secondb->clientCache[0].serviceProviderAddress, "mw5oLLjxSNsPRdDgArCZseGEQJVdNYNK5U", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));// provider m/0'/0/0
+    strncpy(secondb->clientCache[0].serviceUserAddress, "my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));        // user     m/0'/0/0
+    strncpy(secondb->clientCache[1].serviceProviderName, "UID984fee057c6d", sizeof(((UID_ClientProfile *)0)->serviceProviderName));
+    strncpy(secondb->clientCache[1].serviceProviderAddress, "mtEQ22KCcjpz73hWfNvJoq6tqMEcRUKk3m", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));// provider m/0'/0/1
+    strncpy(secondb->clientCache[1].serviceUserAddress, "myUFCeVGwkJv3PXy4zc1KSWRT8dC5iTvhU", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));        // user1     m/0'/0/1
+    strncpy(secondb->clientCache[2].serviceProviderName, "nocontract", sizeof(((UID_ClientProfile *)0)->serviceProviderName));
+    strncpy(secondb->clientCache[2].serviceProviderAddress, "mtEQ22KCcjpz73hWfNvJoq6tqMEcRUKk3m", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));// provider m/0'/0/1
+    strncpy(secondb->clientCache[2].serviceUserAddress, "n1UevZASvVyNhAB2d5Nm9EaHFeooJZbSP7", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));        // user1     m/0'/0/3
+    secondb->validClientEntries = 3;
+}
+#endif
 
 
 cache_buffer *UID_getContracts(UID_Identity *localIdentity)
@@ -95,6 +125,9 @@ cache_buffer *UID_getContracts(UID_Identity *localIdentity)
 
     (secondb->validCacheEntries) = 0; // void the cache
 
+#if DUMMY_CACHE
+    fillDummyCache();
+#else
     // fill the Contractrs Cache
     {
         //snprintf(url, sizeof(url), GETTXS, localIdentity->address, from, to < ctx.totalItems ? to : ctx.totalItems);
@@ -102,6 +135,7 @@ cache_buffer *UID_getContracts(UID_Identity *localIdentity)
         //curl_easy_perform(curl);  // perform http request
         
     } ;
+#endif
     
     pthread_mutex_unlock(&(secondb->in_use));  // unlock the resource
     current = secondb;  // swap the buffers
