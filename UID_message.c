@@ -84,7 +84,7 @@ clean:
     return ret;
 }
 
-int UID_accept_channel(uint8_t *in_msg, size_t in_size, UID_server_channel_ctx *channel_ctx, uint8_t *first_msg, size_t *out_size)
+int UID_accept_channel(uint8_t *in_msg, size_t in_size, UID_ServerChannelCtx *channel_ctx, uint8_t *first_msg, size_t *out_size)
 {
     yajl_val node, v;
     char *s;
@@ -120,7 +120,7 @@ clean_return:
 
 //  {"sender":"my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV","body":{"method":33,"params":"{\"pippa\":\"lapeppa\"}","id":1477550301}}
 
-int UID_perform_request(uint8_t *buffer, size_t size, uint8_t *response, size_t *rsize, UID_server_channel_ctx *channel_ctx)
+int UID_perform_request(uint8_t *buffer, size_t size, uint8_t *response, size_t *rsize, UID_ServerChannelCtx *channel_ctx)
 {
 (void)size;
     yajl_val node, v;
@@ -236,14 +236,14 @@ clean_return:
     return ret;
 }
 
-int UID_close_channel(UID_ClientChannelCtx *ctx)
+int UID_closeChannel(UID_ClientChannelCtx *ctx)
 {
     (void)ctx;
     return UID_MSG_OK;
 }
 
-int UID_close_server_channel(UID_server_channel_ctx *channel_ctx)
+int UID_closeServerChannel(UID_ServerChannelCtx *ctx)
 {
-    (void)channel_ctx;
+    (void)ctx;
     return UID_MSG_OK;
 }
