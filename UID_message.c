@@ -117,48 +117,64 @@ clean_return:
     return ret;
 }
 
-
-//  {"sender":"my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV","body":{"method":33,"params":"{\"pippa\":\"lapeppa\"}","id":1477550301}}
-
-int UID_perform_request(uint8_t *buffer, size_t size, uint8_t *response, size_t *rsize, UID_ServerChannelCtx *channel_ctx)
+int parseReqMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *method, char *params, size_t psize, int *sID)
 {
 (void)size;
     yajl_val node, v;
     int ret;
-    yajl_gen g = NULL;
 
     // parse message
-	node = yajl_tree_parse((char *)buffer, NULL, 0);
+	node = yajl_tree_parse((char *)msg, NULL, 0);
     if (node == NULL) return UID_MSG_JPARSE_ERROR;
 
+// get the sender
     ret = UID_MSG_JPARSE_ERROR;
-    const char * sender[] = { "sender", (const char *) 0 };
-    v = yajl_tree_get(node, sender, yajl_t_string);
+    const char * _sender[] = { "sender", (const char *) 0 };
+    v = yajl_tree_get(node, _sender, yajl_t_string);
     if (v == NULL) goto clean_return;
     char *s =  YAJL_GET_STRING(v);
-    ret = UID_MSG_INVALID_SENDER;
-    if (strcmp(s,channel_ctx->contract.serviceUserAddress)) goto clean_return;
 
-    ret = UID_MSG_JPARSE_ERROR;
-    const char * _method[] = { "body", "method", (const char *) 0 };
-    v = yajl_tree_get(node, _method, yajl_t_number);
-    if (v == NULL) goto clean_return;
-    int method =  YAJL_GET_INTEGER(v);
+    ret = UID_MSG_SMALL_BUFFER;
+    if (strlen(s) >= ssize) goto clean_return;
+    strncpy(sender, s, ssize);
 
+// get the sID
     ret = UID_MSG_JPARSE_ERROR;
     const char * _id[] = { "body", "id", (const char *) 0 };
     v = yajl_tree_get(node, _id, yajl_t_number);
     if (v == NULL) goto clean_return;
-    int id =  YAJL_GET_INTEGER(v);
 
+    *sID = YAJL_GET_INTEGER(v);
+
+// get the method
+    ret = UID_MSG_JPARSE_ERROR;
+    const char * _method[] = { "body", "method", (const char *) 0 };
+    v = yajl_tree_get(node, _method, yajl_t_number);
+    if (v == NULL) goto clean_return;
+
+    *method = YAJL_GET_INTEGER(v);
+
+//get the params
     ret = UID_MSG_JPARSE_ERROR;
     const char * _params[] = { "body", "params", (const char *) 0 };
     v = yajl_tree_get(node, _params, yajl_t_string);
     if (v == NULL) goto clean_return;
-    char *params =  YAJL_GET_STRING(v);
+    char *res =  YAJL_GET_STRING(v);
 
-    char result[1024] = {0}; // must find a better way to allocate the buffer!!!
-    int error = UID_dispatch(method, params, result, sizeof(result), channel_ctx->contract.profile);
+    ret = UID_MSG_SMALL_BUFFER;
+    if (strlen(res) >= psize) goto clean_return;
+    strncpy(params, res, psize);
+
+    ret = UID_MSG_OK;
+clean_return:
+    if (NULL != node) yajl_tree_free(node);
+    return ret;
+}
+
+int formatRespMsg(char *sender, char *result, int error, int sID, uint8_t *msg, size_t *size)
+{
+    int ret;
+    yajl_gen g = NULL;
 
     // build the response
     ret = UID_MSG_GEN_ALLOC_FAIL;
@@ -170,16 +186,39 @@ int UID_perform_request(uint8_t *buffer, size_t size, uint8_t *response, size_t 
     ret = UID_MSG_GEN_FAIL;
     if (yajl_gen_status_ok != yajl_gen_string(g, (uint8_t *)result, strlen(result))) goto clean_return;
     if (yajl_gen_status_ok != yajl_gen_get_buf(g, &json, &sz)) goto clean_return; //get the buffer
-    sz = snprintf((char *)response, *rsize, "{\"sender\":\"%s\",\"body\":{\"result\":%s,\"error\":%d,\"id\":%d}}", channel_ctx->contract.serviceProviderAddress, json, error, id);
+    sz = snprintf((char *)msg, *size, "{\"sender\":\"%s\",\"body\":{\"result\":%s,\"error\":%d,\"id\":%d}}", sender, json, error, sID);
     ret = UID_MSG_SMALL_BUFFER;
-    if (sz >= *rsize) goto clean_return;
-    *rsize = sz + 1;  // add the end of string
+    if (sz >= *size) goto clean_return;
+    *size = sz + 1;  // add the end of string
 
     ret = UID_MSG_OK;
 clean_return:
-    if (NULL != node) yajl_tree_free(node);
     if (NULL != g) yajl_gen_free(g);
     return ret;
+}
+
+//  {"sender":"my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV","body":{"method":33,"params":"{\"pippa\":\"lapeppa\"}","id":1477550301}}
+
+int UID_perform_request(uint8_t *buffer, size_t size, uint8_t *response, size_t *rsize, UID_ServerChannelCtx *channel_ctx)
+{
+    int ret;
+int method;
+int sID;
+BTC_Address sender;
+char params[1024];
+
+ret = parseReqMsg(buffer, size, sender, sizeof(sender), &method, params, sizeof(params), &sID);
+if (ret) return ret;
+if (strcmp(sender,channel_ctx->contract.serviceUserAddress)) return UID_MSG_INVALID_SENDER;
+
+
+    char result[1024] = {0}; // must find a better way to allocate the buffer!!!
+    int error = UID_dispatch(method, params, result, sizeof(result), channel_ctx->contract.profile);
+
+ret = formatRespMsg(channel_ctx->contract.serviceProviderAddress, result, error, sID, response, rsize);
+if (ret) return ret;
+
+    return UID_MSG_OK;
 }
 
 int UID_parseRespMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *error, char *result, size_t rsize, int *sID)
