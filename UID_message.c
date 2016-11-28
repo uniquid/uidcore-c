@@ -26,7 +26,7 @@
 #include "UID_bchainBTC.h"
 #include "UID_dispatch.h"
 
-int UID_openChannel(char *destMachine, UID_ClientChannelCtx *ctx)
+int UID_createChannel(char *destMachine, UID_ClientChannelCtx *ctx)
 {
     UID_ClientProfile *provider;
 
@@ -117,7 +117,7 @@ clean_return:
     return ret;
 }
 
-int parseReqMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *method, char *params, size_t psize, int *sID)
+int UID_parseReqMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *method, char *params, size_t psize, int *sID)
 {
 (void)size;
     yajl_val node, v;
@@ -171,7 +171,7 @@ clean_return:
     return ret;
 }
 
-int formatRespMsg(char *sender, char *result, int error, int sID, uint8_t *msg, size_t *size)
+int UID_formatRespMsg(char *sender, char *result, int error, int sID, uint8_t *msg, size_t *size)
 {
     int ret;
     yajl_gen g = NULL;
@@ -198,28 +198,6 @@ clean_return:
 }
 
 //  {"sender":"my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV","body":{"method":33,"params":"{\"pippa\":\"lapeppa\"}","id":1477550301}}
-
-int UID_perform_request(uint8_t *buffer, size_t size, uint8_t *response, size_t *rsize, UID_ServerChannelCtx *channel_ctx)
-{
-    int ret;
-int method;
-int sID;
-BTC_Address sender;
-char params[1024];
-
-ret = parseReqMsg(buffer, size, sender, sizeof(sender), &method, params, sizeof(params), &sID);
-if (ret) return ret;
-if (strcmp(sender,channel_ctx->contract.serviceUserAddress)) return UID_MSG_INVALID_SENDER;
-
-
-    char result[1024] = {0}; // must find a better way to allocate the buffer!!!
-    int error = UID_dispatch(method, params, result, sizeof(result), channel_ctx->contract.profile);
-
-ret = formatRespMsg(channel_ctx->contract.serviceProviderAddress, result, error, sID, response, rsize);
-if (ret) return ret;
-
-    return UID_MSG_OK;
-}
 
 int UID_parseRespMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *error, char *result, size_t rsize, int *sID)
 {
