@@ -9,26 +9,38 @@
 #define __UID_DISPATCH_C
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "UID_dispatch.h"
 
-UID_user_callback UID_callbacks[UID_RPC_TABLE_SIZE] = {
-    NULL,
+static void UID_echo(char *param, char *result, size_t size)
+{
+	snprintf(result, size, "UID_echo: <%s>", param);
+}
+
+UID_SystemFuntion UID_systemFunctions[UID_RPC_RESERVED] = {
+    UID_echo,
     NULL
 };
 
-int UID_register_user_callback(int index, UID_user_callback callback)
+
+/**
+ * checks the contract for execution permission
+ * @param method method to check for permission
+ * @param smart_contract the contract
+ */
+int UID_checkPermission(int method, UID_smart_contract smart_contract)
 {
-    if (index < UID_RPC_RESERVED) return UID_DISPATCH_RESERVED;
-    if (NULL != UID_callbacks[index]) return UID_DISPATCH_INUSE;
-    UID_callbacks[index] = callback;
-    return UID_DISPATCH_OK;
+    if(0 != ((1 << (method & 0x07)) & smart_contract[method >> 3])) {
+        return 1;
+    }
+    else return 0;
 }
 
-int UID_dispatch(int method, char *params, char *result, size_t size, UID_smart_contract smart_contract)
+int UID_performRequest(int method, char *params, char *result, size_t size)
 {
-    if(0 == ((method & 0xff) & smart_contract[method >> 8])) return UID_DISPATCH_NOPERMISSION;
-    if (NULL == UID_callbacks[method]) return UID_DISPATCH_NOTREGISTERED;
-    UID_callbacks[method](params, result, size);
+    if(UID_RPC_RESERVED <= method) return UID_DISPATCH_NOTEXISTENT;
+    if (NULL == UID_systemFunctions[method]) return UID_DISPATCH_NOTEXISTENT;
+    UID_systemFunctions[method](params, result, size);
     return UID_DISPATCH_OK;
 }
 
