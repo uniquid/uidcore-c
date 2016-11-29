@@ -5,9 +5,6 @@
  *      Author: M. Palumbi
  */
 
-#ifndef __UID_DISPATCH_C
-#define __UID_DISPATCH_C
-
 #include <stdlib.h>
 #include <stdio.h>
 #include "UID_dispatch.h"
@@ -43,5 +40,3 @@ int UID_performRequest(int method, char *params, char *result, size_t size)
     UID_systemFunctions[method](params, result, size);
     return UID_DISPATCH_OK;
 }
-
-#endif //__UID_DISPATCH_C
