@@ -17,10 +17,9 @@ typedef struct
 {
     UID_KeyPair keyPair;
     BTC_Address address;  // address  base58 coded
-    BTC_Address orchestrator;
     uint64_t balance;    // bitcoin balance in Satoshi (10e-8 BTC)
 } UID_Identity;
 
-UID_Identity *UID_getLocalIdentity(char *keypriv_h, BTC_Address orchestrator);
+UID_Identity *UID_getLocalIdentity(char *keypriv_h);
 
 #endif

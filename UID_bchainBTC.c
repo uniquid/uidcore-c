@@ -43,7 +43,7 @@ typedef struct  {
     yajl_handle hand;
     int totalItems;
     int toItems;
-    char *orchestrator;
+//    char *orchestrator;
     char *serviceProviderAddress;
     bool isOrchestrator;
     bool isContract;
@@ -113,7 +113,6 @@ cache_buffer *UID_getContracts(UID_Identity *localIdentity)
 
 
     // setup context for the callback
-    ctx.orchestrator = localIdentity->orchestrator;
     ctx.serviceProviderAddress = localIdentity->address;
 
     // Get ctx.totalItems

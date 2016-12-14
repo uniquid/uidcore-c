@@ -26,40 +26,21 @@
 #include "UID_utils.h"
 #include "UID_identity.h"
 
-UID_Identity *UID_fill_Identity(
-    BTC_PrivateKey privateKey,
-    BTC_PublicKey publicKey,
-    BTC_Address address,  // address  base58 coded
-    uint64_t    balance,    // bitcoin balance in Satoshi (10e-8 BTC)
-    UID_Identity *identity)
-{
-    memcpy (identity->keyPair.privateKey, privateKey, sizeof(BTC_PrivateKey));
-    memcpy (identity->keyPair.publicKey, publicKey, sizeof(BTC_PublicKey));
-    strncpy(identity->address, address, sizeof(BTC_Address));
-
-
-    identity->balance = balance;
-    
-    return identity;
-}
 
 static UID_Identity identity;
-char *identityDB = NULL;
+static HDNode node;
+
+char *identityDB = "./identity.db";
 
 static char lbuffer[1024];
 
-UID_Identity *UID_getLocalIdentity(char *keypriv_h, BTC_Address orchestrator)
+UID_Identity *UID_getLocalIdentity(char *tprv)
 {
-    char privateKey[sizeof(BTC_PrivateKey)*2 + 1]; 
-    BTC_Address orchestrator_b;
-    HDNode node;
-    uint8_t keypriv[32];
-    uint8_t chaincode[32] = { 0 };
+    char privateKey[256]; 
     uint64_t balance = 10e7;  // satoshi = (10e-8 BTC)
     FILE *id;
     char format[64];
 
-    if (identityDB == NULL) identityDB = "./identity.db";
 
     if ((id = fopen(identityDB, "r")) != NULL)
     {
@@ -68,10 +49,8 @@ UID_Identity *UID_getLocalIdentity(char *keypriv_h, BTC_Address orchestrator)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
             snprintf(format, sizeof(format),  "privateKey: %%%zus\n", sizeof(privateKey) - 1);
-            if (sscanf(lbuffer, format,  privateKey) == 1) keypriv_h = privateKey; // if read OK assign to keypriv_h
+            if (sscanf(lbuffer, format,  privateKey) == 1) tprv = privateKey; // if read OK assign to tprv
 
-            snprintf(format, sizeof(format),  "orchestrator: %%%zus\n", sizeof(orchestrator_b) - 1);
-            if (sscanf(lbuffer, format,  orchestrator_b) == 1) orchestrator = orchestrator_b; // if read OK assign to keypriv_h
 #pragma GCC diagnostic pop
 
             fscanf(id, "balance: %lld\n", &balance);
@@ -79,7 +58,7 @@ UID_Identity *UID_getLocalIdentity(char *keypriv_h, BTC_Address orchestrator)
         fclose(id);
     }
 
-    if(keypriv_h == NULL) 
+    if(tprv == NULL) 
     {
         uint8_t seed[32];
         int rnd = open("/dev/random", O_RDONLY);
@@ -90,7 +69,7 @@ UID_Identity *UID_getLocalIdentity(char *keypriv_h, BTC_Address orchestrator)
     }
 	else
 	{
-	    hdnode_from_xprv(/*depth*/ 0, /*child_num*/ 0, /*chain_code*/ chaincode, /*private_key*/ fromhex(keypriv_h, keypriv), /*curve*/ SECP256K1_NAME, &node);
+	    hdnode_deserialize(tprv, &node);
 	}
 	hdnode_fill_public_key(&node);
 	memcpy(identity.keyPair.privateKey, node.private_key, sizeof(identity.keyPair.privateKey));
@@ -98,12 +77,12 @@ UID_Identity *UID_getLocalIdentity(char *keypriv_h, BTC_Address orchestrator)
 	ecdsa_get_address(node.public_key, /*version*/ NETWORK_BYTE, identity.address, sizeof(identity.address));
 	identity.balance = balance;  // satoshi = (10e-8 BTC)
 	
-	if (orchestrator != NULL) memcpy(identity.orchestrator, orchestrator, sizeof(identity.orchestrator));
 
     if ((id = fopen(identityDB, "w")) != NULL)
     {
-        fprintf(id, "privateKey: %s\n",  tohex(identity.keyPair.privateKey, sizeof(identity.keyPair.privateKey), privateKey));
-        fprintf(id, "orchestrator: %s\n", identity.orchestrator);
+        memset(privateKey, 0, sizeof(privateKey));
+        hdnode_serialize_private(&node, 0 /*uint32_t fingerprint*/, privateKey, sizeof(privateKey));
+        fprintf(id, "privateKey: %s\n", privateKey);
         fprintf(id, "balance: %lld\n", identity.balance);
         fclose(id);
     }
