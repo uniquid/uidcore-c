@@ -1,8 +1,8 @@
-/*
- * UID_identity.h
+/**
+ * @file   UID_identity.h
  *
- *  Created on: 3/aug/2016
- *      Author: M. Palumbi
+ * @date   3/aug/2016
+ * @author M. Palumbi
  */
  
  
@@ -10,8 +10,15 @@
 #define __UID_IDENTITY_H
 
 #include <stdint.h>
-
 #include "UID_globals.h"
+
+#define UID_DEFAULT_IDENTITY_FILE "./identity.db"
+
+typedef struct
+{
+    int account;
+    int n;
+} UID_Bip32Path;
 
 typedef struct 
 {
@@ -21,5 +28,7 @@ typedef struct
 } UID_Identity;
 
 UID_Identity *UID_getLocalIdentity(char *keypriv_h);
+int UID_getPubkeyAt(UID_Bip32Path *path, uint8_t public_key[33]);
+int UID_signAt(UID_Bip32Path *path, uint8_t hash[32], uint8_t sig[64]);
 
 #endif
