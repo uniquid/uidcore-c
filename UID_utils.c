@@ -27,10 +27,18 @@
 #include "UID_utils.h"
 
 // buf must be provided at least strlen(str) / 2 bytes long
-uint8_t *fromhex(const char *str, uint8_t *buf)
+/**
+ * @param[in]		str  string in hex format to convert
+ * @param[out]		buf  binary out buffer
+ * @param[in-out]	len  in input, the size of the out buffer, in out the bytes
+ * 						 converted
+ */
+size_t fromhex(const char *str, uint8_t *buf, size_t len)
 {
 	uint8_t c;
-	for (size_t i = 0; i < strlen(str) / 2; i++) {
+	size_t l = strlen(str) / 2;
+	if (l > len) return 0;
+	for (size_t i = 0; i < l; i++) {
 		c = 0;
 		if (str[i*2] >= '0' && str[i*2] <= '9') c += (str[i*2] - '0') << 4;
 		if (str[i*2] >= 'a' && str[i*2] <= 'f') c += (10 + str[i*2] - 'a') << 4;
@@ -40,7 +48,7 @@ uint8_t *fromhex(const char *str, uint8_t *buf)
 		if (str[i*2+1] >= 'A' && str[i*2+1] <= 'F') c += (10 + str[i*2+1] - 'A');
 		buf[i] = c;
 	}
-	return buf;
+	return l;
 }
 
 uint8_t *fromnhex(const char *str, uint8_t *buf, size_t len)

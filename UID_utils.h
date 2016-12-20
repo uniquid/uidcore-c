@@ -9,7 +9,7 @@
 #ifndef __UID_UTILS_H
 #define __UID_UTILS_H
 
-uint8_t *fromhex(const char *str, uint8_t *buf);
+size_t fromhex(const char *str, uint8_t *buf, size_t len);
 uint8_t *fromnhex(const char *str, uint8_t *buf, size_t len);
 
 char *tohex(const uint8_t *bin, size_t l, char *buf);
