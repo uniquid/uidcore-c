@@ -36,8 +36,6 @@ cache_buffer cache1 = { { { {0},{0},{0} } }, 0, { { {0},{0},{0} } }, 0, PTHREAD_
 cache_buffer *current = &cache0;
 cache_buffer *secondb = &cache1;
 
-#define GETTXS "http://appliance2.uniquid.co:8080/insight-api/addrs/%s/txs?from=%d&to=%d"
-//#define GETTXS "http://appliance1.uniquid.co:3001/insight-api/addrs/%s/txs?from=%d"
 
 typedef struct  {
     yajl_handle hand;
@@ -116,7 +114,7 @@ cache_buffer *UID_getContracts(UID_Identity *localIdentity)
     ctx.serviceProviderAddress = localIdentity->address;
 
     // Get ctx.totalItems
-    snprintf(url, sizeof(url), GETTXS, localIdentity->address, 0, 0);
+    snprintf(url, sizeof(url), UID_GETTXS, localIdentity->address, 0, 0);
     curl_easy_setopt(curl, CURLOPT_URL, url);
     if(curl_easy_perform(curl) != 0) goto clean_ret; // error contacting server
         
@@ -129,7 +127,7 @@ cache_buffer *UID_getContracts(UID_Identity *localIdentity)
 #else
     // fill the Contractrs Cache
     {
-        //snprintf(url, sizeof(url), GETTXS, localIdentity->address, from, to < ctx.totalItems ? to : ctx.totalItems);
+        //snprintf(url, sizeof(url), UID_GETTXS, localIdentity->address, from, to < ctx.totalItems ? to : ctx.totalItems);
         //curl_easy_setopt(curl, CURLOPT_URL, url);
         //curl_easy_perform(curl);  // perform http request
         
@@ -196,4 +194,57 @@ UID_ClientProfile *UID_matchProvider(char *name)
 
     pthread_mutex_unlock(&(ptr->in_use));  // unlock the resource
     return ret_val;
+}
+
+typedef struct {
+    size_t buffer_size;
+    char  *buffer;
+} send_tx_context;
+
+/**
+ * callback from curl_easy_perform
+ * returns the answer for the send from insight-api
+ */
+static size_t send_tx(void *buffer, size_t size, size_t nmemb, send_tx_context *ctx)
+{
+//    (void)size;(void)nmemb;
+    size_t l = size*nmemb;
+    printf("curl callback called with size = %d nmemb = %d\n", size, nmemb);
+
+    if (l < ctx->buffer_size) {
+        memcpy(ctx->buffer, buffer, l);
+        ctx->buffer += l;
+        *ctx->buffer = 0;
+        ctx->buffer_size -= l;
+        return l;
+    }
+    else {
+        return -1;
+    }
+}
+
+int UID_sendTx(char *signed_tx, char *ret, size_t size)
+{
+    CURL *curl;
+    CURLcode res;
+    send_tx_context ctx;
+
+    curl = curl_easy_init();
+    /* Define our callback to get called when there's data to be written */
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, send_tx);
+    /* Set a pointer to our struct to pass to the callback */
+    ctx.buffer_size = size;
+    ctx.buffer = ret;
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ctx);
+
+    curl_easy_setopt(curl, CURLOPT_URL, UID_SENDTX);
+    /* setup post data */
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, signed_tx);
+    /* perform the request */
+    res = curl_easy_perform(curl);
+
+    /* always cleanup */
+    curl_easy_cleanup(curl);
+
+    return res;
 }

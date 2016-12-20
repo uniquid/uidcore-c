@@ -18,6 +18,11 @@
 #define PROFILE_SIZE 40 // OP_RETURN lenght...
 #define UID_NAME_LENGHT 16
 
+#define UID_GETTXS "http://appliance2.uniquid.co:8080/insight-api/addrs/%s/txs?from=%d&to=%d"
+//#define GETTXS "http://appliance1.uniquid.co:3001/insight-api/addrs/%s/txs?from=%d"
+#define UID_SENDTX "http://appliance3.uniquid.co:8080/insight-api/tx/send"
+//#define UID_SENDTX "http://appliance4.uniquid.co:3001/insight-api/tx/send"
+
 typedef uint8_t UID_smart_contract[PROFILE_SIZE];
 
 typedef struct
@@ -45,6 +50,7 @@ typedef struct {
 cache_buffer *UID_getContracts(UID_Identity *localIdentity);
 UID_SecurityProfile *UID_matchContract(BTC_Address serviceUserAddress);
 UID_ClientProfile *UID_matchProvider(char *name);
+int UID_sendTx(char *signed_tx, char *ret, size_t size);
 
 #endif
 
