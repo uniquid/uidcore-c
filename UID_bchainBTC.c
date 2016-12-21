@@ -207,9 +207,7 @@ typedef struct {
  */
 static size_t send_tx(void *buffer, size_t size, size_t nmemb, send_tx_context *ctx)
 {
-//    (void)size;(void)nmemb;
     size_t l = size*nmemb;
-    printf("curl callback called with size = %d nmemb = %d\n", size, nmemb);
 
     if (l < ctx->buffer_size) {
         memcpy(ctx->buffer, buffer, l);

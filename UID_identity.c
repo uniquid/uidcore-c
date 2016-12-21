@@ -18,6 +18,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
+#include <inttypes.h>
 #include "curves.h"
 #include "secp256k1.h"
 #include "bip32.h"
@@ -90,7 +91,7 @@ UID_Identity *UID_getLocalIdentity(char *tprv)
 
 #pragma GCC diagnostic pop
 
-            fscanf(id, "balance: %lld\n", &balance);
+            fscanf(id, "balance: %" PRIu64  "\n", &balance);
         }
         fclose(id);
     }
@@ -128,7 +129,7 @@ printf("m/0'/2/5 %s\n", ttprv);
         memset(privateKey, 0, sizeof(privateKey));
         hdnode_serialize_private(&node_m, 0 /*uint32_t fingerprint*/, privateKey, sizeof(privateKey));
         fprintf(id, "privateKey: %s\n", privateKey);
-        fprintf(id, "balance: %lld\n", identity.balance);
+        fprintf(id, "balance: %" PRIu64  "\n", identity.balance);
         fclose(id);
     }
 
