@@ -97,11 +97,12 @@ void fillDummyCache(void)
 #endif
 
 
-cache_buffer *UID_getContracts(UID_Identity *localIdentity)
+int UID_getContracts(UID_Identity *localIdentity, cache_buffer **cache)
 {
     CURL *curl;
     char url[256];
     parse_context ctx;
+    int res;
 
     curl = curl_easy_init();
     /* Define our callback to get called when there's data to be written */ 
@@ -116,6 +117,7 @@ cache_buffer *UID_getContracts(UID_Identity *localIdentity)
     // Get ctx.totalItems
     snprintf(url, sizeof(url), UID_GETTXS, localIdentity->address, 0, 0);
     curl_easy_setopt(curl, CURLOPT_URL, url);
+    res = UID_CONTRACTS_SERV_ERROR;
     if(curl_easy_perform(curl) != 0) goto clean_ret; // error contacting server
         
     pthread_mutex_lock(&(secondb->in_use));  // lock the resource
@@ -135,14 +137,17 @@ cache_buffer *UID_getContracts(UID_Identity *localIdentity)
 #endif
     
     pthread_mutex_unlock(&(secondb->in_use));  // unlock the resource
-    current = secondb;  // swap the buffers
+    *cache = secondb;  // swap the buffers
+    secondb = current;
+    current = *cache;
+    res = UID_CONTRACTS_OK;
     goto clean_ret;
 
 clean_ret:
     /* always cleanup */ 
     curl_easy_cleanup(curl);
     
-    return current;
+    return res;
 }
 
 static UID_SecurityProfile goodContract; //TODO warning non reantrant code!!!
