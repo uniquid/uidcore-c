@@ -28,7 +28,14 @@
 
 static UID_Identity identity;
 static HDNode node_m;
-static HDNode node_m_0H_x[3];
+//static HDNode node_m_0H_x[3];
+
+static HDNode node_m_44H_0H;  // imprinting
+static HDNode node_m_44H_0H_0;  // orchestrator
+static HDNode node_m_44H_0H_0_x[2][2];
+        //                      ^  ^
+        // provider/user________|  |
+        // intern/extern___________|
 
 char *identityDB = UID_DEFAULT_IDENTITY_FILE;
 
@@ -36,30 +43,52 @@ static char lbuffer[1024];
 
 static HDNode *UID_deriveAt(UID_Bip32Path *path, HDNode *node)
 {
-memcpy( node, &node_m,sizeof(*node)); return node;
-    if (path->account > 2 )
+    if (path->p_u > 1 )
         return NULL;
-    memcpy( node, &node_m_0H_x[path->account],sizeof(*node));
+    if (path->account > 1 )
+        return NULL;
+    memcpy( node, &node_m_44H_0H_0_x[path->p_u][path->account], sizeof(HDNode));
     hdnode_private_ckd(node, path->n);
 //    hdnode_fill_public_key(node);
     return node;
 }
 
-static void derive_m_0H_x(void)
+static void derive_m_44H_0H_x(void)
 {
-	// [Chain m/0']
-    memcpy(&node_m_0H_x[0], &node_m, sizeof(node_m_0H_x[1]));
-	hdnode_private_ckd_prime(&node_m_0H_x[0], 0);
+    // [Chain m/44']
+    memcpy(&node_m_44H_0H, &node_m, sizeof(HDNode));
+    hdnode_private_ckd_prime(&node_m_44H_0H, 44);
 
-    // [Chain m/0'/2]
-    memcpy(&node_m_0H_x[2], &node_m_0H_x[0], sizeof(node_m_0H_x[2]));
-	hdnode_private_ckd(&node_m_0H_x[2], 2);
-	// [Chain m/0'/1]
-    memcpy(&node_m_0H_x[1], &node_m_0H_x[0], sizeof(node_m_0H_x[1]));
-	hdnode_private_ckd(&node_m_0H_x[1], 1);
-    // [Chain m/0'/0]
-    //memcpy(&node_m_0H_x[0], &node_m_0H_x[0], sizeof(node_m_0H_x[0]));
-	hdnode_private_ckd(&node_m_0H_x[0], 0);
+    // [Chain m/44'/0']
+    //memcpy(&node_m_44H_0H, &node_m_44H_0H, sizeof(HDNode));
+    hdnode_private_ckd_prime(&node_m_44H_0H, 0);
+
+    // [Chain m/44'/0'/0]
+    memcpy(&node_m_44H_0H_0, &node_m_44H_0H, sizeof(HDNode));
+    hdnode_private_ckd(&node_m_44H_0H_0, 0);
+
+
+    // [Chain m/44'/0'/0/0]
+    memcpy(&node_m_44H_0H_0_x[0][0], &node_m_44H_0H_0, sizeof(HDNode));
+    hdnode_private_ckd(&node_m_44H_0H_0_x[0][0], 0);
+    memcpy(&node_m_44H_0H_0_x[0][1], &node_m_44H_0H_0_x[0][0], sizeof(HDNode));
+
+    // [Chain m/44'/0'/0/0/0]
+    hdnode_private_ckd(&node_m_44H_0H_0_x[0][0], 0);
+
+    // [Chain m/44'/0'/0/0/1]
+    hdnode_private_ckd(&node_m_44H_0H_0_x[0][1], 1);
+
+    // [Chain m/44'/0'/0/1]
+    memcpy(&node_m_44H_0H_0_x[1][0], &node_m_44H_0H_0, sizeof(HDNode));
+    hdnode_private_ckd(&node_m_44H_0H_0_x[1][0], 1);
+    memcpy(&node_m_44H_0H_0_x[1][1], &node_m_44H_0H_0_x[1][0], sizeof(HDNode));
+
+    // [Chain m/44'/0'/0/1/0]
+    hdnode_private_ckd(&node_m_44H_0H_0_x[1][0], 0);
+
+    // [Chain m/44'/0'/0/1/1]
+    hdnode_private_ckd(&node_m_44H_0H_0_x[1][1], 1);
 }
 
 /**
@@ -115,14 +144,7 @@ UID_Identity *UID_getLocalIdentity(char *tprv)
 	ecdsa_get_address(node_m.public_key, /*version*/ NETWORK_BYTE, identity.address, sizeof(identity.address));
 	identity.balance = balance;  // satoshi = (10e-8 BTC)
 
-	derive_m_0H_x();
-
-char ttprv[256];
-HDNode node;
-UID_Bip32Path path = { 2, 5 };
-UID_deriveAt(&path, &node);
-ecdsa_get_address(node.public_key, /*version*/ NETWORK_BYTE, ttprv, sizeof(ttprv));
-printf("m/0'/2/5 %s\n", ttprv);
+	derive_m_44H_0H_x();
 
     if ((id = fopen(identityDB, "w")) != NULL)
     {

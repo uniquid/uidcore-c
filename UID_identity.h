@@ -16,8 +16,9 @@
 
 typedef struct
 {
-    int account;
-    int n;
+    unsigned p_u;    // provider/user
+    unsigned account;// extern/int
+    unsigned n;
 } UID_Bip32Path;
 
 typedef struct 
