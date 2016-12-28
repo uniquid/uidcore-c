@@ -17,7 +17,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "sha2.h"
+#include "yajl/yajl_tree.h"
 #include "UID_transaction.h"
+#include "UID_bchainBTC.h"
 #include "UID_utils.h"
 #include "UID_identity.h"
 #include "ecdsa.h"
@@ -63,7 +65,7 @@ size_t decode_varint(uint8_t *stream, uint64_t *dest)
 static uint8_t script[26] = { 0x19, 0x76, 0xa9, 0x14, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0x88, 0xac };
 int UID_digestRawTx(uint8_t *rawtx, size_t len, u_int in, uint8_t address[20], uint8_t hash[32])
 {
-    uint8_t *ptr;
+    uint8_t *ptr,*out;
     uint64_t n_inputs, i, l;
     size_t s;
 	SHA256_CTX	context;
@@ -95,8 +97,21 @@ int UID_digestRawTx(uint8_t *rawtx, size_t len, u_int in, uint8_t address[20], u
         sha256_Update(&context, ptr, 4);
         ptr += 4;
     }
+    // parse outputs to find the len
+    out = ptr;
+    s = decode_varint(ptr, &n_inputs);
+    ptr += s;  // points to the beginning of first output
+    for (i = 0; i < n_inputs; i++) {
+        ptr += 8;  // amount
+        s = decode_varint(ptr, &l);
+        ptr += l + s;  // scripsig
+    }
+    ptr += 4;  //lock time
 
-    sha256_Update(&context, ptr, len - (ptr - rawtx));
+    if(len < (unsigned)(ptr - rawtx)) return UID_TX_PARSE_ERROR;
+    sha256_Update(&context, out, (ptr - out));
+    sha256_Update(&context, (uint8_t *)"\x1\x0\x0\x0", 4); // hash code type
+
 	sha256_Final(&context, hash);
 	sha256_Raw(hash, 32, hash);
 
@@ -109,19 +124,19 @@ int UID_digestRawTx(uint8_t *rawtx, size_t len, u_int in, uint8_t address[20], u
  */
 int UID_buildSignedHex(uint8_t *rawtx, size_t len, UID_ScriptSig *scriptsig, char *hexouttx, size_t olen)
 {
-(void)olen;
+(void)olen;(void)len;
     size_t s;
-    uint8_t *ptr;
+    uint8_t *ptr,*out;
     char *hextx;
-    uint64_t n_input, i, l;
+    uint64_t n_inputs, i, l;
 
     hextx = hexouttx;
-    s = decode_varint(rawtx+4, &n_input);
+    s = decode_varint(rawtx+4, &n_inputs);
 	tohex(rawtx, 4 + s, hextx);
 	ptr = rawtx + 4 + s;
 	hextx += 2*(4 + s);
 
-    for (i = 0; i < n_input; i++) {
+    for (i = 0; i < n_inputs; i++) {
         tohex(ptr, 36, hextx);
         ptr += 36;
         hextx += 72;
@@ -136,9 +151,19 @@ int UID_buildSignedHex(uint8_t *rawtx, size_t len, UID_ScriptSig *scriptsig, cha
         ptr += 4;
         hextx += 8;
     }
+    // parse outputs to find the len
+    out = ptr;
+    s = decode_varint(ptr, &n_inputs);
+    ptr += s;  // points to the beginning of first output
+    for (i = 0; i < n_inputs; i++) {
+        ptr += 8;  // amount
+        s = decode_varint(ptr, &l);
+        ptr += l + s;  // scripsig
+    }
+    ptr += 4;  //lock time
 
-    s = len - (ptr - rawtx) - 4; // -4 to remove the hash code type
-	tohex(ptr, s, hextx);
+    s = (ptr - out);  // skip the hash code type if present
+	tohex(out, s, hextx);
 	hextx[2*s] = 0;
 
     return hextx - hexouttx + 2*s;
@@ -170,4 +195,65 @@ int UID_buildScriptSig(uint8_t *rawtx, size_t rawtx_len, UID_Bip32Path *path, in
         memcpy(scriptsig[i]+2+len_der+1+1, public_key, 33);
     }
     return UID_TX_OK;
+}
+
+static UID_ScriptSig scriptsig[UID_CONTRACT_MAX_IN];
+static UID_Bip32Path bip32path[UID_CONTRACT_MAX_IN];
+#define TX_OFFSET 6
+static char jsontransaction[3000] = "rawtx=";
+static char *transaction = jsontransaction+TX_OFFSET; //point to end of -->rawtx=<--
+static uint8_t rawtx[1500];
+static size_t rawtx_len;
+static char errbuf[1024];
+
+/**
+ * function is not thread safe!!
+ * @param[in]  param  - contract to sign and send: {"paths":["0/0/1","0/1/5"],"tx":"01000000028a9799dcc44b529aa2c4dd......"}
+ * @param[out] result - if all ok returns the transaction ID: {"txid":"3cd0f12a587945c75edde69e8989260fb4126b6ae803cb26de751e62a47137be"}
+ * @param[in]  size   - size of result buffer
+ */
+void UID_signAndSendContract(char *param, char *result, size_t size)
+{
+    yajl_val jnode, paths, v;
+    char *str;
+    unsigned i;
+
+	jnode = yajl_tree_parse(param, errbuf, sizeof(errbuf));
+    if (jnode == NULL) {
+        snprintf(result, size, "parse_error: %s", strlen(errbuf)?"unknown error":errbuf);
+        goto clean_return;
+    }
+
+    const char * path[] = { "paths",(const char *) 0 };
+    paths = yajl_tree_get(jnode, path, yajl_t_array);
+    if (paths == NULL) {
+        snprintf(result, size, "UID_signAndSendContract() parse error: \"%s\" array not found", path[0]);
+        goto clean_return;
+    }
+    if (UID_CONTRACT_MAX_IN < paths->u.array.len) {
+        snprintf(result, size, "UID_signAndSendContract() too many inputs <%d>", paths->u.array.len);
+        goto clean_return;
+    }
+    for(i=0;i<paths->u.array.len;i++) {
+        v = paths->u.array.values[i];
+        str = YAJL_GET_STRING(v);
+        sscanf(str,"%u/%u/%u", &bip32path[i].p_u, &bip32path[i].account, &bip32path[i].n);
+    }
+
+    path[0] = "tx";
+    v = yajl_tree_get(jnode, path, yajl_t_string);
+    if (v == NULL) {
+        snprintf(result, size, "UID_signAndSendContract() parse error: \"%s\" string not found", path[0]);
+        goto clean_return;
+    }
+    str = YAJL_GET_STRING(v);
+
+    rawtx_len = fromhex(str, rawtx, sizeof(rawtx));
+    UID_buildScriptSig(rawtx, rawtx_len, bip32path, i, scriptsig, UID_CONTRACT_MAX_IN);
+    UID_buildSignedHex(rawtx, rawtx_len, scriptsig, transaction, sizeof(jsontransaction)-TX_OFFSET);
+    UID_sendTx(jsontransaction, result, size);
+
+clean_return:
+    yajl_tree_free(jnode);
+    return;
 }

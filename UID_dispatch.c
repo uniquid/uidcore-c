@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "UID_dispatch.h"
+#include "UID_transaction.h"
 
 static void UID_echo(char *param, char *result, size_t size)
 {
@@ -15,8 +16,17 @@ static void UID_echo(char *param, char *result, size_t size)
 }
 
 UID_SystemFuntion UID_systemFunctions[UID_RPC_RESERVED] = {
-    UID_echo,
-    NULL
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL,
+    NULL,
+    UID_signAndSendContract,
+    UID_echo
 };
 
 
