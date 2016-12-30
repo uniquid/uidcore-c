@@ -19,6 +19,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+#include <inttypes.h>
 
 #include "yajl/yajl_gen.h"
 #include "yajl/yajl_tree.h"
@@ -37,7 +38,7 @@ int UID_createChannel(char *destMachine, UID_ClientChannelCtx *ctx)
     return UID_MSG_OK;
 }
 
-int UID_formatReqMsg(char *sender, int method, char *params, uint8_t *msg, size_t *size, int *sID)
+int UID_formatReqMsg(char *sender, int method, char *params, uint8_t *msg, size_t *size, int64_t *sID)
 {
     yajl_gen g;
     const uint8_t *json;
@@ -71,7 +72,7 @@ int UID_formatReqMsg(char *sender, int method, char *params, uint8_t *msg, size_
     ret = UID_MSG_GEN_FAIL;
     if (yajl_gen_status_ok != yajl_gen_string(g, (uint8_t *)params, strlen(params))) goto clean;
     if (yajl_gen_status_ok != yajl_gen_get_buf(g, &json, &sz)) goto clean; //format params string
-    sz = snprintf((char *)msg, *size, "{\"sender\":\"%s\",\"body\":{\"method\":%d,\"params\":%s,\"id\":%d}}", sender, method, json, *sID);
+    sz = snprintf((char *)msg, *size, "{\"sender\":\"%s\",\"body\":{\"method\":%d,\"params\":%s,\"id\":%" PRId64 "}}", sender, method, json, *sID);
     ret = UID_MSG_SMALL_BUFFER;
     if (sz >= *size) goto clean;
     *size = sz + 1;  // add the end of string
@@ -117,7 +118,7 @@ clean_return:
     return ret;
 }
 
-int UID_parseReqMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *method, char *params, size_t psize, int *sID)
+int UID_parseReqMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *method, char *params, size_t psize, int64_t *sID)
 {
 (void)size;
     yajl_val node, v;
@@ -171,7 +172,7 @@ clean_return:
     return ret;
 }
 
-int UID_formatRespMsg(char *sender, char *result, int error, int sID, uint8_t *msg, size_t *size)
+int UID_formatRespMsg(char *sender, char *result, int error, int64_t sID, uint8_t *msg, size_t *size)
 {
     int ret;
     yajl_gen g = NULL;
@@ -186,7 +187,7 @@ int UID_formatRespMsg(char *sender, char *result, int error, int sID, uint8_t *m
     ret = UID_MSG_GEN_FAIL;
     if (yajl_gen_status_ok != yajl_gen_string(g, (uint8_t *)result, strlen(result))) goto clean_return;
     if (yajl_gen_status_ok != yajl_gen_get_buf(g, &json, &sz)) goto clean_return; //get the buffer
-    sz = snprintf((char *)msg, *size, "{\"sender\":\"%s\",\"body\":{\"result\":%s,\"error\":%d,\"id\":%d}}", sender, json, error, sID);
+    sz = snprintf((char *)msg, *size, "{\"sender\":\"%s\",\"body\":{\"result\":%s,\"error\":%d,\"id\":%" PRId64 "}}", sender, json, error, sID);
     ret = UID_MSG_SMALL_BUFFER;
     if (sz >= *size) goto clean_return;
     *size = sz + 1;  // add the end of string
@@ -199,7 +200,7 @@ clean_return:
 
 //  {"sender":"my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV","body":{"method":33,"params":"{\"pippa\":\"lapeppa\"}","id":1477550301}}
 
-int UID_parseRespMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *error, char *result, size_t rsize, int *sID)
+int UID_parseRespMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *error, char *result, size_t rsize, int64_t *sID)
 {
 (void)size;
     yajl_val node, v;
