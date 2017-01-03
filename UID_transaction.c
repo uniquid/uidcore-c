@@ -216,22 +216,22 @@ void UID_signAndSendContract(char *param, char *result, size_t size)
 {
     yajl_val jnode, paths, v;
     char *str;
-    unsigned i;
+    unsigned i, res;
 
 	jnode = yajl_tree_parse(param, errbuf, sizeof(errbuf));
     if (jnode == NULL) {
-        snprintf(result, size, "parse_error: %s", strlen(errbuf)?"unknown error":errbuf);
+        snprintf(result, size, "1 - parse_error: %s", strlen(errbuf)?"unknown error":errbuf);
         goto clean_return;
     }
 
     const char * path[] = { "paths",(const char *) 0 };
     paths = yajl_tree_get(jnode, path, yajl_t_array);
     if (paths == NULL) {
-        snprintf(result, size, "UID_signAndSendContract() parse error: \"%s\" array not found", path[0]);
+        snprintf(result, size, "2 - UID_signAndSendContract() parse error: \"%s\" array not found", path[0]);
         goto clean_return;
     }
     if (UID_CONTRACT_MAX_IN < paths->u.array.len) {
-        snprintf(result, size, "UID_signAndSendContract() too many inputs <%d>", paths->u.array.len);
+        snprintf(result, size, "3 - UID_signAndSendContract() too many inputs <%d>", paths->u.array.len);
         goto clean_return;
     }
     for(i=0;i<paths->u.array.len;i++) {
@@ -243,7 +243,7 @@ void UID_signAndSendContract(char *param, char *result, size_t size)
     path[0] = "tx";
     v = yajl_tree_get(jnode, path, yajl_t_string);
     if (v == NULL) {
-        snprintf(result, size, "UID_signAndSendContract() parse error: \"%s\" string not found", path[0]);
+        snprintf(result, size, "4 - UID_signAndSendContract() parse error: \"%s\" string not found", path[0]);
         goto clean_return;
     }
     str = YAJL_GET_STRING(v);
@@ -251,7 +251,23 @@ void UID_signAndSendContract(char *param, char *result, size_t size)
     rawtx_len = fromhex(str, rawtx, sizeof(rawtx));
     UID_buildScriptSig(rawtx, rawtx_len, bip32path, i, scriptsig, UID_CONTRACT_MAX_IN);
     UID_buildSignedHex(rawtx, rawtx_len, scriptsig, transaction, sizeof(jsontransaction)-TX_OFFSET);
-    UID_sendTx(jsontransaction, result, size);
+    strcpy(result, "6 - ");
+    res = UID_sendTx(jsontransaction, result + 4, size - 4);
+    if (0 == res) {
+        yajl_tree_free(jnode);
+        jnode = yajl_tree_parse(result + 4, errbuf, sizeof(errbuf));
+        if ( NULL != jnode) {
+            path[0] = "txid";
+            v = yajl_tree_get(jnode, path, yajl_t_string);
+            if ( NULL != v) {
+                str = YAJL_GET_STRING(v);
+                snprintf(result, size, "0 - %s", str);
+            }
+        }
+    }
+    else {
+        snprintf(result, size, "5 - UID_sendTx() return <%d>", res);
+    }
 
 clean_return:
     yajl_tree_free(jnode);
