@@ -37,7 +37,7 @@ UID_SystemFuntion UID_systemFunctions[UID_RPC_RESERVED] = {
  */
 int UID_checkPermission(int method, UID_smart_contract smart_contract)
 {
-    if(0 != ((1 << (method & 0x07)) & smart_contract[method >> 3])) {
+    if(0 != ((1 << (method & 0x07)) & smart_contract.bit_mask[method >> 3])) {
         return 1;
     }
     else return 0;

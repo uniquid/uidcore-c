@@ -15,7 +15,7 @@
 
 #define CONTRACTS_CACHE_SIZE 200 // number of locally cached contracts
 #define CLIENT_CACHE_SIZE 50 // number of locally cached client contracts
-#define PROFILE_SIZE 40 // OP_RETURN lenght...
+#define PROFILE_SIZE 80 // OP_RETURN lenght...
 #define UID_NAME_LENGHT 16
 
 #define UID_GETTXS "http://appliance3.uniquid.co:8080/insight-api/addrs/%s/txs?from=%d&to=%d"
@@ -26,7 +26,15 @@
 #define UID_CONTRACTS_OK 0
 #define UID_CONTRACTS_SERV_ERROR 1
 
-typedef uint8_t UID_smart_contract[PROFILE_SIZE];
+typedef struct {
+    uint8_t version;
+    uint8_t bit_mask[18];
+    uint8_t n_di_n;
+    uint8_t guarantor[3][20];
+} UID_smart_contract;
+
+// raises a compiler error if the size of the struct is different than expected
+typedef char assertion_on_mystruct[(   sizeof(UID_smart_contract)==PROFILE_SIZE   )*2-1 ];
 
 typedef struct
 {
