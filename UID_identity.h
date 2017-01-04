@@ -21,14 +21,8 @@ typedef struct
     unsigned n;
 } UID_Bip32Path;
 
-typedef struct 
-{
-    UID_KeyPair keyPair;
-    BTC_Address address;  // address  base58 coded
-    uint64_t balance;    // bitcoin balance in Satoshi (10e-8 BTC)
-} UID_Identity;
 
-UID_Identity *UID_getLocalIdentity(char *keypriv_h);
+void UID_getLocalIdentity(char *keypriv_h);
 int UID_getPubkeyAt(UID_Bip32Path *path, uint8_t public_key[33]);
 int UID_signAt(UID_Bip32Path *path, uint8_t hash[32], uint8_t sig[64]);
 char *UID_getTpub(void);

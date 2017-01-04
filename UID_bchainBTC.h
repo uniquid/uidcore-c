@@ -58,7 +58,7 @@ typedef struct {
     pthread_mutex_t in_use;
 } cache_buffer;
 
-int UID_getContracts(UID_Identity *localIdentity, cache_buffer **cache);
+int UID_getContracts(cache_buffer **cache);
 UID_SecurityProfile *UID_matchContract(BTC_Address serviceUserAddress);
 UID_ClientProfile *UID_matchProvider(char *name);
 int UID_sendTx(char *signed_tx, char *ret, size_t size);

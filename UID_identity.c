@@ -26,7 +26,6 @@
 #include "UID_identity.h"
 
 
-static UID_Identity identity;
 static HDNode node_m;
 
 static HDNode node_m_44H_0H;  // imprinting
@@ -104,12 +103,10 @@ static void derive_m_44H_0H_x(void)
  * stores the identity in the file identityDB
  *
  * @param[in]   tprv  if != NULL use it instead of a random seed
- * @return the machine identity
  */
-UID_Identity *UID_getLocalIdentity(char *tprv)
+void UID_getLocalIdentity(char *tprv)
 {
     char privateKey[256]; 
-    uint64_t balance = 10e7;  // satoshi = (10e-8 BTC)
     FILE *id;
     char format[64];
 
@@ -125,7 +122,6 @@ UID_Identity *UID_getLocalIdentity(char *tprv)
 
 #pragma GCC diagnostic pop
 
-            fscanf(id, "balance: %" PRIu64  "\n", &balance);
         }
         fclose(id);
     }
@@ -143,11 +139,6 @@ UID_Identity *UID_getLocalIdentity(char *tprv)
 	{
 	    hdnode_deserialize(tprv, &node_m);
 	}
-	hdnode_fill_public_key(&node_m);
-	memcpy(identity.keyPair.privateKey, node_m.private_key, sizeof(identity.keyPair.privateKey));
-	memcpy(identity.keyPair.publicKey, node_m.public_key, sizeof(identity.keyPair.publicKey));
-	ecdsa_get_address(node_m.public_key, /*version*/ NETWORK_BYTE, identity.address, sizeof(identity.address));
-	identity.balance = balance;  // satoshi = (10e-8 BTC)
 
 	derive_m_44H_0H_x();
 
@@ -156,12 +147,9 @@ UID_Identity *UID_getLocalIdentity(char *tprv)
         memset(privateKey, 0, sizeof(privateKey));
         hdnode_serialize_private(&node_m, 0 /*uint32_t fingerprint*/, privateKey, sizeof(privateKey));
         fprintf(id, "privateKey: %s\n", privateKey);
-        fprintf(id, "balance: %" PRIu64  "\n", identity.balance);
         fclose(id);
     }
 
-
-    return &identity;
 }
 
 char *UID_getTpub(void)

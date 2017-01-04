@@ -97,7 +97,7 @@ void fillDummyCache(void)
 #endif
 
 
-int UID_getContracts(UID_Identity *localIdentity, cache_buffer **cache)
+int UID_getContracts(cache_buffer **cache)
 {
     CURL *curl;
     char url[256];
@@ -112,10 +112,10 @@ int UID_getContracts(UID_Identity *localIdentity, cache_buffer **cache)
 
 
     // setup context for the callback
-    ctx.serviceProviderAddress = localIdentity->address;
+    //ctx.serviceProviderAddress = localIdentity->address;
 
     // Get ctx.totalItems
-    snprintf(url, sizeof(url), UID_GETTXS, localIdentity->address, 0, 0);
+    snprintf(url, sizeof(url), UID_GETTXS, "localIdentity->address", 0, 0);
     curl_easy_setopt(curl, CURLOPT_URL, url);
     res = UID_CONTRACTS_SERV_ERROR;
     if(curl_easy_perform(curl) != 0) goto clean_ret; // error contacting server
