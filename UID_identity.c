@@ -28,9 +28,9 @@
 
 static UID_Identity identity;
 static HDNode node_m;
-//static HDNode node_m_0H_x[3];
 
 static HDNode node_m_44H_0H;  // imprinting
+static char tpub[120];
 static HDNode node_m_44H_0H_0;  // orchestrator
 static HDNode node_m_44H_0H_0_x[2][2];
         //                      ^  ^
@@ -55,13 +55,18 @@ static HDNode *UID_deriveAt(UID_Bip32Path *path, HDNode *node)
 
 static void derive_m_44H_0H_x(void)
 {
+	uint32_t fingerprint;
+
     // [Chain m/44']
     memcpy(&node_m_44H_0H, &node_m, sizeof(HDNode));
     hdnode_private_ckd_prime(&node_m_44H_0H, 44);
 
     // [Chain m/44'/0']
+    fingerprint = hdnode_fingerprint(&node_m_44H_0H);
     //memcpy(&node_m_44H_0H, &node_m_44H_0H, sizeof(HDNode));
     hdnode_private_ckd_prime(&node_m_44H_0H, 0);
+	hdnode_fill_public_key(&node_m_44H_0H);
+	hdnode_serialize_public(&node_m_44H_0H, fingerprint, tpub, sizeof(tpub));
 
     // [Chain m/44'/0'/0]
     memcpy(&node_m_44H_0H_0, &node_m_44H_0H, sizeof(HDNode));
@@ -159,6 +164,10 @@ UID_Identity *UID_getLocalIdentity(char *tprv)
     return &identity;
 }
 
+char *UID_getTpub(void)
+{
+    return tpub;
+}
 
 int UID_signAt(UID_Bip32Path *path, uint8_t hash[32], uint8_t sig[64])
 {
