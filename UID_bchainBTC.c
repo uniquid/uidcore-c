@@ -65,7 +65,7 @@ static size_t parse_txs(void *buffer, size_t size, size_t nmemb, void *ctx)
     return nmemb;
 }
 
-#if DUMMY_CACHE
+#ifdef DUMMY_CACHE
 void fillDummyCache(void)
 // fill the Contractrs Cache
 {
@@ -124,7 +124,7 @@ int UID_getContracts(cache_buffer **cache)
 
     (secondb->validCacheEntries) = 0; // void the cache
 
-#if DUMMY_CACHE
+#ifdef DUMMY_CACHE
     fillDummyCache();
 #else
     // fill the Contractrs Cache
