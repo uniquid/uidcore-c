@@ -9,7 +9,8 @@
 #ifndef __UID_BCHAINBTC_H
 #define __UID_BCHAINBTC_H
 
-#include "stdint.h"
+#include <stdint.h>
+#include <pthread.h>
 #include "UID_globals.h"
 #include "UID_identity.h"
 

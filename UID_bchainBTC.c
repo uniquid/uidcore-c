@@ -20,7 +20,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <curl/curl.h>
-#include <pthread.h>
 #include "sha2.h"
 #include "UID_utils.h"
 #include "UID_globals.h"
