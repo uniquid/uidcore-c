@@ -25,6 +25,7 @@
 #include "UID_globals.h"
 #include "UID_identity.h"
 #include "UID_bchainBTC.h"
+#include "UID_fillCache.h"
 #include "yajl/yajl_parse.h"
 
 // double buffer for contract cache
@@ -36,36 +37,8 @@ cache_buffer *current = &cache0;
 cache_buffer *secondb = &cache1;
 
 
-typedef struct  {
-    yajl_handle hand;
-    int totalItems;
-    int toItems;
-//    char *orchestrator;
-    char *serviceProviderAddress;
-    bool isOrchestrator;
-    bool isContract;
-    unsigned char *fileData;
-    int rd;
-} parse_context;
-
-
-// callback from curl_easy_perform
-// calls yajl_parse to parse the data just received
-static size_t parse_txs(void *buffer, size_t size, size_t nmemb, void *ctx)
-{
-    (void)size;(void)nmemb;
-    //printf("curl callback called with size = %d nmemb = %d\n", size, nmemb);
-    if (((parse_context *)ctx)->hand == NULL)
-    {
-        sscanf(buffer, "{\"totalItems\":%d", &(((parse_context *)ctx)->totalItems));    
-        return nmemb;
-    }
-
-    return nmemb;
-}
-
 #ifdef DUMMY_CACHE
-void fillDummyCache(void)
+int  fillDummyCache(void)
 // fill the Contractrs Cache
 {
     // fill the dummy cache
@@ -92,6 +65,7 @@ void fillDummyCache(void)
     strncpy(secondb->clientCache[2].serviceProviderAddress, "mtEQ22KCcjpz73hWfNvJoq6tqMEcRUKk3m", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));// provider m/0'/0/1
     strncpy(secondb->clientCache[2].serviceUserAddress, "n1UevZASvVyNhAB2d5Nm9EaHFeooJZbSP7", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));        // user1     m/0'/0/3
     secondb->validClientEntries = 3;
+    return UID_CONTRACTS_OK;
 }
 #endif
 
@@ -99,50 +73,27 @@ void fillDummyCache(void)
 int UID_getContracts(cache_buffer **cache)
 {
     CURL *curl;
-    char url[256];
-    parse_context ctx;
     int res;
 
     curl = curl_easy_init();
-    /* Define our callback to get called when there's data to be written */ 
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, parse_txs);
-    /* Set a pointer to our struct to pass to the callback */ 
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ctx);
 
-
-    // setup context for the callback
-    //ctx.serviceProviderAddress = localIdentity->address;
-
-    // Get ctx.totalItems
-    snprintf(url, sizeof(url), UID_GETTXS, "localIdentity->address", 0, 0);
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    res = UID_CONTRACTS_SERV_ERROR;
-    if(curl_easy_perform(curl) != 0) goto clean_ret; // error contacting server
-        
     pthread_mutex_lock(&(secondb->in_use));  // lock the resource
 
     (secondb->validCacheEntries) = 0; // void the cache
 
 #ifdef DUMMY_CACHE
-    fillDummyCache();
+    res = fillDummyCache();
 #else
-    // fill the Contractrs Cache
-    {
-        //snprintf(url, sizeof(url), UID_GETTXS, localIdentity->address, from, to < ctx.totalItems ? to : ctx.totalItems);
-        //curl_easy_setopt(curl, CURLOPT_URL, url);
-        //curl_easy_perform(curl);  // perform http request
-        
-    } ;
+    res = UID_fillCache(curl, secondb);
 #endif
     
     pthread_mutex_unlock(&(secondb->in_use));  // unlock the resource
-    *cache = secondb;  // swap the buffers
-    secondb = current;
-    current = *cache;
-    res = UID_CONTRACTS_OK;
-    goto clean_ret;
+    if (UID_CONTRACTS_OK == res) {
+        *cache = secondb;  // swap the buffers
+        secondb = current;
+        current = *cache;
+    }
 
-clean_ret:
     /* always cleanup */ 
     curl_easy_cleanup(curl);
     
