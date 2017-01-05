@@ -221,7 +221,7 @@ void UID_signAndSendContract(char *param, char *result, size_t size)
 	jnode = yajl_tree_parse(param, errbuf, sizeof(errbuf));
     if (jnode == NULL) {
         snprintf(result, size, "1 - parse_error: %s", strlen(errbuf)?"unknown error":errbuf);
-        goto clean_return;
+        return;
     }
 
     const char * path[] = { "paths",(const char *) 0 };
