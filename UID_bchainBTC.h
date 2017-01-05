@@ -17,7 +17,7 @@
 #define CONTRACTS_CACHE_SIZE 200 // number of locally cached contracts
 #define CLIENT_CACHE_SIZE 50 // number of locally cached client contracts
 #define PROFILE_SIZE 80 // OP_RETURN lenght...
-#define UID_NAME_LENGHT 16
+#define UID_NAME_LENGHT 32
 
 #define UID_GETTXS "http://appliance3.uniquid.co:8080/insight-api/addrs/%s/txs?from=%d&to=%d"
 //#define GETTXS "http://appliance1.uniquid.co:3001/insight-api/addrs/%s/txs?from=%d"
