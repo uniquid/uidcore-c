@@ -19,10 +19,12 @@
 #define PROFILE_SIZE 80 // OP_RETURN lenght...
 #define UID_NAME_LENGHT 32
 
-#define UID_GETTXS "http://appliance3.uniquid.co:8080/insight-api/addrs/%s/txs?from=%d&to=%d"
-//#define GETTXS "http://appliance1.uniquid.co:3001/insight-api/addrs/%s/txs?from=%d"
-#define UID_SENDTX "http://appliance3.uniquid.co:8080/insight-api/tx/send"
-//#define UID_SENDTX "http://appliance4.uniquid.co:3001/insight-api/tx/send"
+#define UID_APPLIANCE "http://appliance3.uniquid.co:8080/insight-api/"
+//#define UID_APPLIANCE "http://appliance1.uniquid.co:3001/insight-api/"
+//#define UID_APPLIANCE "http://appliance4.uniquid.co:3001/insight-api/"
+
+#define UID_GETTXS UID_APPLIANCE "addr/%s"
+#define UID_SENDTX UID_APPLIANCE "tx/send"
 
 #define UID_CONTRACTS_OK 0
 #define UID_CONTRACTS_SERV_ERROR 1
