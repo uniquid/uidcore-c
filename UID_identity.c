@@ -175,3 +175,12 @@ int UID_getPubkeyAt(UID_Bip32Path *path, uint8_t public_key[33])
     memcpy(public_key, node.public_key, 33);
     return 0;
 }
+
+int UID_getAddressAt(UID_Bip32Path *path, char *b58addr, size_t size)
+{
+    HDNode node;
+    UID_deriveAt(path, &node);
+    hdnode_fill_public_key(&node);
+    ecdsa_get_address(node.public_key, /*version*/ NETWORK_BYTE, b58addr, size);
+    return 0;
+}
