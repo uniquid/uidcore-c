@@ -30,8 +30,8 @@
 /**
  * @param[in]		str  string in hex format to convert
  * @param[out]		buf  binary out buffer
- * @param[in-out]	len  in input, the size of the out buffer, in out the bytes
- * 						 converted
+ * @param[in]		len  in input, the size of the out buffer
+ * @return				 n of bytes converted
  */
 size_t fromhex(const char *str, uint8_t *buf, size_t len)
 {
