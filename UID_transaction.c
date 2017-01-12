@@ -231,7 +231,7 @@ void UID_signAndSendContract(char *param, char *result, size_t size)
         goto clean_return;
     }
     if (UID_CONTRACT_MAX_IN < paths->u.array.len) {
-        snprintf(result, size, "3 - UID_signAndSendContract() too many inputs <%d>", paths->u.array.len);
+        snprintf(result, size, "3 - UID_signAndSendContract() too many inputs <%zd>", paths->u.array.len);
         goto clean_return;
     }
     for(i=0;i<paths->u.array.len;i++) {
