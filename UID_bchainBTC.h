@@ -25,9 +25,11 @@
 
 #define UID_GETTXS UID_APPLIANCE "addr/%s"
 #define UID_SENDTX UID_APPLIANCE "tx/send"
+#define UID_GETCONTRACT UID_APPLIANCE "tx/%s"
 
 #define UID_CONTRACTS_OK 0
 #define UID_CONTRACTS_SERV_ERROR 1
+#define UID_CONTRACTS_NO_TX 2
 
 typedef struct {
     uint8_t version;

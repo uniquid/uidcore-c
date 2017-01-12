@@ -79,8 +79,6 @@ int UID_getContracts(cache_buffer **cache)
 
     pthread_mutex_lock(&(secondb->in_use));  // lock the resource
 
-    (secondb->validCacheEntries) = 0; // void the cache
-
 #ifdef DUMMY_CACHE
     res = fillDummyCache();
 #else
