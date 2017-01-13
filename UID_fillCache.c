@@ -215,6 +215,14 @@ static int parse_user(yajl_val jnode, UID_ClientProfile *cp)
         return 0;
     }
     printf("        %s %s\n", s, cp->serviceUserAddress);
+    // get the OP_RETURN (smart contract)
+    path[0] = "scriptPubKey";
+    path[1] = "hex";
+    s = YAJL_GET_STRING(yajl_tree_get(vout->u.array.values[1], path, yajl_t_string));
+    if ((NULL == s) || (166 != strlen(s))) {
+        return 0;
+    }
+    printf("        <%s>\n", s + 6);
     // check validity (vout n 2 not spent)
     path[0] = "spentIndex";
     path[1] = NULL;
