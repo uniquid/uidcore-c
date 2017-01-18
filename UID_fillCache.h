@@ -14,6 +14,7 @@
 #include <curl/curl.h>
 #include "UID_bchainBTC.h"
 
+extern int UID_confirmations;
 
 int UID_fillCache(CURL *curl, cache_buffer *secondb);
 

@@ -257,6 +257,11 @@ static char curlbuffer[10000];
 #define PROVIDER 1
 #define IMPRINTING 2
 
+/**
+ * minimum confirmations required
+ */
+int UID_confirmations = 1;
+
 static int check_contract(CURL *curl, cache_buffer *secondb, char * tx, char *address, int type)
 {
     yajl_val jnode, v;
@@ -277,7 +282,7 @@ static int check_contract(CURL *curl, cache_buffer *secondb, char * tx, char *ad
         return UID_CONTRACTS_SERV_ERROR;
     }
     printf("    confirmations: %lld\n", YAJL_GET_INTEGER(v));
-    if(0 < YAJL_GET_INTEGER(v)) {
+    if(UID_confirmations <= YAJL_GET_INTEGER(v)) {
 
         if (type == IMPRINTING) {
             UID_SecurityProfile *sp = &(secondb->contractsCache)[secondb->validCacheEntries];
