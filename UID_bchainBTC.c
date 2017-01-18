@@ -36,6 +36,7 @@ cache_buffer cache1 = { { { {0},{0},{0,{0},0,{{0}}} } }, 0, { { {0},{0},{0} } },
 cache_buffer *current = &cache0;
 cache_buffer *secondb = &cache1;
 
+char *UID_appliance = UID_APPLIANCE;
 
 #ifdef DUMMY_CACHE
 int  fillDummyCache(void)
@@ -179,6 +180,7 @@ int UID_sendTx(char *signed_tx, char *ret, size_t size)
     CURL *curl;
     CURLcode res;
     send_tx_context ctx;
+    char url[256];
 
     curl = curl_easy_init();
     /* Define our callback to get called when there's data to be written */
@@ -188,7 +190,8 @@ int UID_sendTx(char *signed_tx, char *ret, size_t size)
     ctx.buffer = ret;
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ctx);
 
-    curl_easy_setopt(curl, CURLOPT_URL, UID_SENDTX);
+    snprintf(url, sizeof(url), UID_SENDTX);
+    curl_easy_setopt(curl, CURLOPT_URL, url);
     /* setup post data */
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, signed_tx);
     /* perform the request */

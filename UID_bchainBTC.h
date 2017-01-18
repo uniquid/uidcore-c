@@ -19,17 +19,22 @@
 #define PROFILE_SIZE 80 // OP_RETURN lenght...
 #define UID_NAME_LENGHT 32
 
-#define UID_APPLIANCE "http://appliance3.uniquid.co:8080/insight-api/"
-//#define UID_APPLIANCE "http://appliance1.uniquid.co:3001/insight-api/"
-//#define UID_APPLIANCE "http://appliance4.uniquid.co:3001/insight-api/"
+#define UID_APPLIANCE "http://appliance3.uniquid.co:8080/insight-api"
+//#define UID_APPLIANCE "http://appliance1.uniquid.co:3001/insight-api"
+//#define UID_APPLIANCE "http://appliance4.uniquid.co:3001/insight-api"
 
-#define UID_GETTXS UID_APPLIANCE "addr/%s"
-#define UID_SENDTX UID_APPLIANCE "tx/send"
-#define UID_GETCONTRACT UID_APPLIANCE "tx/%s"
+#define UID_GETTXS "%s/addr/%s", UID_appliance
+#define UID_SENDTX "%s/tx/send", UID_appliance
+#define UID_GETCONTRACT "%s/tx/%s", UID_appliance
 
 #define UID_CONTRACTS_OK 0
 #define UID_CONTRACTS_SERV_ERROR 1
 #define UID_CONTRACTS_NO_TX 2
+
+/**
+ * base url of the insight-api appliance
+ */
+extern char *UID_appliance;
 
 typedef struct {
     uint8_t version;
