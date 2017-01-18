@@ -34,7 +34,7 @@
 /**
  * base url of the insight-api appliance
  */
-extern char *UID_appliance;
+extern char UID_appliance[256];
 
 typedef struct {
     uint8_t version;

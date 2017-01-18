@@ -36,7 +36,7 @@ cache_buffer cache1 = { { { {0},{0},{0,{0},0,{{0}}} } }, 0, { { {0},{0},{0} } },
 cache_buffer *current = &cache0;
 cache_buffer *secondb = &cache1;
 
-char *UID_appliance = UID_APPLIANCE;
+char UID_appliance[256] = UID_APPLIANCE;
 
 #ifdef DUMMY_CACHE
 int  fillDummyCache(void)
