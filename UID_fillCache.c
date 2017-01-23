@@ -365,6 +365,44 @@ static int check_address(CURL *curl, cache_buffer *secondb, char *address, int t
     return res;
 }
 
+static int get_providers_name(CURL *curl, cache_buffer *secondb)
+{
+    yajl_val jnode, v;
+    int i;
+    size_t j;
+    char *s;
+
+    if(CURLE_OK != curlget(curl, "http://appliance4.uniquid.co:8080/registry", curlbuffer, sizeof(curlbuffer)))
+        return 1;
+
+	jnode = yajl_tree_parse(curlbuffer, NULL, 0);
+	if (NULL == jnode)
+        return 1;
+
+    if (!YAJL_IS_ARRAY(jnode)) {
+        yajl_tree_free(jnode);
+        return 1;
+    }
+
+    const char * path[] = { NULL, (const char *) 0 };
+    for (i=0; i<secondb->validClientEntries;i++) {
+        for (j=0; j<jnode->u.array.len; j++) {
+            path[0] = "provider_address";
+            v = yajl_tree_get(jnode->u.array.values[j], path, yajl_t_string);
+            s = YAJL_GET_STRING(v);
+            if (!strcmp(s, secondb->clientCache[i].serviceProviderAddress)) {
+                path[0] = "provider_name";
+                v = yajl_tree_get(jnode->u.array.values[j], path, yajl_t_string);
+                s = YAJL_GET_STRING(v);
+                strncpy(secondb->clientCache[i].serviceProviderName, s, sizeof(secondb->clientCache[i].serviceProviderName));
+            }
+        }
+    }
+
+    yajl_tree_free(jnode);
+    return 0;
+}
+
 int UID_fillCache(CURL *curl, cache_buffer *secondb)
 {
     int res, gap;
@@ -420,6 +458,8 @@ int UID_fillCache(CURL *curl, cache_buffer *secondb)
         else
             gap = 0;
     }
+
+    get_providers_name(curl, secondb);
 
     return UID_CONTRACTS_OK;
 }
