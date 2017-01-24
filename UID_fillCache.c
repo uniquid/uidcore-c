@@ -246,7 +246,7 @@ static int parse_user(yajl_val jnode, UID_ClientProfile *cp)
         return 0;
     }
     strncpy(cp->serviceProviderAddress, s, sizeof(cp->serviceProviderAddress));
-
+    memset(cp->serviceProviderName, 0x00, sizeof(cp->serviceProviderName));
 
     return 1;
 }
