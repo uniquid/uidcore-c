@@ -413,15 +413,6 @@ int UID_fillCache(CURL *curl, cache_buffer *secondb)
     (secondb->validClientEntries) = 0; // void the cache
 
     printf("================================================================\n");
-    // look for imprinting on the first external addresses
-    path.p_u = 0;  //provider
-    path.account = 0;
-    path.n = 0;
-    UID_getAddressAt(&path, b58addr, sizeof(b58addr));
-    res = check_address(curl, secondb, b58addr, IMPRINTING);
-    if ( UID_CONTRACTS_SERV_ERROR == res )
-        return UID_CONTRACTS_SERV_ERROR;
-    printf("----------------------------------------------------------------\n");
     // look for contract on the first external addresses
     path.p_u = 0;  //provider
     path.account = 0;
@@ -444,6 +435,17 @@ int UID_fillCache(CURL *curl, cache_buffer *secondb)
             gap ++;
         else
             gap = 0;
+    }
+    printf("----------------------------------------------------------------\n");
+    // look for imprinting on the first external addresses
+    if (0 == secondb->validCacheEntries) {
+        path.p_u = 0;  //provider
+        path.account = 0;
+        path.n = 0;
+        UID_getAddressAt(&path, b58addr, sizeof(b58addr));
+        res = check_address(curl, secondb, b58addr, IMPRINTING);
+        if ( UID_CONTRACTS_SERV_ERROR == res )
+            return UID_CONTRACTS_SERV_ERROR;
     }
     printf("----------------------------------------------------------------\n");
     path.p_u = 1;  //user
