@@ -66,19 +66,13 @@ CURLcode curlget(CURL *curl, char *url, char *buffer, size_t size)
 }
 
 
-static int parse_imprinting(yajl_val jnode, UID_SecurityProfile *sp)
+static int check_vout(int n, yajl_val vout, UID_SecurityProfile *sp)
 {
-    yajl_val vin, vout, str, addresses;
+    yajl_val addresses;
 
-    // get the vout array
-    const char * path[] = { "vout", (const char *) 0, (const char *) 0 };
-    vout = yajl_tree_get(jnode, path, yajl_t_array);
-    if (NULL == vout) {
-        return 0;
-    }
     // check validity (vout n 0 not spent)
-    path[0] = "spentIndex";
-    if (NULL != yajl_tree_get(vout->u.array.values[0], path, yajl_t_number)) {
+    const char * path[] = { "spentIndex", (const char *) 0, (const char *) 0 };
+    if (NULL != yajl_tree_get(vout->u.array.values[n], path, yajl_t_number)) {
         printf("        ### spent!!\n");
         return 0;  // vout spent
     }
@@ -87,7 +81,7 @@ static int parse_imprinting(yajl_val jnode, UID_SecurityProfile *sp)
     // get the addresses of the first vout (array)
     path[0] = "scriptPubKey";
     path[1] = "addresses";
-    addresses = yajl_tree_get(vout->u.array.values[0], path, yajl_t_array);
+    addresses = yajl_tree_get(vout->u.array.values[n], path, yajl_t_array);
     if (NULL == addresses) {
         return 0;
     }
@@ -101,6 +95,23 @@ static int parse_imprinting(yajl_val jnode, UID_SecurityProfile *sp)
         return 0;
     }
     printf("        %s %s\n", s, sp->serviceProviderAddress);
+    return 1;
+}
+
+static int parse_imprinting(yajl_val jnode, UID_SecurityProfile *sp)
+{
+    yajl_val vin, vout, str;
+
+    // get the vout array
+    const char * path[] = { "vout", (const char *) 0, (const char *) 0 };
+    vout = yajl_tree_get(jnode, path, yajl_t_array);
+    if (NULL == vout) {
+        return 0;
+    }
+
+    if ( 0 == check_vout(0, vout, sp) )
+        if (0 == check_vout(1, vout, sp) )
+            return 0;
 
     // get the vin array
     path[0] = "vin";
@@ -112,7 +123,7 @@ static int parse_imprinting(yajl_val jnode, UID_SecurityProfile *sp)
     // get the addr of the first input (imprinting orchestrator)
     path[0] = "addr";
     str = yajl_tree_get(vin->u.array.values[0], path, yajl_t_string);
-    s =  YAJL_GET_STRING(str);
+    char *s =  YAJL_GET_STRING(str);
     if ( NULL == s ) {
         return 0;
     }
