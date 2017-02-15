@@ -63,7 +63,7 @@ size_t decode_varint(uint8_t *stream, uint64_t *dest)
  * @param[out] hash     returns the digest (sha256(sha256()))
  */
 static uint8_t script[26] = { 0x19, 0x76, 0xa9, 0x14, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0x88, 0xac };
-int UID_digestRawTx(uint8_t *rawtx, size_t len, u_int in, uint8_t address[20], uint8_t hash[32])
+int UID_digestRawTx(uint8_t *rawtx, size_t len, unsigned in, uint8_t address[20], uint8_t hash[32])
 {
     uint8_t *ptr,*out;
     uint64_t n_inputs, i, l;
