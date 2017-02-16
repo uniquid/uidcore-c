@@ -15,8 +15,6 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <time.h>
 #include <inttypes.h>
 #include "curves.h"
@@ -26,6 +24,47 @@
 #include "UID_identity.h"
 #include "rand.h"
 
+#ifdef UID_EMBEDDED
+#include "UID_persistence.h"
+#else
+#include <fcntl.h>
+
+char *identityDB = UID_DEFAULT_IDENTITY_FILE;
+static char lbuffer[1024];
+
+static char *load_tprv(char *privateKey, size_t size)
+{
+    FILE *id;
+    char format[64];
+    char *tprv = NULL;
+
+    if ((id = fopen(identityDB, "r")) != NULL)
+    {
+        while(fgets(lbuffer, sizeof(lbuffer), id) != NULL)
+        {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+            snprintf(format, sizeof(format),  "privateKey: %%%zus\n", size - 1);
+            if (sscanf(lbuffer, format,  privateKey) == 1) tprv = privateKey; // if read OK assign to tprv
+
+#pragma GCC diagnostic pop
+
+        }
+        fclose(id);
+    }
+    return tprv;
+}
+
+static void store_tprv(char *privateKey)
+{
+    FILE *id;
+    if ((id = fopen(identityDB, "w")) != NULL)
+    {
+        fprintf(id, "privateKey: %s\n", privateKey);
+        fclose(id);
+    }
+}
+#endif
 
 static HDNode node_m;
 
@@ -36,10 +75,6 @@ static HDNode node_m_44H_0H_0_x[2][2];
         //                      ^  ^
         // provider/user________|  |
         // intern/extern___________|
-
-char *identityDB = UID_DEFAULT_IDENTITY_FILE;
-
-static char lbuffer[1024];
 
 static HDNode *UID_deriveAt(UID_Bip32Path *path, HDNode *node)
 {
@@ -108,24 +143,9 @@ static void derive_m_44H_0H_x(void)
 void UID_getLocalIdentity(char *tprv)
 {
     char privateKey[256]; 
-    FILE *id;
-    char format[64];
 
-
-    if ((id = fopen(identityDB, "r")) != NULL)
-    {
-        while(fgets(lbuffer, sizeof(lbuffer), id) != NULL)
-        {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-            snprintf(format, sizeof(format),  "privateKey: %%%zus\n", sizeof(privateKey) - 1);
-            if (sscanf(lbuffer, format,  privateKey) == 1) tprv = privateKey; // if read OK assign to tprv
-
-#pragma GCC diagnostic pop
-
-        }
-        fclose(id);
-    }
+    if (load_tprv(privateKey, sizeof(privateKey)) != NULL)
+        tprv = privateKey; // if read OK assign to tprv
 
     if(tprv == NULL) 
     {
@@ -140,14 +160,11 @@ void UID_getLocalIdentity(char *tprv)
 
 	derive_m_44H_0H_x();
 
-    if ((id = fopen(identityDB, "w")) != NULL)
-    {
+    if (tprv != privateKey) {
         memset(privateKey, 0, sizeof(privateKey));
         hdnode_serialize_private(&node_m, 0 /*uint32_t fingerprint*/, privateKey, sizeof(privateKey));
-        fprintf(id, "privateKey: %s\n", privateKey);
-        fclose(id);
+        store_tprv(privateKey);
     }
-
 }
 
 char *UID_getTpub(void)
