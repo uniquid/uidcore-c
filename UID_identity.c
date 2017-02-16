@@ -24,6 +24,7 @@
 #include "bip32.h"
 #include "UID_utils.h"
 #include "UID_identity.h"
+#include "rand.h"
 
 
 static HDNode node_m;
@@ -129,11 +130,8 @@ void UID_getLocalIdentity(char *tprv)
     if(tprv == NULL) 
     {
         uint8_t seed[32];
-        int rnd = open("/dev/random", O_RDONLY);
-        if(read(rnd, seed, sizeof(seed)) <= 0) // if we cant read /dev/random use time for seed
-            *(int32_t *)seed = time(NULL);
+        random_buffer(seed, sizeof(seed));
         hdnode_from_seed(seed, sizeof(seed), SECP256K1_NAME, &node_m);
-        close(rnd);
     }
 	else
 	{
