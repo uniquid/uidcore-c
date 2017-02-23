@@ -177,7 +177,7 @@ int UID_buildScriptSig(uint8_t *rawtx, size_t rawtx_len, UID_Bip32Path *path, in
     uint8_t pubkeyhash[20];
 	uint8_t hash[32];
     uint8_t sig[64] = {0};
-	u_int8_t len_der;
+	uint8_t len_der;
 
     if(n_script < n_inputs) return UID_TX_NOMEM;
     for( i=0; i<n_inputs; i++) {
