@@ -123,6 +123,11 @@ int UID_parseReqMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *
 (void)size;
     yajl_val node, v;
     int ret;
+    char *s;
+    const char * _sender[] = { "sender", (const char *) 0 };
+    const char * _id[] = { "body", "id", (const char *) 0 };
+    const char * _method[] = { "body", "method", (const char *) 0 };
+    const char * _params[] = { "body", "params", (const char *) 0 };
 
     // parse message
 	node = yajl_tree_parse((char *)msg, NULL, 0);
@@ -130,10 +135,9 @@ int UID_parseReqMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *
 
 // get the sender
     ret = UID_MSG_JPARSE_ERROR;
-    const char * _sender[] = { "sender", (const char *) 0 };
     v = yajl_tree_get(node, _sender, yajl_t_string);
     if (v == NULL) goto clean_return;
-    char *s =  YAJL_GET_STRING(v);
+    s =  YAJL_GET_STRING(v);
 
     ret = UID_MSG_SMALL_BUFFER;
     if (strlen(s) >= ssize) goto clean_return;
@@ -141,7 +145,6 @@ int UID_parseReqMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *
 
 // get the sID
     ret = UID_MSG_JPARSE_ERROR;
-    const char * _id[] = { "body", "id", (const char *) 0 };
     v = yajl_tree_get(node, _id, yajl_t_number);
     if (v == NULL) goto clean_return;
 
@@ -149,7 +152,6 @@ int UID_parseReqMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *
 
 // get the method
     ret = UID_MSG_JPARSE_ERROR;
-    const char * _method[] = { "body", "method", (const char *) 0 };
     v = yajl_tree_get(node, _method, yajl_t_number);
     if (v == NULL) goto clean_return;
 
@@ -157,14 +159,13 @@ int UID_parseReqMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *
 
 //get the params
     ret = UID_MSG_JPARSE_ERROR;
-    const char * _params[] = { "body", "params", (const char *) 0 };
     v = yajl_tree_get(node, _params, yajl_t_string);
     if (v == NULL) goto clean_return;
-    char *res =  YAJL_GET_STRING(v);
+    s =  YAJL_GET_STRING(v);
 
     ret = UID_MSG_SMALL_BUFFER;
-    if (strlen(res) >= psize) goto clean_return;
-    strncpy(params, res, psize);
+    if (strlen(s) >= psize) goto clean_return;
+    strncpy(params, s, psize);
 
     ret = UID_MSG_OK;
 clean_return:
@@ -205,6 +206,11 @@ int UID_parseRespMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int 
 (void)size;
     yajl_val node, v;
     int ret;
+    char *s;
+    const char * _sender[] = { "sender", (const char *) 0 };
+    const char * _id[] = { "body", "id", (const char *) 0 };
+    const char * _error[] = { "body", "error", (const char *) 0 };
+    const char * _result[] = { "body", "result", (const char *) 0 };
 
     // parse message
 	node = yajl_tree_parse((char *)msg, NULL, 0);
@@ -212,10 +218,9 @@ int UID_parseRespMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int 
 
 // get the sender
     ret = UID_MSG_JPARSE_ERROR;
-    const char * _sender[] = { "sender", (const char *) 0 };
     v = yajl_tree_get(node, _sender, yajl_t_string);
     if (v == NULL) goto clean_return;
-    char *s =  YAJL_GET_STRING(v);
+    s =  YAJL_GET_STRING(v);
 
     ret = UID_MSG_SMALL_BUFFER;
     if (strlen(s) >= ssize) goto clean_return;
@@ -223,7 +228,6 @@ int UID_parseRespMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int 
 
 // get the sID
     ret = UID_MSG_JPARSE_ERROR;
-    const char * _id[] = { "body", "id", (const char *) 0 };
     v = yajl_tree_get(node, _id, yajl_t_number);
     if (v == NULL) goto clean_return;
 
@@ -231,7 +235,6 @@ int UID_parseRespMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int 
 
 // get the error
     ret = UID_MSG_JPARSE_ERROR;
-    const char * _error[] = { "body", "error", (const char *) 0 };
     v = yajl_tree_get(node, _error, yajl_t_number);
     if (v == NULL) goto clean_return;
 
@@ -239,14 +242,13 @@ int UID_parseRespMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int 
 
 //get the result
     ret = UID_MSG_JPARSE_ERROR;
-    const char * _result[] = { "body", "result", (const char *) 0 };
     v = yajl_tree_get(node, _result, yajl_t_string);
     if (v == NULL) goto clean_return;
-    char *res =  YAJL_GET_STRING(v);
+    s =  YAJL_GET_STRING(v);
 
     ret = UID_MSG_SMALL_BUFFER;
-    if (strlen(res) >= rsize) goto clean_return;
-    strncpy(result, res, rsize);
+    if (strlen(s) >= rsize) goto clean_return;
+    strncpy(result, s, rsize);
 
     ret = UID_MSG_OK;
 clean_return:
