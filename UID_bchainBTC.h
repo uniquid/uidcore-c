@@ -14,8 +14,8 @@
 #include "UID_globals.h"
 #include "UID_identity.h"
 
-#define CONTRACTS_CACHE_SIZE 200 // number of locally cached contracts
-#define CLIENT_CACHE_SIZE 50 // number of locally cached client contracts
+#define CONTRACTS_CACHE_SIZE 5 // number of locally cached contracts
+#define CLIENT_CACHE_SIZE 5 // number of locally cached client contracts
 #define PROFILE_SIZE 80 // OP_RETURN lenght...
 #define UID_NAME_LENGHT 32
 
