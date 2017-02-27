@@ -200,9 +200,9 @@ int UID_buildScriptSig(uint8_t *rawtx, size_t rawtx_len, UID_Bip32Path *path, in
 static UID_ScriptSig scriptsig[UID_CONTRACT_MAX_IN];
 static UID_Bip32Path bip32path[UID_CONTRACT_MAX_IN];
 #define TX_OFFSET 6
-static char jsontransaction[3000] = "rawtx=";
+static char jsontransaction[2000] = "rawtx=";
 static char *transaction = jsontransaction+TX_OFFSET; //point to end of -->rawtx=<--
-static uint8_t rawtx[1500];
+static uint8_t rawtx[1000];
 static size_t rawtx_len;
 
 /**
