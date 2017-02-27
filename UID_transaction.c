@@ -204,7 +204,6 @@ static char jsontransaction[3000] = "rawtx=";
 static char *transaction = jsontransaction+TX_OFFSET; //point to end of -->rawtx=<--
 static uint8_t rawtx[1500];
 static size_t rawtx_len;
-static char errbuf[1024];
 
 /**
  * function is not thread safe!!
@@ -218,9 +217,9 @@ void UID_signAndSendContract(char *param, char *result, size_t size)
     char *str;
     unsigned i, res;
 
-	jnode = yajl_tree_parse(param, errbuf, sizeof(errbuf));
+	jnode = yajl_tree_parse(param, NULL, 0);
     if (jnode == NULL) {
-        snprintf(result, size, "1 - parse_error: %s", strlen(errbuf)?"unknown error":errbuf);
+        snprintf(result, size, "1 - parse_error");
         return;
     }
 
@@ -255,7 +254,7 @@ void UID_signAndSendContract(char *param, char *result, size_t size)
     res = UID_sendTx(jsontransaction, result + 4, size - 4);
     if (0 == res) {
         yajl_tree_free(jnode);
-        jnode = yajl_tree_parse(result + 4, errbuf, sizeof(errbuf));
+        jnode = yajl_tree_parse(result + 4, NULL, 0);
         if ( NULL != jnode) {
             path[0] = "txid";
             v = yajl_tree_get(jnode, path, yajl_t_string);
