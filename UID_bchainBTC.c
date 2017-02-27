@@ -19,13 +19,15 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#ifndef DUMMY_CACHE
 #include <curl/curl.h>
+#include "UID_fillCache.h"
+#endif
 #include "sha2.h"
 #include "UID_utils.h"
 #include "UID_globals.h"
 #include "UID_identity.h"
 #include "UID_bchainBTC.h"
-#include "UID_fillCache.h"
 #include "yajl/yajl_parse.h"
 
 // double buffer for contract cache
@@ -73,17 +75,23 @@ int  fillDummyCache(void)
 
 int UID_getContracts(cache_buffer **cache)
 {
-    CURL *curl;
     int res;
-
-    curl = curl_easy_init();
 
     pthread_mutex_lock(&(secondb->in_use));  // lock the resource
 
 #ifdef DUMMY_CACHE
     res = fillDummyCache();
 #else
+{
+    CURL *curl;
+
+    curl = curl_easy_init();
+
     res = UID_fillCache(curl, secondb);
+
+    /* always cleanup */
+    curl_easy_cleanup(curl);
+}
 #endif
     
     pthread_mutex_unlock(&(secondb->in_use));  // unlock the resource
@@ -92,9 +100,6 @@ int UID_getContracts(cache_buffer **cache)
         secondb = current;
         current = *cache;
     }
-
-    /* always cleanup */ 
-    curl_easy_cleanup(curl);
     
     return res;
 }
@@ -150,7 +155,18 @@ UID_ClientProfile *UID_matchProvider(char *name)
     return ret_val;
 }
 
-typedef struct {
+#ifdef DUMMY_CACHE
+#include <stdio.h>
+int UID_sendTx(char *signed_tx, char *ret, size_t size)
+{
+	// return the signed transaction
+	if ( size > snprintf(ret, size, "{\"txid\":\"%s\"}",signed_tx ) ) return 0;
+	else return 1;
+}
+
+#else
+
+	typedef struct {
     size_t buffer_size;
     char  *buffer;
 } send_tx_context;
@@ -202,3 +218,4 @@ int UID_sendTx(char *signed_tx, char *ret, size_t size)
 
     return res;
 }
+#endif
