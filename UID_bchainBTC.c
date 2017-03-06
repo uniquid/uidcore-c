@@ -51,13 +51,13 @@ int  fillDummyCache(void)
     // tprv8ZgxMBicQKsPeNN7y2mmmFJf6Mh2FLzzNmHn67gmy7CjwQYucmHwdjFugaFU8A1NwMJWjWrC46fxcTUaSYTLpn7H8oyUYneegarrfvHQYF1
     // provider (bip32.org Passphrase provider weak hash)
     // tprv8ZgxMBicQKsPdLmDgjo8Ed2U8c93oN4kJx2B2UfWmB878YcKiBCWu1WnrDqWZxSCzg9fsZASieJajf3nsckqbboJei53SrfqqEwcFz8sUhr
-    strncpy(secondb->contractsCache[0].serviceUserAddress, "my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV", sizeof(BTC_Address));          // user     m/0'/0/0
+    strncpy(secondb->contractsCache[0].serviceUserAddress, "proxy", sizeof(BTC_Address));          // user     m/0'/0/0
     strncpy(secondb->contractsCache[0].serviceProviderAddress, "mw5oLLjxSNsPRdDgArCZseGEQJVdNYNK5U", sizeof(BTC_Address));      // provider m/0'/0/0
-    memset(secondb->contractsCache[0].profile.bit_mask, 0, sizeof(secondb->contractsCache[0].profile.bit_mask));
-    strncpy(secondb->contractsCache[1].serviceUserAddress, "myUFCeVGwkJv3PXy4zc1KSWRT8dC5iTvhU", sizeof(BTC_Address));          // user1    m/0'/0/1
-    strncpy(secondb->contractsCache[1].serviceProviderAddress, "mtEQ22KCcjpz73hWfNvJoq6tqMEcRUKk3m", sizeof(BTC_Address));      // provider m/0'/0/1
-    memset(secondb->contractsCache[1].profile.bit_mask, 0xFF, sizeof(secondb->contractsCache[1].profile.bit_mask));
-    secondb->validCacheEntries = 2;
+    memset(secondb->contractsCache[0].profile.bit_mask, 0xFF, sizeof(secondb->contractsCache[0].profile.bit_mask));
+//    strncpy(secondb->contractsCache[1].serviceUserAddress, "myUFCeVGwkJv3PXy4zc1KSWRT8dC5iTvhU", sizeof(BTC_Address));          // user1    m/0'/0/1
+//    strncpy(secondb->contractsCache[1].serviceProviderAddress, "mtEQ22KCcjpz73hWfNvJoq6tqMEcRUKk3m", sizeof(BTC_Address));      // provider m/0'/0/1
+//    memset(secondb->contractsCache[1].profile.bit_mask, 0xFF, sizeof(secondb->contractsCache[1].profile.bit_mask));
+    secondb->validCacheEntries = 1;
     strncpy(secondb->clientCache[0].serviceProviderName, "LocalMachine", sizeof(((UID_ClientProfile *)0)->serviceProviderName));
     strncpy(secondb->clientCache[0].serviceProviderAddress, "mw5oLLjxSNsPRdDgArCZseGEQJVdNYNK5U", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));// provider m/0'/0/0
     strncpy(secondb->clientCache[0].serviceUserAddress, "my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));        // user     m/0'/0/0
