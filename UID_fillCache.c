@@ -101,6 +101,7 @@ static int check_vout(int n, yajl_val vout, UID_SecurityProfile *sp)
 static int parse_imprinting(yajl_val jnode, UID_SecurityProfile *sp)
 {
     yajl_val vin, vout, str;
+    unsigned i;
 
     // get the vout array
     const char * path[] = { "vout", (const char *) 0, (const char *) 0 };
@@ -109,9 +110,13 @@ static int parse_imprinting(yajl_val jnode, UID_SecurityProfile *sp)
         return 0;
     }
 
-    if ( 0 == check_vout(0, vout, sp) )
-        if (0 == check_vout(1, vout, sp) )
-            return 0;
+    for (i=0; i<vout->u.array.len; i++) {
+        if ( 0 != check_vout(i, vout, sp) ) break;
+    }
+    if ( i >= vout->u.array.len) return 0;
+    // if ( 0 == check_vout(0, vout, sp) )
+    //     if (0 == check_vout(1, vout, sp) )
+    //         return 0;
 
     // get the vin array
     path[0] = "vin";
@@ -262,7 +267,7 @@ static int parse_user(yajl_val jnode, UID_ClientProfile *cp)
     return 1;
 }
 
-static char curlbuffer[10000];
+static char curlbuffer[100000];
 
 #define USER 0
 #define PROVIDER 1
