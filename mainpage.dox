@@ -1,0 +1,7 @@
+
+/**
+ @mainpage
+ Main functions list
+
+ - \ref UID_getLocalIdentity "UID_getLocalIdentity()"
+*/

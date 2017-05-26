@@ -56,8 +56,13 @@ $(LIB-TREZOR):
 libuidcore-c.so: $(SRCS) $(HEADERS) Makefile $(LIB-YAJL) $(LIB-TREZOR)
 	$(CC) $(CFLAGS) -fPIC -shared $(SRCS) $(LIBS) -o libuidcore-c.so
 
+.PHONY: doc
+doc:
+	rm -rf doc
+	doxygen Doxyfile
 
 clean:
 	rm -f *.o tests libuidcore-c.so
 	rm -rf yajl/build
 	make -C trezor-crypto clean
+	rm -rf doc
