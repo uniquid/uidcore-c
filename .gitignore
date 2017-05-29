@@ -6,3 +6,7 @@
 *~
 *.so
 /doc
+*.gcda
+*.gcno
+*.gcov
+tests
