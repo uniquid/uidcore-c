@@ -4,4 +4,9 @@
  Main functions list
 
  - \ref UID_getLocalIdentity "UID_getLocalIdentity()"
+ - \ref UID_getTpub "UID_getTpub()"
+
+ Secondary functions
+ - \ref UID_signAt "UID_signAt()"
+ - \ref UID_getPubkeyAt "UID_getPubkeyAt()"
 */

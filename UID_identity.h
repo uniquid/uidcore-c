@@ -12,12 +12,19 @@
 #include <stdint.h>
 #include "UID_globals.h"
 
+/// default name for the file used to hold the identity
 #define UID_DEFAULT_IDENTITY_FILE "./identity.db"
 
+/**
+ * This structure holds the bip32 path used by the identity related functions.<br>
+ * It holds only part of the path.<br>
+ * The actual path it represents is: m/44'/0'/0/p_u/account/n <br>
+ * Both p_u and account may only assume values 0 or 1
+ */
 typedef struct
 {
-    unsigned p_u;    // provider/user
-    unsigned account;// extern/int
+    unsigned p_u;    ///< provider/user
+    unsigned account;///< external/internal
     unsigned n;
 } UID_Bip32Path;
 

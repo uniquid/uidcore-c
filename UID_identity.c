@@ -132,13 +132,15 @@ static void derive_m_44H_0H_x(void)
 }
 
 /**
- * load/create/store/ the machine identity (tprv @ nodo m)
+ * load/create and store the identity of the Entity (xprv @ node m).<br>
+ * this function must be called before all other library functions.
  *
- * if exist the file identityDB, load the identity from it
- * else create a new one
- * stores the identity in the file identityDB
+ * if the file named identityDB exists, the identity is loaded from it
+ * else a new one is created from random.<br>
+ * the identity is then saved in the file named identityDB.
  *
- * @param[in]   tprv  if != NULL use it instead of a random seed
+ * @param[in]   tprv  if != NULL the value is used to force the identity (identityDB take precedence).
+ *
  */
 void UID_getLocalIdentity(char *tprv)
 {
@@ -167,11 +169,27 @@ void UID_getLocalIdentity(char *tprv)
     }
 }
 
+/**
+ * Returns the xpub for imprinting
+ *
+ * @return xpub @ m/44'/0'
+ */
 char *UID_getTpub(void)
 {
     return tpub;
 }
 
+/**
+ * Signs a 32 byte digest with the key @ a given bip32 path
+ * of the identity.
+ *
+ * @param[in]  path bip32 path of the private-key to use
+ * @param[in]  hash 32 bytes long buffer holding the digest to be signed
+ * @param[out] sig  pointer to a 64 bytes long buffer to be filled with the signature
+ * @return          0 == no error
+ *
+ * \todo improve error handling
+ */
 int UID_signAt(UID_Bip32Path *path, uint8_t hash[32], uint8_t sig[64])
 {
     uint8_t pby = 0;
@@ -182,6 +200,17 @@ int UID_signAt(UID_Bip32Path *path, uint8_t hash[32], uint8_t sig[64])
     return 0;
 }
 
+/**
+ * Returns the public key @ a given bip32 path
+ * of the identity.
+ *
+ * @param[in]  path       bip32 path of the private-key to use
+ * @param[out] public_key pointer to a 33 bytes long buffer
+ *                        to be filled with the public key
+ * @return                0 == no error
+ *
+ * \todo improve error handling
+ */
 int UID_getPubkeyAt(UID_Bip32Path *path, uint8_t public_key[33])
 {
     HDNode node;
