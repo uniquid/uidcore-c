@@ -136,7 +136,7 @@ static void derive_m_44H_0H_x(void)
  * this function must be called before all other library functions.
  *
  * if the file named identityDB exists, the identity is loaded from it
- * else a new one is created from random.<br>
+ * else a new identity is created from random.<br>
  * the identity is then saved in the file named identityDB.
  *
  * @param[in]   tprv  if != NULL the value is used to force the identity (identityDB take precedence).
@@ -220,6 +220,18 @@ int UID_getPubkeyAt(UID_Bip32Path *path, uint8_t public_key[33])
     return 0;
 }
 
+/**
+ * Returns the address @ a given bip32 path
+ * of the identity.
+ *
+ * @param[in]  path    bip32 path of the private-key to use
+ * @param[out] b58addr pointer to a buffer to be filled with
+ * 					   the address
+ * @param[in]  size	   size of the buffer pointed by b58addr
+ * @return             0 == no error
+ *
+ * \todo improve error handling
+ */
 int UID_getAddressAt(UID_Bip32Path *path, char *b58addr, size_t size)
 {
     HDNode node;

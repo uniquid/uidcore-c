@@ -9,4 +9,5 @@
  Secondary functions
  - \ref UID_signAt "UID_signAt()"
  - \ref UID_getPubkeyAt "UID_getPubkeyAt()"
+ - \ref UID_getAddressAt "UID_getAddressAt()"
 */
