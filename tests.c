@@ -10,8 +10,8 @@
 
 /* Test Suite setup and cleanup functions: */
 
-int init_suite(void) { puts("\n\n\n################# INIT ##########\n\n\n"); return 0; }
-int clean_suite(void) { puts("\n\n\n################# DEINIT ##########\n\n\n"); return 0; }
+int init_identity_suite(void)  { return 0; }
+int clean_identity_suite(void) { return 0; }
 
 /************* Test case functions ****************/
 
@@ -151,7 +151,7 @@ int main ( void )
       return CU_get_error();
 
    /* add a suite to the registry */
-   pSuite = CU_add_suite( "max_test_suite", init_suite, clean_suite );
+   pSuite = CU_add_suite( "identity_test_suite", init_identity_suite, clean_identity_suite );
    if ( NULL == pSuite ) {
       CU_cleanup_registry();
       return CU_get_error();
