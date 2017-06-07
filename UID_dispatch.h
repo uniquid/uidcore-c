@@ -1,8 +1,8 @@
-/*
- * UID_dispatch.h
+/**
+ * @file   UID_dispatch.h
  *
- *  Created on: 27/oct/2016
- *      Author: M. Palumbi
+ * @date   27/oct/2016
+ * @author M. Palumbi
  */
 
 #ifndef __UID_DISPATCH_H

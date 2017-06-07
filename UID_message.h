@@ -1,8 +1,8 @@
-/*
- * UID_message.h
+/**
+ * @file   UID_message.h
  *
- *  Created on: 24/oct/2016
- *      Author: M. Palumbi
+ * @date   24/oct/2016
+ * @author M. Palumbi
  */
 
 #ifndef __UID_MESSAGE_H

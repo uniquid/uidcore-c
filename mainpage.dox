@@ -1,10 +1,30 @@
 
 /**
  @mainpage
- Main functions list
 
+ Main functions
  - \ref UID_getLocalIdentity "UID_getLocalIdentity()"
  - \ref UID_getTpub "UID_getTpub()"
+
+ Provider side message functions
+ - \ref UID_accept_channel "UID_accept_channel()"
+ - \ref UID_parseReqMsg "UID_parseReqMsg()"
+ - \ref UID_formatRespMsg "UID_formatRespMsg()"
+ - \ref UID_closeServerChannel "UID_closeServerChannel()"
+
+ User side message functions
+ - \ref UID_createChannel "UID_createChannel()"
+ - \ref UID_formatReqMsg "UID_formatReqMsg()"
+ - \ref UID_parseRespMsg "UID_parseRespMsg()"
+ - \ref UID_closeChannel "UID_closeChannel()"
+
+Structure of the messages:<br>
+
+request<br>
+{"sender":"sender-address", "body":{"method":n, "params":"param-string", "id":nonce} }
+<br>
+response<br>
+{"sender":"sender-address", "body":{"result":"res-string", "error":err, "id":nonce} }
 
  Secondary functions
  - \ref UID_signAt "UID_signAt()"
