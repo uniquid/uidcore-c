@@ -18,7 +18,7 @@
  - \ref UID_parseRespMsg "UID_parseRespMsg()"
  - \ref UID_closeChannel "UID_closeChannel()"
 
-Structure of the messages:<br>
+RPC message structure:<br>
 
 request<br>
 {"sender":"sender-address", "body":{"method":n, "params":"param-string", "id":nonce} }
