@@ -1,9 +1,8 @@
 /*
- *  @file   UID_fillCache.c
+ * @file   UID_fillCache.c
  *
- *
- *  @date   05/jan/2016
- *  @author M. Palumbi
+ * @date   05/jan/2016
+ * @author M. Palumbi
  */
 
 

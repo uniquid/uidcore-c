@@ -1,8 +1,8 @@
 /*
- * UID_bchainBTC.c
+ * @file   UID_bchainBTC.c
  *
- *  Created on: 5/aug/2016
- *      Author: M. Palumbi
+ * @date   5/aug/2016
+ * @author M. Palumbi
  */
   
  
@@ -10,10 +10,11 @@
 
 
 
-/* 
- * DESCRIPTION
+/**
+ * @file   UID_bchainBTC.h
+ *
  * Block chain functions for BTC using insight-api
- * 
+ *
  */
 
 #include <string.h>

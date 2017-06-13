@@ -1,9 +1,8 @@
 /*
- *  @file   UID_transaction.c
+ * @file   UID_transaction.c
  *
- *
- *  @date   12/dec/2016
- *  @author M. Palumbi
+ * @date   12/dec/2016
+ * @author M. Palumbi
  */
 
 
@@ -50,6 +49,7 @@ size_t decode_varint(uint8_t *stream, uint64_t *dest)
 
 
 
+static uint8_t script[26] = { 0x19, 0x76, 0xa9, 0x14, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0x88, 0xac };
 /**
  * takes a raw tx (with/without full input scripts) and
  * compute the digest [sha256(sha256())] for the <in> input of the transaction.
@@ -62,7 +62,6 @@ size_t decode_varint(uint8_t *stream, uint64_t *dest)
  * @param[in]  adrress  raw bitcoin address (20 bytes)
  * @param[out] hash     returns the digest (sha256(sha256()))
  */
-static uint8_t script[26] = { 0x19, 0x76, 0xa9, 0x14, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0x88, 0xac };
 int UID_digestRawTx(uint8_t *rawtx, size_t len, unsigned in, uint8_t address[20], uint8_t hash[32])
 {
     uint8_t *ptr,*out;
@@ -120,7 +119,7 @@ int UID_digestRawTx(uint8_t *rawtx, size_t len, unsigned in, uint8_t address[20]
 
 /**
  * build the signed transaction (hex coded)
- * @todo  check the len of the out buffer during the buid
+ * @todo  check the len of the out buffer during the build
  */
 int UID_buildSignedHex(uint8_t *rawtx, size_t len, UID_ScriptSig *scriptsig, char *hexouttx, size_t olen)
 {

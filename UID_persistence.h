@@ -3,8 +3,6 @@
  *
  * @date   16/feb/2017
  * @author M. Palumbi
- *
- *
  */
 
 

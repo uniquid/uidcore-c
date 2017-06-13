@@ -1,8 +1,8 @@
-/*
- * UID_globals.h
+/**
+ * @file   UID_globals.h
  *
- *  Created on: 3/aug/2016
- *      Author: M. Palumbi
+ * @date   3/aug/2016
+ * @author M. Palumbi
  */
  
  

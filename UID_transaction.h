@@ -1,9 +1,8 @@
 /**
- *  @file   UID_transaction.h
+ * @file   UID_transaction.h
  *
- *
- *  @date   12/dec/2016
- *  @author M. Palumbi
+ * @date   12/dec/2016
+ * @author M. Palumbi
  */
 
 

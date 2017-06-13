@@ -1,8 +1,8 @@
-/*
- * UID_bchainBTC.h
+/**
+ * @file   UID_bchainBTC.h
  *
- *  Created on: 5/aug/2016
- *      Author: M. Palumbi
+ * @date   5/aug/2016
+ * @author M. Palumbi
  */
  
  
