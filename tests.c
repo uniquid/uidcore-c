@@ -7,6 +7,7 @@
 #include "UID_bchainBTC.h"
 #include "UID_message.h"
 #include "UID_dispatch.h"
+#include "UID_utils.h"
 
 #include <stdio.h>  // for printf
 #include <unistd.h> // unlink
@@ -252,7 +253,137 @@ void test_case_general1(void)
 	CU_ASSERT_EQUAL(0, UID_closeChannel(&u_ctx));
 }
 
+void test_case_utils1(void)
+{
+{
+	uint8_t buf[30] = {0};
+	char str[] = "2e34f2ac6dfe6153";
+	uint8_t res[8] = "\x2e\x34\xf2\xac\x6d\xfe\x61\x53";
+	CU_ASSERT( sizeof(res) == fromhex(str, buf, sizeof(buf)));
+	CU_ASSERT( 0 == memcmp(buf, res, sizeof(res)));
+}
+{
+	uint8_t buf[30] = {0};
+	char str[] = "d9e8b23777c1f313e24a35332de3a47f32e99fb9074d0ba532153c05e065";
+	uint8_t res[30] = "\xd9\xe8\xb2\x37\x77\xc1\xf3\x13\xe2\x4a\x35\x33\x2d\xe3\xa4"
+                      "\x7f\x32\xe9\x9f\xb9\x07\x4d\x0b\xa5\x32\x15\x3c\x05\xe0\x65";
+	CU_ASSERT( sizeof(res) == fromhex(str, buf, sizeof(buf)));
+	CU_ASSERT( 0 == memcmp(buf, res, sizeof(res)));
+}
+{
+	uint8_t buf[30] = {0};
+	char str[] = "53c05e065c7a0349346324f76bbf77abd8f3334f2a2e9f3fb8c4f72b04614102";
+	CU_ASSERT( 0 == fromhex(str, buf, sizeof(buf)));
+}
+}
 
+void test_case_utils2(void)
+{
+	uint8_t buf[30] = {0};
+	char str[] = "2e34f2ac6dfe6153d9e8b237";
+	uint8_t res[12] = "\x2e\x34\xf2\xac\x6d\xfe\x61\x53\xd9\xe8\xb2\x37";
+	CU_ASSERT( buf == fromnhex(str, buf, 8));
+	CU_ASSERT(0 == memcmp(buf, res, 8));
+	CU_ASSERT(0 != memcmp(buf, res, sizeof(res)));
+}
+
+void test_case_utils3(void)
+{
+	const uint8_t bin[12] = "\x2e\x34\xf2\xac\x6d\xfe\x61\x53\xd9\xe8\xb2\x37";
+	char buf[25] = {0};
+	char res[] = "2e34f2ac6dfe6153d9e8b237";
+
+	CU_ASSERT(buf == tohex(bin, 12, buf));
+	CU_ASSERT(0 == strcmp(res, buf));
+}
+
+void test_case_utils4(void)
+{
+{
+	uint8_t msg[40] = "You can enter an existing BIP39 mnemonic"; //note: this is not NULL terminated!!
+	uint8_t privkey[32] = "\x42\x7b\x76\x4d\xb9\x04\x1e\xe7\xc2\x0c\xfe\x94\x49\xe3\x8e\x83"
+                          "\xda\x46\x97\x80\x6b\x54\x9d\x76\x2c\xcc\xea\x8e\xf3\x27\x68\xd5";
+	uint8_t sig[65] = "\x1F\x92\x2E\xE5\x4B\xA7\x33\x5B\x1B\x7D\xB0\x28\xB5\xAA\x73\x43\x24"
+                          "\x6E\xB3\xEF\x3F\x2A\xAF\x61\x53\x31\x24\x78\x8D\x62\x10\x68\xC0"
+                          "\x34\x85\x1C\x04\x70\x80\x2A\xE7\x0A\x54\x8D\x79\x5C\x18\x35\xF1"
+                          "\xC9\x6E\x1D\x36\x01\x67\x0F\x2F\x5A\xCF\x2C\x2E\x80\x59\x13\x26";
+	uint8_t signature[65] = {0};
+	CU_ASSERT(0 == cryptoMessageSign(msg, sizeof(msg), privkey, signature));
+	CU_ASSERT(0 == memcmp(signature, sig, sizeof(signature)));
+}
+{
+	uint8_t msg[40] = "You can enter an existing BIP39 mnemoniK"; //note: this is not NULL terminated!!
+	uint8_t privkey[32] = "\x42\x7b\x76\x4d\xb9\x04\x1e\xe7\xc2\x0c\xfe\x94\x49\xe3\x8e\x83"
+                          "\xda\x46\x97\x80\x6b\x54\x9d\x76\x2c\xcc\xea\x8e\xf3\x27\x68\xd5";
+	uint8_t sig[65] = "\x1F\x92\x2E\xE5\x4B\xA7\x33\x5B\x1B\x7D\xB0\x28\xB5\xAA\x73\x43\x24"
+                          "\x6E\xB3\xEF\x3F\x2A\xAF\x61\x53\x31\x24\x78\x8D\x62\x10\x68\xC0"
+                          "\x34\x85\x1C\x04\x70\x80\x2A\xE7\x0A\x54\x8D\x79\x5C\x18\x35\xF1"
+                          "\xC9\x6E\x1D\x36\x01\x67\x0F\x2F\x5A\xCF\x2C\x2E\x80\x59\x13\x26";
+	uint8_t signature[65] = {0};
+	CU_ASSERT(0 == cryptoMessageSign(msg, sizeof(msg), privkey, signature));
+	CU_ASSERT(0 != memcmp(signature, sig, sizeof(signature)));
+}
+{
+	uint8_t msg[84] = "The account extended keys can be used for importing to most BIP44 compatible wallets"; //note: this is not NULL terminated!!
+	uint8_t privkey[32] = "\xe7\x8b\xd3\xd8\x97\xe9\xce\xc5\xcd\xb5\xda\x72\x80\x5a\x73\x03"
+                          "\xd6\x7e\x0d\x18\x0d\xd9\x2b\xb6\xfb\x91\xf4\x72\xb1\xeb\xfc\xca";
+	uint8_t sig[65] = "\x1F\xB6\x9D\xCD\xDA\xCC\x10\xB6\x69\x88\x64\xEA\xBA\xC8\xE0\x4E\x00"
+                          "\x46\xB2\xCE\x9A\x4A\xB1\x92\xE9\xCB\x68\x31\x39\xF6\x3D\x50\xEC"
+                          "\x27\x85\x77\xFA\x62\x7E\xD6\xC4\x3F\x29\x2A\x33\x74\xE0\x2C\x64"
+                          "\xBA\x0F\xD9\x18\x72\xE5\xF4\xD7\x1E\x5D\x16\xCE\x93\x5B\xF7\xB6";
+	uint8_t signature[65] = {0};
+	CU_ASSERT(0 == cryptoMessageSign(msg, sizeof(msg), privkey, signature));
+	CU_ASSERT(0 == memcmp(signature, sig, sizeof(signature)));
+}
+{
+	uint8_t msg[263] = "The quick brown fox jumps over the lazy dog "
+                       "The quick brown fox jumps over the lazy dog "
+                       "The quick brown fox jumps over the lazy dog "
+                       "The quick brown fox jumps over the lazy dog "
+                       "The quick brown fox jumps over the lazy dog "
+                       "The quick brown fox jumps over the lazy dog"; //note: this is not NULL terminated!!
+	uint8_t privkey[32] = "\xe7\x8b\xd3\xd8\x97\xe9\xce\xc5\xcd\xb5\xda\x72\x80\x5a\x73\x03"
+                          "\xd6\x7e\x0d\x18\x0d\xd9\x2b\xb6\xfb\x91\xf4\x72\xb1\xeb\xfc\xca";
+	uint8_t sig[65] = "\x1F\x81\xE1\x9A\x00\xE7\x6C\xB0\x1E\xCA\xA6\x3E\x12\x66\x95\x38\x66"
+                          "\xE7\x6C\xC6\x48\x15\xCD\x02\x79\xFD\x31\x1B\x38\x68\xAC\x5A\xFE"
+                          "\x38\x9E\x77\xB5\x33\x21\x34\x9A\xEA\xA5\x91\xDC\x2D\xBE\x7D\x80"
+                          "\x8F\x71\x32\x39\x39\xC3\x8A\x90\x2E\x02\xCB\x54\x2D\x4E\xAC\x00";
+	uint8_t signature[65] = {0};
+	CU_ASSERT(0 == cryptoMessageSign(msg, sizeof(msg), privkey, signature));
+	CU_ASSERT(0 == memcmp(signature, sig, sizeof(signature)));
+}
+}
+
+void test_case_utils5(void)
+{
+{
+	uint8_t msg[84] = "The account extended keys can be used for importing to most BIP44 compatible wallets"; //note: this is not NULL terminated!!
+	char address[] = "1MeWoTzsbPioXNAi72yArwzULBhDGD7yDP";
+	uint8_t sig[65] = "\x1F\xB6\x9D\xCD\xDA\xCC\x10\xB6\x69\x88\x64\xEA\xBA\xC8\xE0\x4E\x00"
+                          "\x46\xB2\xCE\x9A\x4A\xB1\x92\xE9\xCB\x68\x31\x39\xF6\x3D\x50\xEC"
+                          "\x27\x85\x77\xFA\x62\x7E\xD6\xC4\x3F\x29\x2A\x33\x74\xE0\x2C\x64"
+                          "\xBA\x0F\xD9\x18\x72\xE5\xF4\xD7\x1E\x5D\x16\xCE\x93\x5B\xF7\xB6";
+	CU_ASSERT(0 == cryptoMessageVerify(msg, sizeof(msg), address, sig));
+}
+{
+	uint8_t msg[84] = "The account extended keys can be used for importing to most BIP44 compatible wallets"; //note: this is not NULL terminated!!
+	char address[] = "18BH3UNNuUgHkoKHua2CD2GAZDQQ3Bqrfg";
+	uint8_t sig[65] = "\x1F\xB6\x9D\xCD\xDA\xCC\x10\xB6\x69\x88\x64\xEA\xBA\xC8\xE0\x4E\x00"
+                          "\x46\xB2\xCE\x9A\x4A\xB1\x92\xE9\xCB\x68\x31\x39\xF6\x3D\x50\xEC"
+                          "\x27\x85\x77\xFA\x62\x7E\xD6\xC4\x3F\x29\x2A\x33\x74\xE0\x2C\x64"
+                          "\xBA\x0F\xD9\x18\x72\xE5\xF4\xD7\x1E\x5D\x16\xCE\x93\x5B\xF7\xB6";
+	CU_ASSERT(0 != cryptoMessageVerify(msg, sizeof(msg), address, sig));
+}
+{
+	uint8_t msg[66] = "Typing your own twelve words will probably not work how you expect"; //note: this is not NULL terminated!!
+	char address[] = "n2SXkEhp6tkV6yg8N1pjEazTnm5kG5R2qo";
+	uint8_t sig[65] = "\x1F\x0B\x03\xA4\x8D\xE2\xD6\x60\x96\xD4\xF4\x92\x87\x32\x35\x94\x6B"
+                          "\xD5\x81\x84\xCA\x87\x83\x85\xF2\x6A\xF5\x8F\x37\x8C\x74\x63\xDD"
+                          "\x24\x4C\x8E\xA8\xE6\x40\x16\x36\x37\xAE\x97\x67\x82\x66\xEA\xE2"
+                          "\xCB\x87\xDB\xDC\x3E\xBB\xD9\x13\xF8\x05\xC5\x2E\xD4\xFC\xBA\x11";
+	CU_ASSERT(0 == cryptoMessageVerify(msg, sizeof(msg), address, sig));
+}
+}
 /************* Test Runner Code goes here **************/
 
 int main ( void )
@@ -289,7 +420,12 @@ int main ( void )
    }
 
    /* add the tests to the suite */
-   if ( (NULL == CU_add_test(pSuite, "test_case_general1", test_case_general1))
+   if ( (NULL == CU_add_test(pSuite, "test_case_general1", test_case_general1)) ||
+        (NULL == CU_add_test(pSuite, "test_case_utils1", test_case_utils1)) ||
+        (NULL == CU_add_test(pSuite, "test_case_utils2", test_case_utils2)) ||
+        (NULL == CU_add_test(pSuite, "test_case_utils3", test_case_utils3)) ||
+        (NULL == CU_add_test(pSuite, "test_case_utils4", test_case_utils4)) ||
+        (NULL == CU_add_test(pSuite, "test_case_utils5", test_case_utils5))
       )
    {
       CU_cleanup_registry();
