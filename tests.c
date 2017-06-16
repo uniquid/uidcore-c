@@ -8,6 +8,7 @@
 #include "UID_message.h"
 #include "UID_dispatch.h"
 #include "UID_utils.h"
+#include "UID_transaction.h"
 
 #include <stdio.h>  // for printf
 #include <unistd.h> // unlink
@@ -384,6 +385,74 @@ void test_case_utils5(void)
 	CU_ASSERT(0 == cryptoMessageVerify(msg, sizeof(msg), address, sig));
 }
 }
+
+void test_case_transaction1(void)
+{
+{
+	uint8_t rawtx[200] = {0};
+	UID_ScriptSig scriptsig[2] = {{0}};
+	UID_Bip32Path path[2] = {{0,1,3},{0,0,2}};
+	int len = fromhex("0100000003"
+			"d67835ed9b1bcd2946c225e59da4a110476225b3b1fb477fbb9826195cddf312010000001976a9141b2fc485361b251b53579dd8636532e2ebded02c88acffffffff"
+			"403eda54f5096fceeb78a91a51a17a727e9d763da2ab48b3d173fa5feaa22d33010000001976a9141d1c309a3051f416cc8b0b389adbeacdd097094c88acffffffff"
+			"01f0053101000000001976a914f9c9560f6d4cf2f652e6c75b3f8cf635cbcfc81188ac00000000",rawtx, sizeof(rawtx));
+	CU_ASSERT(UID_TX_PARSE_ERROR == UID_buildScriptSig(rawtx, len, path, 2, scriptsig, 2));
+}
+{
+	uint8_t rawtx[200] = {0};
+	UID_ScriptSig scriptsig[2] = {{0}};
+	UID_Bip32Path path[2] = {{0,1,3},{0,0,2}};
+	int len = fromhex("0100000002"
+			"d67835ed9b1bcd2946c225e59da4a110476225b3b1fb477fbb9826195cddf312010000001976a9141b2fc485361b251b53579dd8636532e2ebded02c88acffffffff"
+			"403eda54f5096fceeb78a91a51a17a727e9d763da2ab48b3d173fa5feaa22d33010000001976a9141d1c309a3051f416cc8b0b389adbeacdd097094c88acffffffff"
+			"01f0053101000000001976a914f9c9560f6d4cf2f652e6c75b3f8cf635cbcfc81188ac00000000",rawtx, sizeof(rawtx));
+	CU_ASSERT(UID_TX_NOMEM == UID_buildScriptSig(rawtx, len, path, 2, scriptsig, 1));
+}
+{
+	uint8_t rawtx[200] = {0};
+	UID_ScriptSig scriptsig[2] = {{0}};
+	UID_Bip32Path path[2] = {{0,1,3},{0,0,2}};
+	int len = fromhex("0100000002"
+			"d67835ed9b1bcd2946c225e59da4a110476225b3b1fb477fbb9826195cddf312010000001976a9141b2fc485361b251b53579dd8636532e2ebded02c88acffffffff"
+			"403eda54f5096fceeb78a91a51a17a727e9d763da2ab48b3d173fa5feaa22d33010000001976a9141d1c309a3051f416cc8b0b389adbeacdd097094c88acffffffff"
+			"01f0053101000000001976a914f9c9560f6d4cf2f652e6c75b3f8cf635cbcfc81188ac00000000",rawtx, sizeof(rawtx));
+	CU_ASSERT(UID_TX_OK == UID_buildScriptSig(rawtx, len, path, 2, scriptsig, 2));
+	UID_ScriptSig result0 = {0};
+	int rlen0 = fromhex("6a47304402202544737730a824de94a7f91dbf7ef2cf721e6f94be45969fba0b41f313aef75c02202dc2d966c13396142ca2421971dfb2a816d77ea7ff385c5757cc1f924fe1300b01"
+			"2103020239b41235f3eea7b904ffe7417900d8b4ff2c4bf6aafc6dce223a62156a2c", (uint8_t *)&result0, sizeof(result0));
+	CU_ASSERT(0 == memcmp(&scriptsig[0], &result0, rlen0));
+	UID_ScriptSig result1 = {0};
+	int rlen1 = fromhex("6a4730440220714a33a79486ff748ecc1a498b3851c82d6775257d4854bfd9ce186c916271a50220146b02394e3708c9748916fa8b175a2d00717fce4fddafa60d794fa6c4b9f0a401"
+			"210374acc0a086b7348652408749f3c0b74e81c32918d6c8ff505996ec242d7cbf2d", (uint8_t *)&result1, sizeof(result1));
+	CU_ASSERT(0 == memcmp(&scriptsig[1], &result1, rlen1));
+}
+}
+
+void test_case_transaction2(void)
+{
+	uint8_t rawtx[200] = {0};
+	UID_ScriptSig scriptsig[2] = {{0}};
+	char hexeouttx[500] = {0};
+	int len = fromhex("0100000002"
+			"d67835ed9b1bcd2946c225e59da4a110476225b3b1fb477fbb9826195cddf312010000001976a9141b2fc485361b251b53579dd8636532e2ebded02c88acffffffff"
+			"403eda54f5096fceeb78a91a51a17a727e9d763da2ab48b3d173fa5feaa22d33010000001976a9141d1c309a3051f416cc8b0b389adbeacdd097094c88acffffffff"
+			"01f0053101000000001976a914f9c9560f6d4cf2f652e6c75b3f8cf635cbcfc81188ac00000000",rawtx, sizeof(rawtx));
+	fromhex("6a47304402202544737730a824de94a7f91dbf7ef2cf721e6f94be45969fba0b41f313aef75c02202dc2d966c13396142ca2421971dfb2a816d77ea7ff385c5757cc1f924fe1300b01"
+			"2103020239b41235f3eea7b904ffe7417900d8b4ff2c4bf6aafc6dce223a62156a2c", (uint8_t *)&scriptsig[0], sizeof(UID_ScriptSig));
+	fromhex("6a4730440220714a33a79486ff748ecc1a498b3851c82d6775257d4854bfd9ce186c916271a50220146b02394e3708c9748916fa8b175a2d00717fce4fddafa60d794fa6c4b9f0a401"
+			"210374acc0a086b7348652408749f3c0b74e81c32918d6c8ff505996ec242d7cbf2d", (uint8_t *)&scriptsig[1], sizeof(UID_ScriptSig));
+
+	CU_ASSERT(676 == UID_buildSignedHex(rawtx, len, scriptsig, hexeouttx, sizeof(hexeouttx)));
+	CU_ASSERT_STRING_EQUAL("0100000002"
+			"d67835ed9b1bcd2946c225e59da4a110476225b3b1fb477fbb9826195cddf31201000000"
+			"6a47304402202544737730a824de94a7f91dbf7ef2cf721e6f94be45969fba0b41f313aef75c02202dc2d966c13396142ca2421971dfb2a816d77ea7ff385c5757cc1f924fe1300b01"
+			"2103020239b41235f3eea7b904ffe7417900d8b4ff2c4bf6aafc6dce223a62156a2cffffffff"
+			"403eda54f5096fceeb78a91a51a17a727e9d763da2ab48b3d173fa5feaa22d3301000000"
+			"6a4730440220714a33a79486ff748ecc1a498b3851c82d6775257d4854bfd9ce186c916271a50220146b02394e3708c9748916fa8b175a2d00717fce4fddafa60d794fa6c4b9f0a401"
+			"210374acc0a086b7348652408749f3c0b74e81c32918d6c8ff505996ec242d7cbf2dffffffff"
+			"01f0053101000000001976a914f9c9560f6d4cf2f652e6c75b3f8cf635cbcfc81188ac00000000",
+			hexeouttx);
+}
 /************* Test Runner Code goes here **************/
 
 int main ( void )
@@ -425,7 +494,9 @@ int main ( void )
         (NULL == CU_add_test(pSuite, "test_case_utils2", test_case_utils2)) ||
         (NULL == CU_add_test(pSuite, "test_case_utils3", test_case_utils3)) ||
         (NULL == CU_add_test(pSuite, "test_case_utils4", test_case_utils4)) ||
-        (NULL == CU_add_test(pSuite, "test_case_utils5", test_case_utils5))
+        (NULL == CU_add_test(pSuite, "test_case_utils5", test_case_utils5)) ||
+        (NULL == CU_add_test(pSuite, "test_case_transaction1", test_case_transaction1)) ||
+        (NULL == CU_add_test(pSuite, "test_case_transaction2", test_case_transaction2))
       )
    {
       CU_cleanup_registry();
