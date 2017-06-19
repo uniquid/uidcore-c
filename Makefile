@@ -61,7 +61,7 @@ tests: tests.c libuidcore-c.so
 
 run-tests: tests
 	./tests
-	gcov $(SRCS)
+	gcov $(SRCS) -r
 
 .PHONY: doc
 doc:
