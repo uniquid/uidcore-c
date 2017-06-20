@@ -269,9 +269,10 @@ static char errbuf[1024];
  * If ok the signed transaction is sent on the blockchain
  * and the txid is returned
  *
- * @param[in]  param  - contract to sign and send: {"paths":["0/0/1","0/1/5"],"tx":"01000000028a9799dcc44b529aa2c4dd......"}
- * @param[out] result - if all ok returns the transaction ID: {"txid":"3cd0f12a587945c75edde69e8989260fb4126b6ae803cb26de751e62a47137be"}
- * @param[in]  size   - size of result buffer
+ * @param[in]  param  contract to sign and send: {"paths":["0/0/1","0/1/5"],"tx":"01000000028a9799dcc44b529aa2c4dd......"}
+ * @param[out] result if all ok returns the transaction ID: <br>
+ *                    "0 - 3cd0f12a587945c75edde69e8989260fb4126b6ae803cb26de751e62a47137be"
+ * @param[in]  size   size of result buffer
  *
  * @todo function is not thread safe!!
  */
