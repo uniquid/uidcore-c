@@ -32,7 +32,9 @@
 #define UID_CONTRACTS_NO_TX 2
 
 /**
- * base url of the insight-api appliance
+ * Base url of the Insight API appliance
+ * to be used to get and send transactions<br>
+ * Defaults to http://appliance3.uniquid.co:8080/insight-api
  */
 extern char UID_appliance[256];
 
@@ -43,7 +45,7 @@ typedef struct {
     uint8_t guarantor[3][20];
 } UID_smart_contract;
 
-// raises a compiler error if the size of the struct is different than expected
+/// trick to raise a compiler error if the size of the struct is different than expected
 typedef char assertion_on_mystruct[(   sizeof(UID_smart_contract)==PROFILE_SIZE   )*2-1 ];
 
 typedef struct

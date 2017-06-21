@@ -33,7 +33,6 @@ typedef struct  {
 
 
 // callback from curl_easy_perform
-// calls yajl_parse to parse the data just received
 static size_t curl_callback(void *buffer, size_t size, size_t nmemb, curl_context *ctx)
 {
     size_t l = size*nmemb;
@@ -50,6 +49,16 @@ static size_t curl_callback(void *buffer, size_t size, size_t nmemb, curl_contex
     }
 }
 
+/**
+ * Get data from url
+ *
+ * @param[in]  curl   pointer to an initialized CURL struct
+ * @param[in]  url    url to contact
+ * @param[out] buffer pointer to buffer to be filled
+ * @param[in]  size   size of buffer
+ *
+ * @return     CURLE_OK no error (see curl documentation)
+ */
 CURLcode curlget(CURL *curl, char *url, char *buffer, size_t size)
 {
     curl_context ctx;
@@ -66,12 +75,16 @@ CURLcode curlget(CURL *curl, char *url, char *buffer, size_t size)
     return curl_easy_perform(curl);
 }
 
-
+/**
+ * check the "n" vout to be a valid imprinting
+ *
+ * @return 0 not valid 1 valid
+ */
 static int check_vout(int n, yajl_val vout, UID_SecurityProfile *sp)
 {
     yajl_val addresses;
 
-    // check validity (vout n 0 not spent)
+    // check validity (vout n not spent)
     const char * path[] = { "spentIndex", (const char *) 0, (const char *) 0 };
     if (NULL != yajl_tree_get(vout->u.array.values[n], path, yajl_t_number)) {
         printf("        ### spent!!\n");
@@ -99,6 +112,11 @@ static int check_vout(int n, yajl_val vout, UID_SecurityProfile *sp)
     return 1;
 }
 
+/**
+ * Parse for a valid IMPRINTING transaction
+ *
+ * @return 1 if valid
+ */
 static int parse_imprinting(yajl_val jnode, UID_SecurityProfile *sp)
 {
     yajl_val vin, vout, str;
@@ -142,6 +160,11 @@ static int parse_imprinting(yajl_val jnode, UID_SecurityProfile *sp)
 
 }
 
+/**
+ * Parse for a valid PROVIDER transaction
+ *
+ * @return 1 if valid
+ */
 static int parse_provider(yajl_val jnode, UID_SecurityProfile *sp)
 {
     yajl_val vin, vout, str, addresses;
@@ -204,6 +227,11 @@ static int parse_provider(yajl_val jnode, UID_SecurityProfile *sp)
     return 1;
 }
 
+/**
+ * Parse for a valid USER transaction
+ *
+ * @return 1 if valid
+ */
 static int parse_user(yajl_val jnode, UID_ClientProfile *cp)
 {
     yajl_val vin, vout, str, addresses;
@@ -275,10 +303,24 @@ static char curlbuffer[100000];
 #define IMPRINTING 2
 
 /**
- * minimum confirmations required
+ * Minimum confirmations required to accept the contract<br>
+ * Defaults to 1
  */
 int UID_confirmations = 1;
 
+/**
+ * check the tx for a valid contract of type "type"
+ * if found add it to the cache buffer
+ *
+ * @param[in]  curl    pointer to an initialized CURL struct
+ * @param[out] secondb pointer to the contracts cache buffer
+ *                     to be filled
+ * @param[in]  tx      transaction to check
+ * @param[in]  type    type of contract to look for: PROVIDER IMPRINTING USER
+ *
+ * @return     UID_CONTRACTS_OK no error <br>
+ *             UID_CONTRACTS_SERV_ERROR error contacting the server
+ */
 static int check_contract(CURL *curl, cache_buffer *secondb, char * tx, char *address, int type)
 {
     yajl_val jnode, v;
@@ -332,6 +374,20 @@ static int check_contract(CURL *curl, cache_buffer *secondb, char * tx, char *ad
     return UID_CONTRACTS_OK;
 }
 
+/**
+ * lookup the Block-Chain for a given address to see
+ * if it received transactions. If some TX exists for the address,
+ * call check_contract() to look for valid contracts
+ *
+ * @param[in]  curl    pointer to an initialized CURL struct
+ * @param[out] secondb pointer to the contracts cache buffer
+ *                     to be filled
+ * @param[in]  type    type of contract to look for: PROVIDER IMPRINTING USER
+ *
+ * @return     UID_CONTRACTS_OK transaction exists for the given address <br>
+ *             UID_CONTRACTS_NO_TX no transactions for the given address <br>
+ *             UID_CONTRACTS_SERV_ERROR error contacting the server
+ */
 static int check_address(CURL *curl, cache_buffer *secondb, char *address, int type)
 {
     int res;
@@ -382,6 +438,15 @@ static int check_address(CURL *curl, cache_buffer *secondb, char *address, int t
     return res;
 }
 
+/**
+ * Gets the providers name of the contracts from the Registry
+ *
+ * @param[in]  curl    pointer to an initialized CURL struct
+ * @param[out] secondb pointer to the contracts cache buffer
+ *                     to be filled with the names
+ *
+ * @todo manage the Registry URL
+ */
 static int get_providers_name(CURL *curl, cache_buffer *secondb)
 {
     yajl_val jnode, v;
@@ -420,6 +485,22 @@ static int get_providers_name(CURL *curl, cache_buffer *secondb)
     return 0;
 }
 
+/**
+ * Lookup all the Bip32 addresses looking for contracts
+ *
+ * - imprinting contract <br>
+ * - provider contracts <br>
+ * - user contracts <br>
+ *
+ * @param[in]  curl    pointer to an initialized CURL struct
+ * @param[out] secondb pointer to the contracts cache buffer
+ *                     to be filled
+ *
+ * @return     UID_CONTRACTS_OK no error <br>
+ *             UID_CONTRACTS_SERV_ERROR error contacting the server
+ *
+ * @todo handle errors from get_providers_name
+ */
 int UID_fillCache(CURL *curl, cache_buffer *secondb)
 {
     int res, gap;
