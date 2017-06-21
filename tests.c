@@ -453,6 +453,102 @@ void test_case_transaction2(void)
 			"01f0053101000000001976a914f9c9560f6d4cf2f652e6c75b3f8cf635cbcfc81188ac00000000",
 			hexeouttx);
 }
+
+/**************************** General test suite *******************************/
+
+/* Test Suite setup and cleanup functions: */
+
+int init_cache_suite(void)
+{
+	strcpy(UID_appliance, "http://explorer.uniquid.co:3001/insight-api");
+	return 0;
+}
+
+int clean_cache_suite(void)
+{
+	unlink("identity.db");
+	return 0;
+}
+
+/************* Test case functions ****************/
+
+void test_case_cache1(void)
+{
+	cache_buffer *cache;
+//	UID_ClientProfile *profile = NULL;
+	UID_SecurityProfile *contract = NULL;
+
+	unlink("identity.db");
+	UID_getLocalIdentity("tprv8ZgxMBicQKsPeF9bnvZrQCjeySPx82J1BpJbrJ4HLLQwDHyNMiQ9uBsKDeh6GhwwmtRAzd142o2ji8M55CcBbcNhgbrUxE1FENw9baLgYnD");
+	CU_ASSERT(0 == UID_getContracts(&cache));
+	CU_ASSERT(4 == cache->validCacheEntries);
+	CU_ASSERT(1 == cache->validClientEntries);
+
+//	profile = UID_matchProvider("Node0");
+//	CU_ASSERT(NULL != profile);
+//	CU_ASSERT_STRING_EQUAL(profile->serviceProviderAddress, "murzfjMUddDbFjir2fEYCis8mpaphrdHKV");
+
+	contract = UID_matchContract("msi5CAqcnMP6aiAQ3Q82W9bUCGj9nMWHTM");
+	CU_ASSERT(NULL != contract);
+	CU_ASSERT_STRING_EQUAL(contract->serviceProviderAddress, "mvMD34qjTuMSoaHifCmjtjiPLXgfFNtCiV");
+	CU_ASSERT_EQUAL(0x40, contract->profile.bit_mask[3]);
+
+	contract = UID_matchContract("n42d4KwDcCKsidov224rsA7GKLtTsVbhoo");
+	CU_ASSERT(NULL != contract);
+	CU_ASSERT_STRING_EQUAL(contract->serviceProviderAddress, "mhxNWQnP91TJ1AU7j8BUjrxLCTPbjLoU6m");
+	CU_ASSERT_EQUAL(0x3e, contract->profile.bit_mask[4]);
+}
+
+void test_case_cache2(void)
+{
+	cache_buffer *cache;
+
+	unlink("identity.db");
+	UID_getLocalIdentity("tprv8ZgxMBicQKsPdoj3tQG8Z2bzNsCTsk9heayJQA1pQStVx2hLEyVwx6gfHZ2p4dSzbvaEw7qrDXnX54vTVbkLghZcB24TXuj1ADXPUCvyfcy");
+	CU_ASSERT(0 == UID_getContracts(&cache));
+	CU_ASSERT( 0 == cache->validCacheEntries);
+	CU_ASSERT( 0 == cache->validClientEntries);
+}
+
+/* fake imprinter:
+ * tprv8ZgxMBicQKsPeEzhahZn1jqJjNyQ3G7HLbEZKU9krP8cdeBXmzVSzt7kCPEofHbmMo5k18mVB7am8rFiQLAzJdchG7zMUWbTUCiJ3w1s9oM
+ * @ m/44'/0'/0/1/1/1
+ * tx: ebafc4c80422e441bed962f6da1c481051de3f5569b101600ad290699090960e 100 coin
+ *
+ * mtN3H7sFPC5V5bNy7t4qg9ku9EKSNhKrHE -> mxZ19o2oq6gGVeES1x7rZUHbwxqMkWFBoo
+ *                                       mmdJjnUHNiTZTAR46YAdtB4eVB4CeB6Rvb
+ */
+
+void test_case_cache3(void)
+{
+	cache_buffer *cache;
+
+	unlink("identity.db");
+	UID_getLocalIdentity("tprv8ZgxMBicQKsPdLB7wadJ2LDnCQ4ra1pyWQrVJGPQNrQkm8XX5K9i6ucFYM6H9aeSEgGCL8JFamvgiVtpmVjBiruNYegiW9LCBL2HCoYWRAa");
+	CU_ASSERT(0 == UID_getContracts(&cache));
+	CU_ASSERT( 1 == cache->validCacheEntries);
+	CU_ASSERT( 0 == cache->validClientEntries);
+}
+
+/*
+#include "bip32.h"
+#include "curves.h"
+#include "secp256k1.h"
+void test_case_seed(void)
+{
+	HDNode node_m;
+    char privateKey[256];
+    uint8_t seed[32] = {0};
+
+    fromhex("6ecc96fd114b975295c45ccfbb8bd15390ec1af65f2d5505ad25884166bdcaec",seed, sizeof(seed));
+    hdnode_from_seed(seed, sizeof(seed), SECP256K1_NAME, &node_m);
+    hdnode_serialize_private(&node_m, 0 , privateKey, sizeof(privateKey));
+    CU_ASSERT_STRING_EQUAL(
+			"tprv8ZgxMBicQKsPeF9bnvZrQCjeySPx82J1BpJbrJ4HLLQwDHyNMiQ9uBsKDeh6GhwwmtRAzd142o2ji8M55CcBbcNhgbrUxE1FENw9baLgYnD",
+			privateKey);
+}
+*/
+
 /************* Test Runner Code goes here **************/
 
 int main ( void )
@@ -497,6 +593,23 @@ int main ( void )
         (NULL == CU_add_test(pSuite, "test_case_utils5", test_case_utils5)) ||
         (NULL == CU_add_test(pSuite, "test_case_transaction1", test_case_transaction1)) ||
         (NULL == CU_add_test(pSuite, "test_case_transaction2", test_case_transaction2))
+      )
+   {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   /* add a suite to the registry */
+   pSuite = CU_add_suite( "cache test suite", init_cache_suite, clean_cache_suite );
+   if ( NULL == pSuite ) {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   /* add the tests to the suite */
+   if ( (NULL == CU_add_test(pSuite, "test_case_cache1", test_case_cache1)) ||
+        (NULL == CU_add_test(pSuite, "test_case_cache2", test_case_cache2)) ||
+        (NULL == CU_add_test(pSuite, "test_case_cache3", test_case_cache3))
       )
    {
       CU_cleanup_registry();
