@@ -23,6 +23,8 @@
 #include "UID_identity.h"
 #include "UID_dispatch.h"
 
+/// disable debug output
+#define printf(...)
 
 typedef struct  {
     size_t size;
