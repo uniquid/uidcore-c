@@ -24,14 +24,19 @@ we give a simple make build system that builds for Linux
 
 just run
 
-__make__
-
+__make__<br>
 to build the the shared library
 
-__make docs__
-
+__make docs__<br>
 to build the Doxygen documentation
 
-__make run-tests__
-
+__make run-tests__<br>
 to build and run the test suite
+
+
+### example code ###
+
+see<br>
+[example_init.c](example_init.c) for an example of entity initialization<br>
+[example_provider.c](example_provider.c) for an example of provider code<br>
+[example_user.c](example_user.c) for an example of user code<br>
