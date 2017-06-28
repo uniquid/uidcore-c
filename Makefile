@@ -63,9 +63,9 @@ run-tests: tests
 	./tests
 	gcov $(SRCS) -r
 
-.PHONY: doc
-doc:
-	rm -rf doc
+.PHONY: docs
+docs:
+	rm -rf docs
 	$(CC) $(CFLAGS) -fsyntax-only example_init.c example_provider.c example_user.c
 	doxygen Doxyfile
 
@@ -73,5 +73,5 @@ clean:
 	rm -f *.o tests libuidcore-c.so
 	rm -rf yajl/build
 	make -C trezor-crypto clean
-	rm -rf doc
+	rm -rf docs
 	rm -f *.gcda *.gcno *.gcov

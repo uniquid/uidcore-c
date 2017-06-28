@@ -28,7 +28,7 @@ __make__
 
 to build the the shared library
 
-__make doc__
+__make docs__
 
 to build the Doxygen documentation
 

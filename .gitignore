@@ -5,7 +5,7 @@
 *.[oa]
 *~
 *.so
-/doc
+/docs
 *.gcda
 *.gcno
 *.gcov
