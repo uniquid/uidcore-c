@@ -2,32 +2,57 @@
 /**
  @mainpage
 
- Main functions
- - \ref UID_getLocalIdentity "UID_getLocalIdentity()"
- - \ref UID_getTpub "UID_getTpub()"
+ The __uidcore-c__ offers the primitives needed to build an Entity of the UniquID framework
+ in plain __C__ language.
 
- Provider side message functions
- - \ref UID_accept_channel "UID_accept_channel()"
- - \ref UID_parseReqMsg "UID_parseReqMsg()"
- - \ref UID_formatRespMsg "UID_formatRespMsg()"
- - \ref UID_closeServerChannel "UID_closeServerChannel()"
+ look at here for the
+ <a href="https://github.com/uniquid/developer-wiki/blob/master/Documents/architecture.md"> __framework architecture__ </a>
+ details\n
+ see also the @ref README.md "README.md" for implementation details
 
- User side message functions
- - \ref UID_createChannel "UID_createChannel()"
- - \ref UID_formatReqMsg "UID_formatReqMsg()"
- - \ref UID_parseRespMsg "UID_parseRespMsg()"
- - \ref UID_closeChannel "UID_closeChannel()"
+ ## Library interface ##
 
-RPC message structure:<br>
+ __Main functions__
+ - UID_getLocalIdentity()
+ - UID_getTpub()
+ - UID_getContracts()
 
-request<br>
-{"sender":"sender-address", "body":{"method":n, "params":"param-string", "id":nonce} }
-<br>
-response<br>
-{"sender":"sender-address", "body":{"result":"res-string", "error":err, "id":nonce} }
+ __Provider side message functions__
+ - UID_accept_channel()
+ - UID_parseReqMsg()
+ - UID_formatRespMsg()
+ - UID_closeServerChannel()
 
- Secondary functions
- - \ref UID_signAt "UID_signAt()"
- - \ref UID_getPubkeyAt "UID_getPubkeyAt()"
- - \ref UID_getAddressAt "UID_getAddressAt()"
+ __User side message functions__
+ - UID_createChannel()
+ - UID_formatReqMsg()
+ - UID_parseRespMsg()
+ - UID_closeChannel()
+
+ __Secondary functions__
+ - UID_signAt()
+ - UID_getPubkeyAt()
+ - UID_getAddressAt()
+ - cryptoMessageSign()
+ - cryptoMessageVerify()
+
+\n
+ ## RPC message structure:##
+
+ __request__\n
+ {"sender":"sender-address", "body":{"method":n, "params":"param-string", "id":nonce} }
+
+ __response__\n
+ {"sender":"sender-address", "body":{"result":"res-string", "error":err, "id":nonce} }
+
+\n
+ ## Code examples ##
+
+ - @ref example_init.c     "entity initialization"
+ - @ref example_provider.c "provider message loop"
+ - @ref example_user.c     "user RPC request"
+
+ @example example_init.c     Code example for the entity initialization
+ @example example_provider.c Code example for the entity provider
+ @example example_user.c     Code example for the entity user
 */

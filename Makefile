@@ -66,6 +66,7 @@ run-tests: tests
 .PHONY: doc
 doc:
 	rm -rf doc
+	$(CC) $(CFLAGS) -fsyntax-only example_init.c example_provider.c example_user.c
 	doxygen Doxyfile
 
 clean:
