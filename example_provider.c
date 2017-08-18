@@ -75,6 +75,7 @@ void* service_provider(void *arg)
 
 //		< Wait_for_Msg_from_user(msg, &size) >
 
+		// create the contest for the communication (contract, identities of the peers, etc)
 		UID_ServerChannelCtx sctx;
 		uint8_t sbuffer[1024];
 		size_t ssize = sizeof(sbuffer);
@@ -87,6 +88,7 @@ void* service_provider(void *arg)
 			continue;
 		}
 
+		// perform the request
 		uint8_t response[1024];
 		size_t respsize = sizeof(response);
 		if ( UID_MSG_OK != (ret = perform_request(sbuffer, ssize, response, &respsize, &sctx))) {

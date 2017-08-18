@@ -41,6 +41,8 @@ int main(void)
 
 	// start the the thread that updates the
 	// contracts cache from the block-chain
+	// here we are using pthread, but is up to the user of the library
+	// to chose how to schedule the execution of UID_getContracts()
 	pthread_create(&thr, NULL, updateCache, NULL);
 
 //		...

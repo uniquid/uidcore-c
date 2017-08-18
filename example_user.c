@@ -20,7 +20,7 @@ void RPC_request(void)
 {
 	int ret;
 
-	// client
+	// create the contest for the communication (contract, identities of the peers, etc)
 	UID_ClientChannelCtx ctx;
 	if ( UID_MSG_OK != (ret = UID_createChannel("Machine name", &ctx)) ) {
 
@@ -29,6 +29,7 @@ void RPC_request(void)
 		return;
 	}
 
+	// format the message
 	uint8_t buffer[1024];
 	size_t size = sizeof(buffer);
 	int64_t id;
@@ -45,9 +46,9 @@ void RPC_request(void)
 	uint8_t msg[1024] = {0};
 	size = sizeof(msg);
 
-//		< Wait_for_Msg_from_user(msg, &size) >
+//		< Wait_for_Msg_from_provider(msg, &size) >
 
-	// client
+	// parse the received message
 	char result[1024] = "";
 	if ( UID_MSG_OK != (ret = parse_result(msg, size, &ctx, result, sizeof(result), id))) {
 
@@ -56,5 +57,9 @@ void RPC_request(void)
 		return;
 	}
 
+//  now you have the <result> from the execution on the provider
+//  of the requested method: you can use it as you need
+
+	// close the channel
 	UID_closeChannel(&ctx);
 }
