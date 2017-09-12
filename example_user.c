@@ -1,4 +1,4 @@
-#include "string.h"
+#include <string.h>
 
 #include "UID_message.h"
 
@@ -19,6 +19,7 @@ int parse_result(uint8_t *buffer, size_t size, UID_ClientChannelCtx *ctx, char *
 void RPC_request(void)
 {
 	int ret;
+	int method = 31;
 
 	// create the contest for the communication (contract, identities of the peers, etc)
 	UID_ClientChannelCtx ctx;
@@ -33,7 +34,6 @@ void RPC_request(void)
 	uint8_t buffer[1024];
 	size_t size = sizeof(buffer);
 	int64_t id;
-	int method = 31;
 	if ( UID_MSG_OK != (ret = UID_formatReqMsg(ctx.myid, method, "parameter to the method", buffer, &size, &id)) ) {
 
 //			< manage_error(ret) >

@@ -33,8 +33,11 @@ int main(void)
 
 //		...
 
+	// set up the URL to insight-api appliance
 	strcpy(UID_appliance, "http://explorer.uniquid.co:3001/insight-api");
+	// generate or load the identity
 	UID_getLocalIdentity(NULL);
+	// build the imprinting string
 	snprintf(imprinting, sizeof(imprinting), "{\"name\":\"%s\",\"xpub\":\"%s\"}", "Entity NAME", UID_getTpub());
 
 //	< manage imprinting information >
