@@ -432,7 +432,7 @@ void test_case_transaction2(void)
 {
 	uint8_t rawtx[200] = {0};
 	UID_ScriptSig scriptsig[2] = {{0}};
-	char hexeouttx[500] = {0};
+	char hexeouttx[1000] = {0};
 	int len = fromhex("0100000002"
 			"d67835ed9b1bcd2946c225e59da4a110476225b3b1fb477fbb9826195cddf312010000001976a9141b2fc485361b251b53579dd8636532e2ebded02c88acffffffff"
 			"403eda54f5096fceeb78a91a51a17a727e9d763da2ab48b3d173fa5feaa22d33010000001976a9141d1c309a3051f416cc8b0b389adbeacdd097094c88acffffffff"
@@ -454,7 +454,50 @@ void test_case_transaction2(void)
 			hexeouttx);
 }
 
-/**************************** General test suite *******************************/
+/**************************** JavaVectors test suite *******************************/
+
+/* Test Suite setup and cleanup functions: */
+
+int init_JavaVectors_suite(void)
+{
+	unlink("identity.db");
+	UID_getLocalIdentity("tprv8ZgxMBicQKsPeUjbnmwN54rKdA1UCsoJsY3ngzhVxyqeTV5pPNo77heffPbSfWVy8vLkTcMwpQHTxJzjz8euKsdDzETM5WKyKFYNLxMAcmQ");
+	return 0;
+}
+int clean_JavaVectors_suite(void)
+{
+	unlink("identity.db");
+	return 0;
+}
+
+/************* Test case functions ****************/
+
+void test_case_JavaVectors_signtx(void)
+{
+{
+	uint8_t rawtx[200] = {0};
+	UID_ScriptSig scriptsig[2] = {{0}};
+	UID_Bip32Path path[2] = {{0,0,0},{0,0,1}};
+	char hexeouttx[1000] = {0};
+	int len = fromhex("0100000002"
+			"47a327c7f5d626a7159c5c0fccf90732ba733ab6e9eea53db24c4829b3cc46a40000000000ffffffff"
+			"ced72f216e191ebc3be3b7b8c5d8fc0a7ac52fa934e395f837a28f96df2d8f900100000000ffffffff"
+			"0140420f00000000001976a91457c9afb8bc5e4fa738f5b46afcb51b43a48b270988ac00000000",rawtx, sizeof(rawtx));
+	CU_ASSERT(UID_TX_OK == UID_buildScriptSig(rawtx, len, path, 2, scriptsig, 2));
+	CU_ASSERT(676 == UID_buildSignedHex(rawtx, len, scriptsig, hexeouttx, sizeof(hexeouttx)));
+	CU_ASSERT_STRING_EQUAL("0100000002"
+			"47a327c7f5d626a7159c5c0fccf90732ba733ab6e9eea53db24c4829b3cc46a400000000"
+			"6a473044022014fac39447707341f16cac6fcd9a7258dcc636767016e225c5bb2a2ed4462f4c02202867a07f0695109b47cd9de86d06393c9f3f1f0ebbde5f3f7914f5296edf1be401"
+			"2102461fb3538ffec054fd4ee1e9087e7debf8442028f941bda308c24b508cbf69f7ffffffff"
+			"ced72f216e191ebc3be3b7b8c5d8fc0a7ac52fa934e395f837a28f96df2d8f9001000000"
+			"6a473044022061e3c20622dcbe8ea3a62c66ba56da91c4f1083b11bbd6e912df81bc92826ac50220631d302f309a1c5212933830f910ba2931ff32a5b41a2c9aaa808b926aa9936301"
+			"2102ece5ce70796b6893283aa0c8f30273c7dc0ff0b82a75017285387ecd2d767110ffffffff"
+			"0140420f00000000001976a91457c9afb8bc5e4fa738f5b46afcb51b43a48b270988ac00000000",
+			hexeouttx);
+}
+}
+
+/**************************** Cache test suite *******************************/
 
 /* Test Suite setup and cleanup functions: */
 
@@ -593,6 +636,21 @@ int main ( void )
         (NULL == CU_add_test(pSuite, "test_case_utils5", test_case_utils5)) ||
         (NULL == CU_add_test(pSuite, "test_case_transaction1", test_case_transaction1)) ||
         (NULL == CU_add_test(pSuite, "test_case_transaction2", test_case_transaction2))
+      )
+   {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   /* add a suite to the registry */
+   pSuite = CU_add_suite( "JavaVectors test suite", init_JavaVectors_suite, clean_JavaVectors_suite );
+   if ( NULL == pSuite ) {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   /* add the tests to the suite */
+   if ( (NULL == CU_add_test(pSuite, "test_case_JavaVectors_signtx", test_case_JavaVectors_signtx))
       )
    {
       CU_cleanup_registry();
