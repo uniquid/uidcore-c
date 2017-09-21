@@ -20,6 +20,8 @@
  __Provider side message functions__
  - UID_accept_channel()
  - UID_parseReqMsg()
+ - UID_checkPermission()
+ - UID_performRequest()
  - UID_formatRespMsg()
  - UID_closeServerChannel()
 
