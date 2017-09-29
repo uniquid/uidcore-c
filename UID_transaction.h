@@ -16,11 +16,6 @@
 
 #define UID_CONTRACT_MAX_IN 3
 
-#define UID_TX_OK 0
-#define UID_TX_INDEX_OUT_RANGE 1
-#define UID_TX_NOMEM 2
-#define UID_TX_PARSE_ERROR 3
-
 typedef uint8_t UID_ScriptSig[1 /*len*/ + 1 /*OP_PUSH*/ + 72 /*maxDER*/ + 1 /*hash type*/ + 1 /*OP_PUSH*/ + 33 /*pub key*/];
 
 int UID_digestRawTx(uint8_t *rawtx, size_t len, unsigned in, uint8_t address[20], uint8_t hash[32]);
