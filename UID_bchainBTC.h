@@ -27,10 +27,6 @@
 #define UID_SENDTX "%s/tx/send", UID_appliance
 #define UID_GETCONTRACT "%s/tx/%s", UID_appliance
 
-#define UID_CONTRACTS_OK 0
-#define UID_CONTRACTS_SERV_ERROR 1
-#define UID_CONTRACTS_NO_TX 2
-
 /**
  * Base url of the Insight API appliance
  * to be used to get and send transactions<br>

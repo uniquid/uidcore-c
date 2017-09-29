@@ -13,13 +13,6 @@
 //#define UID_RPC_TABLE_SIZE (40*8)
 #define UID_RPC_RESERVED 32
 
-#define UID_DISPATCH_OK 0
-//#define UID_DISPATCH_NOCONTRACT 1
-#define UID_DISPATCH_NOPERMISSION 2
-#define UID_DISPATCH_NOTEXISTENT 3
-#define UID_DISPATCH_RESERVED 4
-#define UID_DISPATCH_INUSE 5
-
 typedef void (*UID_SystemFuntion)(char *param, char *result, size_t size);
 
 
