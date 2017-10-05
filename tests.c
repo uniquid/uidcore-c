@@ -5,6 +5,7 @@
 
 #include "UID_identity.h"
 #include "UID_bchainBTC.h"
+#include "UID_fillCache.h"
 #include "UID_message.h"
 #include "UID_dispatch.h"
 #include "UID_utils.h"
@@ -504,6 +505,7 @@ void test_case_JavaVectors_signtx(void)
 int init_cache_suite(void)
 {
 	UID_pApplianceURL = "http://explorer.uniquid.co:3001/insight-api";
+	UID_pRegistryURL = "http://appliance4.uniquid.co:8080/registry";
 	return 0;
 }
 

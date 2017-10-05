@@ -5,6 +5,7 @@
 
 
 #include "UID_bchainBTC.h"
+#include "UID_fillCache.h"
 #include "UID_identity.h"
 
 // Update Cache Thread
@@ -35,6 +36,8 @@ int main(void)
 
 	// set up the URL to insight-api appliance
 	UID_pApplianceURL = "http://explorer.uniquid.co:3001/insight-api";
+	// set up the URL to the registry appliance
+	UID_pRegistryURL = "http://appliance4.uniquid.co:8080/registry";
 	// generate or load the identity
 	UID_getLocalIdentity(NULL);
 	// build the imprinting string

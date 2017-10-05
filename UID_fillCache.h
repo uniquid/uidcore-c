@@ -13,7 +13,10 @@
 #include <curl/curl.h>
 #include "UID_bchainBTC.h"
 
+#define UID_REGISTRY "http://appliance4.uniquid.co:8080/registry"
+
 extern int UID_confirmations;
+extern char *UID_pRegistryURL;
 
 int UID_fillCache(CURL *curl, cache_buffer *secondb);
 
