@@ -42,7 +42,12 @@ cache_buffer cache1 = { { { {0},{0},{0,{0},0,{{0}}} } }, 0, { { {0},{0},{0} } },
 cache_buffer *current = &cache0;
 cache_buffer *secondb = &cache1;
 
-char UID_appliance[256] = UID_APPLIANCE;
+/**
+ * Base url of the Insight API appliance
+ * to be used to get and send transactions<br>
+ * Defaults to http://appliance3.uniquid.co:8080/insight-api
+ */
+char *UID_pApplianceURL = UID_APPLIANCE;
 
 #ifdef DUMMY_CACHE
 int  fillDummyCache(void)

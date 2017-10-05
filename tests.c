@@ -503,7 +503,7 @@ void test_case_JavaVectors_signtx(void)
 
 int init_cache_suite(void)
 {
-	strcpy(UID_appliance, "http://explorer.uniquid.co:3001/insight-api");
+	UID_pApplianceURL = "http://explorer.uniquid.co:3001/insight-api";
 	return 0;
 }
 
