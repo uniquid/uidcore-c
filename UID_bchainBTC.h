@@ -23,16 +23,11 @@
 //#define UID_APPLIANCE "http://appliance1.uniquid.co:3001/insight-api"
 //#define UID_APPLIANCE "http://appliance4.uniquid.co:3001/insight-api"
 
-#define UID_GETTXS "%s/addr/%s", UID_appliance
-#define UID_SENDTX "%s/tx/send", UID_appliance
-#define UID_GETCONTRACT "%s/tx/%s", UID_appliance
+#define UID_GETTXS "%s/addr/%s", UID_pApplianceURL
+#define UID_SENDTX "%s/tx/send", UID_pApplianceURL
+#define UID_GETCONTRACT "%s/tx/%s", UID_pApplianceURL
 
-/**
- * Base url of the Insight API appliance
- * to be used to get and send transactions<br>
- * Defaults to http://appliance3.uniquid.co:8080/insight-api
- */
-extern char UID_appliance[256];
+extern char *UID_pApplianceURL;
 
 typedef struct {
     uint8_t version;

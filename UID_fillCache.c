@@ -31,6 +31,11 @@ typedef struct  {
     char  *buffer;
 } curl_context;
 
+/**
+ * Base url of the Name Registry appliance<br>
+ * Defaults to http://appliance4.uniquid.co:8080/registry
+ */
+char *UID_pRegistryURL = UID_REGISTRY;
 
 // callback from curl_easy_perform
 static size_t curl_callback(void *buffer, size_t size, size_t nmemb, curl_context *ctx)
@@ -444,8 +449,6 @@ static int check_address(CURL *curl, cache_buffer *secondb, char *address, int t
  * @param[in]  curl    pointer to an initialized CURL struct
  * @param[out] secondb pointer to the contracts cache buffer
  *                     to be filled with the names
- *
- * @todo manage the Registry URL
  */
 static int get_providers_name(CURL *curl, cache_buffer *secondb)
 {
@@ -454,7 +457,7 @@ static int get_providers_name(CURL *curl, cache_buffer *secondb)
     size_t j;
     char *s;
 
-    if(CURLE_OK != curlget(curl, "http://appliance4.uniquid.co:8080/registry", curlbuffer, sizeof(curlbuffer)))
+    if(CURLE_OK != curlget(curl, UID_pRegistryURL, curlbuffer, sizeof(curlbuffer)))
         return 1;
 
 	jnode = yajl_tree_parse(curlbuffer, NULL, 0);
