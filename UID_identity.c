@@ -15,8 +15,6 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <time.h>
 #include <inttypes.h>
 #include "curves.h"
@@ -24,7 +22,49 @@
 #include "bip32.h"
 #include "UID_utils.h"
 #include "UID_identity.h"
+#include "rand.h"
 
+#ifdef UID_EMBEDDED
+#include "UID_persistence.h"
+#else
+#include <fcntl.h>
+
+char *identityDB = UID_DEFAULT_IDENTITY_FILE;
+static char lbuffer[1024];
+
+static char *load_tprv(char *privateKey, size_t size)
+{
+    FILE *id;
+    char format[64];
+    char *tprv = NULL;
+
+    if ((id = fopen(identityDB, "r")) != NULL)
+    {
+        while(fgets(lbuffer, sizeof(lbuffer), id) != NULL)
+        {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+            snprintf(format, sizeof(format),  "privateKey: %%%zus\n", size - 1);
+            if (sscanf(lbuffer, format,  privateKey) == 1) tprv = privateKey; // if read OK assign to tprv
+
+#pragma GCC diagnostic pop
+
+        }
+        fclose(id);
+    }
+    return tprv;
+}
+
+static void store_tprv(char *privateKey)
+{
+    FILE *id;
+    if ((id = fopen(identityDB, "w")) != NULL)
+    {
+        fprintf(id, "privateKey: %s\n", privateKey);
+        fclose(id);
+    }
+}
+#endif
 
 static HDNode node_m;
 
@@ -35,10 +75,6 @@ static HDNode node_m_44H_0H_0_x[2][2];
         //                      ^  ^
         // provider/user________|  |
         // intern/extern___________|
-
-char *identityDB = UID_DEFAULT_IDENTITY_FILE;
-
-static char lbuffer[1024];
 
 static HDNode *UID_deriveAt(UID_Bip32Path *path, HDNode *node)
 {
@@ -96,44 +132,28 @@ static void derive_m_44H_0H_x(void)
 }
 
 /**
- * load/create/store/ the machine identity (tprv @ nodo m)
+ * load/create and store the identity of the Entity (xprv @ node m).<br>
+ * this function must be called before all other library functions.
  *
- * if exist the file identityDB, load the identity from it
- * else create a new one
- * stores the identity in the file identityDB
+ * if the file named identityDB exists, the identity is loaded from it
+ * else a new identity is created from random.<br>
+ * the identity is then saved in the file named identityDB.
  *
- * @param[in]   tprv  if != NULL use it instead of a random seed
+ * @param[in]   tprv  if != NULL the value is used to force the identity (identityDB take precedence).
+ *
  */
 void UID_getLocalIdentity(char *tprv)
 {
     char privateKey[256]; 
-    FILE *id;
-    char format[64];
 
-
-    if ((id = fopen(identityDB, "r")) != NULL)
-    {
-        while(fgets(lbuffer, sizeof(lbuffer), id) != NULL)
-        {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-            snprintf(format, sizeof(format),  "privateKey: %%%zus\n", sizeof(privateKey) - 1);
-            if (sscanf(lbuffer, format,  privateKey) == 1) tprv = privateKey; // if read OK assign to tprv
-
-#pragma GCC diagnostic pop
-
-        }
-        fclose(id);
-    }
+    if (load_tprv(privateKey, sizeof(privateKey)) != NULL)
+        tprv = privateKey; // if read OK assign to tprv
 
     if(tprv == NULL) 
     {
         uint8_t seed[32];
-        int rnd = open("/dev/random", O_RDONLY);
-        if(read(rnd, seed, sizeof(seed)) <= 0) // if we cant read /dev/random use time for seed
-            *(int32_t *)seed = time(NULL);
+        random_buffer(seed, sizeof(seed));
         hdnode_from_seed(seed, sizeof(seed), SECP256K1_NAME, &node_m);
-        close(rnd);
     }
 	else
 	{
@@ -142,21 +162,34 @@ void UID_getLocalIdentity(char *tprv)
 
 	derive_m_44H_0H_x();
 
-    if ((id = fopen(identityDB, "w")) != NULL)
-    {
+    if (tprv != privateKey) {
         memset(privateKey, 0, sizeof(privateKey));
         hdnode_serialize_private(&node_m, 0 /*uint32_t fingerprint*/, privateKey, sizeof(privateKey));
-        fprintf(id, "privateKey: %s\n", privateKey);
-        fclose(id);
+        store_tprv(privateKey);
     }
-
 }
 
+/**
+ * Returns the xpub for imprinting
+ *
+ * @return xpub @ m/44'/0'
+ */
 char *UID_getTpub(void)
 {
     return tpub;
 }
 
+/**
+ * Signs a 32 byte digest with the key @ a given bip32 path
+ * of the identity.
+ *
+ * @param[in]  path bip32 path of the private-key to use
+ * @param[in]  hash 32 bytes long buffer holding the digest to be signed
+ * @param[out] sig  pointer to a 64 bytes long buffer to be filled with the signature
+ * @return          0 == no error
+ *
+ * \todo improve error handling
+ */
 int UID_signAt(UID_Bip32Path *path, uint8_t hash[32], uint8_t sig[64])
 {
     uint8_t pby = 0;
@@ -167,6 +200,17 @@ int UID_signAt(UID_Bip32Path *path, uint8_t hash[32], uint8_t sig[64])
     return 0;
 }
 
+/**
+ * Returns the public key @ a given bip32 path
+ * of the identity.
+ *
+ * @param[in]  path       bip32 path of the private-key to use
+ * @param[out] public_key pointer to a 33 bytes long buffer
+ *                        to be filled with the public key
+ * @return                0 == no error
+ *
+ * \todo improve error handling
+ */
 int UID_getPubkeyAt(UID_Bip32Path *path, uint8_t public_key[33])
 {
     HDNode node;
@@ -176,6 +220,18 @@ int UID_getPubkeyAt(UID_Bip32Path *path, uint8_t public_key[33])
     return 0;
 }
 
+/**
+ * Returns the address @ a given bip32 path
+ * of the identity.
+ *
+ * @param[in]  path    bip32 path of the private-key to use
+ * @param[out] b58addr pointer to a buffer to be filled with
+ * 					   the address
+ * @param[in]  size	   size of the buffer pointed by b58addr
+ * @return             0 == no error
+ *
+ * \todo improve error handling
+ */
 int UID_getAddressAt(UID_Bip32Path *path, char *b58addr, size_t size)
 {
     HDNode node;

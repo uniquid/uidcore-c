@@ -1,9 +1,8 @@
 /*
- *  @file   UID_transaction.c
+ * @file   UID_transaction.c
  *
- *
- *  @date   12/dec/2016
- *  @author M. Palumbi
+ * @date   12/dec/2016
+ * @author M. Palumbi
  */
 
 
@@ -24,7 +23,15 @@
 #include "UID_identity.h"
 #include "ecdsa.h"
 
-
+/**
+ * Takes in input a varint and outputs it as uint64_t
+ *
+ * @param[in]  stream varint to be decoded
+ * @param[out] dest   decoded varint
+ *
+ * @return            if  > 0 number of bytes of the varint
+ *                    if == 0 error. "varint overflow"
+ */
 size_t decode_varint(uint8_t *stream, uint64_t *dest)
 {
     uint8_t byte;
@@ -50,20 +57,24 @@ size_t decode_varint(uint8_t *stream, uint64_t *dest)
 
 
 
+static uint8_t script[26] = { 0x19, 0x76, 0xa9, 0x14, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0x88, 0xac };
 /**
  * takes a raw tx (with/without full input scripts) and
- * compute the digest [sha256(sha256())] for the <in> input of the transaction.
+ * compute the digest [sha256(sha256())] for the "in" input of the transaction.
  * If address is != NULL, use it to build a pay2address script for the input
  * else uses the script in the tx
- * 
+ *
  * @param[in]  rawtx    tx in binary form.
  * @param[in]  len      len of the raw tx
  * @param[in]  in       input for wich calculate the digest
- * @param[in]  adrress  raw bitcoin address (20 bytes)
+ * @param[in]  address  raw bitcoin address (20 bytes)
  * @param[out] hash     returns the digest (sha256(sha256()))
+ *
+ * @return     UID_TX_INDEX_OUT_RANGE index exceed the number of inputs <br>
+ *             UID_TX_PARSE_ERROR     error parsing the tx <br>
+ *             UID_TX_OK              no error <br>
  */
-static uint8_t script[26] = { 0x19, 0x76, 0xa9, 0x14, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0x88, 0xac };
-int UID_digestRawTx(uint8_t *rawtx, size_t len, u_int in, uint8_t address[20], uint8_t hash[32])
+int UID_digestRawTx(uint8_t *rawtx, size_t len, unsigned in, uint8_t address[20], uint8_t hash[32])
 {
     uint8_t *ptr,*out;
     uint64_t n_inputs, i, l;
@@ -119,8 +130,20 @@ int UID_digestRawTx(uint8_t *rawtx, size_t len, u_int in, uint8_t address[20], u
 }
 
 /**
- * build the signed transaction (hex coded)
- * @todo  check the len of the out buffer during the buid
+ * Build the signed transaction (hex coded)
+ *
+ * @param[in]  rawtx     unsigned tx in binary form
+ * @param[in]  len       length of the unsigned tx
+ * @param[in]  scriptsig array of the signed input scripts
+ * @param[out] hexouttx  buffer to be filled with the
+ *                       signed transaction (hex coded)
+ * @param[in]  olen      length of the hexouttx buffer
+ *
+ * @return     return the length of the hexouttx string
+ *             (binary tx length is return/2)
+ *
+ * @todo  check the length of the out buffer during the build
+ *        and improve all the error checking
  */
 int UID_buildSignedHex(uint8_t *rawtx, size_t len, UID_ScriptSig *scriptsig, char *hexouttx, size_t olen)
 {
@@ -169,6 +192,24 @@ int UID_buildSignedHex(uint8_t *rawtx, size_t len, UID_ScriptSig *scriptsig, cha
     return hextx - hexouttx + 2*s;
 }
 
+/**
+ * Build the array of the signed input scripts
+ * for P2PKH transactions
+ *
+ * @param[in]  rawtx     unsigned tx in binary form
+ * @param[in]  rawtx_len length of the unsigned tx
+ * @param[in]  path      array of the BIP32 paths to be
+ *                       used to build and sign the scripts
+ * @param[in]  n_inputs  elements in the path array
+ * @param[out] scriptsig array of UID_ScriptSig to be
+ *                       filled with the sgned scripts
+ * @param[in]  n_script  elements in the scriptsig array
+ *
+ * @return     UID_TX_OK              no error <br>
+ *             UID_TX_NOMEM           not enough elements in scriptsig array <br>
+ *             UID_TX_INDEX_OUT_RANGE index exceed the number of inputs <br>
+ *             UID_TX_PARSE_ERROR     error parsing the tx <br>
+ */
 int UID_buildScriptSig(uint8_t *rawtx, size_t rawtx_len, UID_Bip32Path *path, int n_inputs, UID_ScriptSig *scriptsig, int n_script)
 {
     int i;
@@ -177,7 +218,7 @@ int UID_buildScriptSig(uint8_t *rawtx, size_t rawtx_len, UID_Bip32Path *path, in
     uint8_t pubkeyhash[20];
 	uint8_t hash[32];
     uint8_t sig[64] = {0};
-	u_int8_t len_der;
+	uint8_t len_der;
 
     if(n_script < n_inputs) return UID_TX_NOMEM;
     for( i=0; i<n_inputs; i++) {
@@ -196,6 +237,20 @@ int UID_buildScriptSig(uint8_t *rawtx, size_t rawtx_len, UID_Bip32Path *path, in
     }
     return UID_TX_OK;
 }
+/*
+ * TODO: this code goes in segmentation fault
+ {
+	uint8_t rawtx[200] = {0};
+	UID_ScriptSig scriptsig[2] = {{0}};
+	UID_Bip32Path path[2] = {{0,1,3},{0,0,2}};
+	int len = fromhex("0100000001"
+			"d67835ed9b1bcd2946c225e59da4a110476225b3b1fb477fbb9826195cddf312010000001976a9141b2fc485361b251b53579dd8636532e2ebded02c88acffffffff"
+			"403eda54f5096fceeb78a91a51a17a727e9d763da2ab48b3d173fa5feaa22d33010000001976a9141d1c309a3051f416cc8b0b389adbeacdd097094c88acffffffff"
+			"01f0053101000000001976a914f9c9560f6d4cf2f652e6c75b3f8cf635cbcfc81188ac00000000",rawtx, sizeof(rawtx));
+	CU_ASSERT(UID_TX_OK == UID_buildScriptSig(rawtx, len, path, 2, scriptsig, 2));
+}
+* improve rawtx parsing!!!
+*/
 
 static UID_ScriptSig scriptsig[UID_CONTRACT_MAX_IN];
 static UID_Bip32Path bip32path[UID_CONTRACT_MAX_IN];
@@ -207,10 +262,19 @@ static size_t rawtx_len;
 static char errbuf[1024];
 
 /**
- * function is not thread safe!!
- * @param[in]  param  - contract to sign and send: {"paths":["0/0/1","0/1/5"],"tx":"01000000028a9799dcc44b529aa2c4dd......"}
- * @param[out] result - if all ok returns the transaction ID: {"txid":"3cd0f12a587945c75edde69e8989260fb4126b6ae803cb26de751e62a47137be"}
- * @param[in]  size   - size of result buffer
+ * System RPC function used to sign and send a contract on the blockchain
+ *
+ * In input takes a JSON with the list of bip32 paths to
+ * be used to sign and the raw transction to be signed.
+ * If ok the signed transaction is sent on the blockchain
+ * and the txid is returned
+ *
+ * @param[in]  param  contract to sign and send: {"paths":["0/0/1","0/1/5"],"tx":"01000000028a9799dcc44b529aa2c4dd......"}
+ * @param[out] result if all ok returns the transaction ID: <br>
+ *                    "0 - 3cd0f12a587945c75edde69e8989260fb4126b6ae803cb26de751e62a47137be"
+ * @param[in]  size   size of result buffer
+ *
+ * @todo function is not thread safe!!
  */
 void UID_signAndSendContract(char *param, char *result, size_t size)
 {

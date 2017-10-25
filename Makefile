@@ -24,27 +24,54 @@ CFLAGS   += $(OPTFLAGS) \
             -Wformat-security \
             -Werror
 
-CFLAGS += -I../yajl/build/yajl-2.1.1/include -I../trezor-crypto
+CFLAGS += -Iyajl/build/yajl-2.1.1/include -Itrezor-crypto
+LIB-YAJL := yajl/build/yajl-2.1.1/lib/libyajl_s.a
+LIB-TREZOR := trezor-crypto/libtrezor-crypto.so
 
-
-SRCS	:= $(shell find  -name "*.c")
+SRCS	:= $(shell find -maxdepth 1 -name "UID_*.c")
 SRCS  += 
-LIBS	+= -L../yajl/build/yajl-2.1.1/lib/ -lyajl_s 
+LIBS	+= -L $(dir $(LIB-YAJL)) -l $(patsubst lib%,%, $(basename $(notdir $(LIB-YAJL))))
+LIBS	+= -L $(dir $(LIB-TREZOR)) -l $(patsubst lib%,%, $(basename $(notdir $(LIB-TREZOR))))
 
 OBJS   = $(SRCS:.c=.o)
 
-HEADERS   := $(shell find  -name "*.h")
+HEADERS   := $(shell find -maxdepth 1 -name "UID_*.h")
 
 all: libuidcore-c.so
 
+yajl/build/Makefile:
+	mkdir yajl/build
+	cd yajl/build; cmake ..
+
+$(LIB-YAJL): yajl/build/Makefile
+	make -C yajl/build
+
+$(LIB-TREZOR):
+	make -C trezor-crypto
 
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 
-libuidcore-c.so: $(SRCS) $(HEADERS) Makefile
+libuidcore-c.so: $(SRCS) $(HEADERS) Makefile $(LIB-YAJL) $(LIB-TREZOR)
 	$(CC) $(CFLAGS) -fPIC -shared $(SRCS) $(LIBS) -o libuidcore-c.so
 
+tests: tests.c libuidcore-c.so
+	$(CC) $(CFLAGS) tests.c $(SRCS) $(LIBS) -Wl,-rpath=$(dir $(LIB-TREZOR)) -lcurl -lcunit -ftest-coverage -fprofile-arcs -o tests
+
+run-tests: tests
+	./tests
+	gcov $(SRCS) -r
+
+.PHONY: docs
+docs:
+	rm -rf docs
+	$(CC) $(CFLAGS) -fsyntax-only example_init.c example_provider.c example_user.c
+	doxygen Doxyfile
 
 clean:
 	rm -f *.o tests libuidcore-c.so
+	rm -rf yajl/build
+	make -C trezor-crypto clean
+	rm -rf docs
+	rm -f *.gcda *.gcno *.gcov

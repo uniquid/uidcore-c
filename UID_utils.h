@@ -1,8 +1,8 @@
-/*
- * UID_utils.h
+/**
+ * @file   UID_utils.h
  *
- *  Created on: 29/lug/2016
- *      Author: M. Palumbi
+ * @date   29/lug/2016
+ * @author M. Palumbi
  */
  
  

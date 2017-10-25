@@ -1,8 +1,8 @@
-/*
- * UID_bchainBTC.h
+/**
+ * @file   UID_bchainBTC.h
  *
- *  Created on: 5/aug/2016
- *      Author: M. Palumbi
+ * @date   5/aug/2016
+ * @author M. Palumbi
  */
  
  
@@ -23,18 +23,11 @@
 //#define UID_APPLIANCE "http://appliance1.uniquid.co:3001/insight-api"
 //#define UID_APPLIANCE "http://appliance4.uniquid.co:3001/insight-api"
 
-#define UID_GETTXS "%s/addr/%s", UID_appliance
-#define UID_SENDTX "%s/tx/send", UID_appliance
-#define UID_GETCONTRACT "%s/tx/%s", UID_appliance
+#define UID_GETTXS "%s/addr/%s", UID_pApplianceURL
+#define UID_SENDTX "%s/tx/send", UID_pApplianceURL
+#define UID_GETCONTRACT "%s/tx/%s", UID_pApplianceURL
 
-#define UID_CONTRACTS_OK 0
-#define UID_CONTRACTS_SERV_ERROR 1
-#define UID_CONTRACTS_NO_TX 2
-
-/**
- * base url of the insight-api appliance
- */
-extern char UID_appliance[256];
+extern char *UID_pApplianceURL;
 
 typedef struct {
     uint8_t version;
@@ -43,7 +36,7 @@ typedef struct {
     uint8_t guarantor[3][20];
 } UID_smart_contract;
 
-// raises a compiler error if the size of the struct is different than expected
+/// trick to raise a compiler error if the size of the struct is different than expected
 typedef char assertion_on_mystruct[(   sizeof(UID_smart_contract)==PROFILE_SIZE   )*2-1 ];
 
 typedef struct

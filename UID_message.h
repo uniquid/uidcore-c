@@ -1,8 +1,8 @@
-/*
- * UID_message.h
+/**
+ * @file   UID_message.h
  *
- *  Created on: 24/oct/2016
- *      Author: M. Palumbi
+ * @date   24/oct/2016
+ * @author M. Palumbi
  */
 
 #ifndef __UID_MESSAGE_H
@@ -21,17 +21,6 @@ typedef struct {
 typedef struct {
     UID_SecurityProfile contract;
 } UID_ServerChannelCtx;
-
-#define UID_MSG_OK 0
-#define UID_MSG_NOT_FOUND 1
-#define UID_MSG_GEN_ALLOC_FAIL 2
-#define UID_MSG_GEN_FAIL 3
-#define UID_MSG_SMALL_BUFFER 4
-#define UID_MSG_JPARSE_ERROR 5
-#define UID_MSG_NO_CONTRACT 6
-#define UID_MSG_INVALID_SENDER 7
-#define UID_MSG_ID_MISMATCH 8
-#define UID_MSG_RPC_ERROR 0x100
 
 // user side functions
 int UID_createChannel(char *destMachine, UID_ClientChannelCtx *ctx);

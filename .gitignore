@@ -5,3 +5,8 @@
 *.[oa]
 *~
 *.so
+/docs
+*.gcda
+*.gcno
+*.gcov
+tests

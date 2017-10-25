@@ -1,8 +1,8 @@
 /*
- * UID_utils.c
+ * @file   UID_utils.c
  *
- *  Created on: 29/lug/2016
- *      Author: M. Palumbi
+ * @date   29/lug/2016
+ * @author M. Palumbi
  */
  
  
@@ -10,9 +10,10 @@
 
 
 
-/* 
- * DESCRIPTION
- * Utilityis functions to support IAM library
+/**
+ * @file   UID_utils.h
+ *
+ * Utilities functions to support IAM library
  * 
  */
  
@@ -26,12 +27,17 @@
 #include "base58.h"
 #include "UID_utils.h"
 
-// buf must be provided at least strlen(str) / 2 bytes long
 /**
- * @param[in]		str  string in hex format to convert
- * @param[out]		buf  binary out buffer
- * @param[in]		len  in input, the size of the out buffer
- * @return				 n of bytes converted
+ * Converts an hex string to a binary buffer
+ *
+ * buf must be provided at least strlen(str) / 2 bytes long
+ *
+ * @param[in]  str string in hex format to convert
+ * @param[out] buf binary out buffer
+ * @param[in]  len size in bytes of the out buffer
+ *
+ * @return         number of bytes converted on success
+ *                 0 if buffer too small
  */
 size_t fromhex(const char *str, uint8_t *buf, size_t len)
 {
@@ -51,6 +57,17 @@ size_t fromhex(const char *str, uint8_t *buf, size_t len)
 	return l;
 }
 
+/**
+ * Converts len bytes from an hex string to a binary buffer
+ *
+ * buf must be provided at least len bytes long
+ *
+ * @param[in]  str string in hex format to be converted
+ * @param[out] buf binary out buffer
+ * @param[in]  len number of bytes to be converted
+ *
+ * @return         address of the output buffer
+ */
 uint8_t *fromnhex(const char *str, uint8_t *buf, size_t len)
 {
 	uint8_t c;
@@ -67,7 +84,17 @@ uint8_t *fromnhex(const char *str, uint8_t *buf, size_t len)
 	return buf;
 }
 
-// buf must be provided at least 2 * l + 1 bytes long
+/**
+ * Converts a binary buffer to a string in hexadecimal ascii representation
+ *
+ * buf must be provided at least 2 * l + 1 bytes long
+ *
+ * @param[in]  bin input binary buffer
+ * @param[in]  l   number of bytes to be converted
+ * @param[out] buf buffer to be filled with the result
+ *
+ * @return         string buffer holding the result
+ */
 char *tohex(const uint8_t *bin, size_t l, char *buf)
 {
 //	char *buf = (char *)malloc(l * 2 + 1);
@@ -80,7 +107,16 @@ char *tohex(const uint8_t *bin, size_t l, char *buf)
 	return buf;
 }
 
-
+/**
+ * Encode a varint (variable-lenght integer)
+ *
+ * out buffer must be at least 5 bytes in size
+ *
+ * @param[in]  len unsigned integer to be converted
+ * @param[out] out buffer to be filled with the varint
+ *
+ * @return         the varint lenght in bytes
+ */
 uint32_t ser_length(uint32_t len, uint8_t *out)
 {
 	if (len < 253) {
@@ -101,6 +137,16 @@ uint32_t ser_length(uint32_t len, uint8_t *out)
 	return 5;
 }
 
+/**
+ * Compute the signature of a bitcoin message
+ *
+ * @param[in]  message     buffer holding the message to be signed
+ * @param[in]  message_len lenght of the message
+ * @param[in]  privkey     32 byte long buffer holding the private key (raw binary)
+ * @param[out] signature   65 bytes long buffer to be filled with the signature
+ *
+ * @return                 0 == no error
+ */
 int cryptoMessageSign(const uint8_t *message, size_t message_len, const uint8_t *privkey, uint8_t *signature)
 {
     SHA256_CTX ctx;
@@ -121,7 +167,17 @@ int cryptoMessageSign(const uint8_t *message, size_t message_len, const uint8_t 
 	return result;
 }
 
-int cryptoMessageVerify(const uint8_t *message, size_t message_len, const char *address_raw, const uint8_t *signature)
+/**
+ * Verify the signature of a bitcoin message
+ *
+ * @param[in] message     buffer holding the message to be verified
+ * @param[in] message_len lenght of the message
+ * @param[in] address     bitcoin address against which verify the signature
+ * @param[in] signature   65 bytes long buffer holding the signature
+ *
+ * @return                0 == signature match
+ */
+int cryptoMessageVerify(const uint8_t *message, size_t message_len, const char *address, const uint8_t *signature)
 {
   bignum256 r, s, e;
   curve_point cp, cp2;
@@ -171,7 +227,7 @@ int cryptoMessageVerify(const uint8_t *message, size_t message_len, const char *
           pubkey[0] = 0x02 | (cp.y.val[0] & 0x01);
   }
   memset(data,0,sizeof(data));
-  base58_decode_check(address_raw, data, sizeof(data));
+  base58_decode_check(address, data, sizeof(data));
   ecdsa_get_address_raw(pubkey, data[0], addr_raw);
   if (memcmp(addr_raw, data, 21) != 0) {
           return 2;

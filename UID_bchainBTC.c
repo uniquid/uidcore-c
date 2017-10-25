@@ -1,8 +1,8 @@
 /*
- * UID_bchainBTC.c
+ * @file   UID_bchainBTC.c
  *
- *  Created on: 5/aug/2016
- *      Author: M. Palumbi
+ * @date   5/aug/2016
+ * @author M. Palumbi
  */
   
  
@@ -10,10 +10,11 @@
 
 
 
-/* 
- * DESCRIPTION
+/**
+ * @file   UID_bchainBTC.h
+ *
  * Block chain functions for BTC using insight-api
- * 
+ *
  */
 
 #include <string.h>
@@ -28,15 +29,25 @@
 #include "UID_fillCache.h"
 #include "yajl/yajl_parse.h"
 
-// double buffer for contract cache
-// UID_getContracts may fill seconb while current is read
+/**
+ * double buffer for contract cache<br>
+ * UID_getContracts may fill seconb while current is read
+ */
 cache_buffer cache0 = { { { {0},{0},{0,{0},0,{{0}}} } }, 0, { { {0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER };
 cache_buffer cache1 = { { { {0},{0},{0,{0},0,{{0}}} } }, 0, { { {0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER };
 
+/**
+ * pointers to the main and secondary buffer
+ */
 cache_buffer *current = &cache0;
 cache_buffer *secondb = &cache1;
 
-char UID_appliance[256] = UID_APPLIANCE;
+/**
+ * Base url of the Insight API appliance
+ * to be used to get and send transactions<br>
+ * Defaults to http://appliance3.uniquid.co:8080/insight-api
+ */
+char *UID_pApplianceURL = UID_APPLIANCE;
 
 #ifdef DUMMY_CACHE
 int  fillDummyCache(void)
@@ -70,7 +81,22 @@ int  fillDummyCache(void)
 }
 #endif
 
-
+/**
+ * Updates the contract's db from the block-chain.
+ *
+ * This function must be called periodically, it may be
+ * inside a dedicated thread or scheduled in other ways.
+ * The db (contracts cache) is organized in a double buffer
+ * structure.
+ * This implementation uses pthread mutex to synchronize
+ * with the functions that acces the data: UID_matchContract()
+ * and UID_matchProvider()
+ *
+ * @param[out] cache return the address of the valid contract's cache buffer
+ *
+ * @return     UID_CONTRACTS_OK         no error <br>
+ *             UID_CONTRACTS_SERV_ERROR error accessing Insight API server
+ */
 int UID_getContracts(cache_buffer **cache)
 {
     CURL *curl;
@@ -99,9 +125,17 @@ int UID_getContracts(cache_buffer **cache)
     return res;
 }
 
-static UID_SecurityProfile goodContract; //TODO warning non reantrant code!!!
+static UID_SecurityProfile goodContract;
 
-// retrives the matching contract from the Contracts Cache
+/**
+ * Retrieves the matching contract from the Contracts Cache
+ *
+ * @param[in] serviceUserAddress user address to search for a matching contract
+ *
+ * @return    pointer to a UID_SecurityProfile structure holding the contract
+ *
+ * @todo non reentrant code!!! the returned structure is allocated statically
+ */
 UID_SecurityProfile *UID_matchContract(BTC_Address serviceUserAddress)
 {
     int i;
@@ -125,9 +159,18 @@ UID_SecurityProfile *UID_matchContract(BTC_Address serviceUserAddress)
     return ret_val;
 }
 
-static UID_ClientProfile clientContract; //TODO warning non reantrant code!!!
+static UID_ClientProfile clientContract;
 
-// retrives the matching contract from the client Cache
+/**
+ * Retrieves the matching contract from the client Cache
+ *
+ * @param[in] name provider name to search for a matching contract
+ *
+ * @return    pointer to a UID_ClientProfile structure holding the contract <br>
+ *            NULL if not found
+ *
+ * @todo non reentrant code!!! the returned structure is allocated statically
+ */
 UID_ClientProfile *UID_matchProvider(char *name)
 {
     int i;
@@ -175,6 +218,18 @@ static size_t send_tx(void *buffer, size_t size, size_t nmemb, send_tx_context *
     }
 }
 
+/**
+ * Sends a signed transaction to the block-chain using
+ * Insight API service
+ *
+ * @param[in]  signed_tx signed transaction as hex string (ascii)
+ * @param[out] ret       string buffer to be filled with the
+ *                       result from Insight  API. The txid if all OK, es: <br>
+ *                       {"txid":"3cd0f12a587945c75edde69e8989260fb4126b6ae803cb26de751e62a47137be"}
+ * @param[in]  size      size of ret buffer
+ *
+ * @return     0 == no error
+ */
 int UID_sendTx(char *signed_tx, char *ret, size_t size)
 {
     CURL *curl;
