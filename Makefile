@@ -54,7 +54,7 @@ $(LIB-TREZOR):
 
 
 libuidcore-c.so: $(SRCS) $(HEADERS) Makefile $(LIB-YAJL) $(LIB-TREZOR)
-	$(CC) $(CFLAGS) -fPIC -shared $(SRCS) $(LIBS) -o libuidcore-c.so
+	$(CC) $(CFLAGS) -fPIC -shared $(SRCS) -Wl,-rpath='$$ORIGIN' $(LIBS) -o libuidcore-c.so
 
 tests: tests.c libuidcore-c.so
 	$(CC) $(CFLAGS) tests.c $(SRCS) $(LIBS) -Wl,-rpath=$(dir $(LIB-TREZOR)) -lcurl -lcunit -ftest-coverage -fprofile-arcs -o tests
