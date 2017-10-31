@@ -332,8 +332,9 @@ static int check_contract(CURL *curl, cache_buffer *secondb, char * tx, char *ad
     char url[256];
 
     snprintf(url, sizeof(url), UID_GETCONTRACT, tx);
-    if(CURLE_OK != curlget(curl, url, curlbuffer, sizeof(curlbuffer)))
+    if(CURLE_OK != curlget(curl, url, curlbuffer, sizeof(curlbuffer))) {
         return UID_CONTRACTS_SERV_ERROR;
+    }
 
 	jnode = yajl_tree_parse(curlbuffer, NULL, 0);
 	if (NULL == jnode)
@@ -402,8 +403,9 @@ static int check_address(CURL *curl, cache_buffer *secondb, char *address, int t
 
     printf("==>> %s\n", address);
     snprintf(url, sizeof(url), UID_GETTXS, address);
-    if(CURLE_OK != curlget(curl, url, curlbuffer, sizeof(curlbuffer)))
+    if(CURLE_OK != curlget(curl, url, curlbuffer, sizeof(curlbuffer))) {
         return UID_CONTRACTS_SERV_ERROR;
+    }
 
 	jnode = yajl_tree_parse(curlbuffer, NULL, 0);
 	if (NULL == jnode)
@@ -457,8 +459,9 @@ static int get_providers_name(CURL *curl, cache_buffer *secondb)
     size_t j;
     char *s;
 
-    if(CURLE_OK != curlget(curl, UID_pRegistryURL, curlbuffer, sizeof(curlbuffer)))
+    if(CURLE_OK != curlget(curl, UID_pRegistryURL, curlbuffer, sizeof(curlbuffer))) {
         return 1;
+    }
 
 	jnode = yajl_tree_parse(curlbuffer, NULL, 0);
 	if (NULL == jnode)
