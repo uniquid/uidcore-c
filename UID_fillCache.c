@@ -301,7 +301,7 @@ static int parse_user(yajl_val jnode, UID_ClientProfile *cp)
     return 1;
 }
 
-static char curlbuffer[100000];
+static char curlbuffer[UID_CURL_BUFFER_SIZE];
 
 #define USER 0
 #define PROVIDER 1

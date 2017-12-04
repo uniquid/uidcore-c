@@ -13,6 +13,9 @@
 #include <curl/curl.h>
 #include "UID_bchainBTC.h"
 
+#ifndef UID_CURL_BUFFER_SIZE
+    #define UID_CURL_BUFFER_SIZE 100000
+#endif // #ifndef UID_CURL_BUFFER_SIZE
 #define UID_REGISTRY "http://appliance4.uniquid.co:8080/registry"
 
 extern int UID_confirmations;
