@@ -102,6 +102,7 @@ int UID_getContracts(cache_buffer **cache)
     CURL *curl;
     int res;
 
+    *cache = current; // set *cahe to current in case of error
     curl = curl_easy_init();
 
     pthread_mutex_lock(&(secondb->in_use));  // lock the resource
