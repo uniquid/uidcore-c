@@ -10,7 +10,7 @@
 #ifndef __UID_FILLCACHE_H
 #define __UID_FILLCACHE_H
 
-#include <curl/curl.h>
+#include "UID_httpal.h"
 #include "UID_bchainBTC.h"
 
 #ifndef UID_CURL_BUFFER_SIZE

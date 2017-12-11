@@ -25,59 +25,11 @@
 #include "UID_log.h"
 
 
-typedef struct  {
-    size_t size;
-    char  *buffer;
-} curl_context;
-
 /**
  * Base url of the Name Registry appliance<br>
  * Defaults to http://appliance4.uniquid.co:8080/registry
  */
 char *UID_pRegistryURL = UID_REGISTRY;
-
-// callback from curl_easy_perform
-static size_t curl_callback(void *buffer, size_t size, size_t nmemb, curl_context *ctx)
-{
-    size_t l = size*nmemb;
-
-    if (l < ctx->size) {
-        memcpy(ctx->buffer, buffer, l);
-        ctx->buffer += l;
-        *ctx->buffer = 0;
-        ctx->size -= l;
-        return l;
-    }
-    else {
-        return -1;
-    }
-}
-
-/**
- * Get data from url
- *
- * @param[in]  curl   pointer to an initialized CURL struct
- * @param[in]  url    url to contact
- * @param[out] buffer pointer to buffer to be filled
- * @param[in]  size   size of buffer
- *
- * @return     CURLE_OK no error (see curl documentation)
- */
-CURLcode curlget(CURL *curl, char *url, char *buffer, size_t size)
-{
-    curl_context ctx;
-
-    ctx.buffer = buffer;
-    ctx.size = size;
-
-    /* Define our callback to get called when there's data to be written */ 
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_callback);
-    /* Set a pointer to our struct to pass to the callback */ 
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ctx);
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-
-    return curl_easy_perform(curl);
-}
 
 /**
  * check the "n" vout to be a valid imprinting
@@ -331,7 +283,7 @@ static int check_contract(CURL *curl, cache_buffer *secondb, char * tx, char *ad
     char url[256];
 
     snprintf(url, sizeof(url), UID_GETCONTRACT, tx);
-    if(CURLE_OK != curlget(curl, url, curlbuffer, sizeof(curlbuffer))) {
+    if(CURLE_OK != UID_httpget(curl, url, curlbuffer, sizeof(curlbuffer))) {
         return UID_CONTRACTS_SERV_ERROR;
     }
 
@@ -402,7 +354,7 @@ static int check_address(CURL *curl, cache_buffer *secondb, char *address, int t
 
     UID_log(UID_LOG_INFO,"==>> %s\n", address);
     snprintf(url, sizeof(url), UID_GETTXS, address);
-    if(CURLE_OK != curlget(curl, url, curlbuffer, sizeof(curlbuffer))) {
+    if(CURLE_OK != UID_httpget(curl, url, curlbuffer, sizeof(curlbuffer))) {
         return UID_CONTRACTS_SERV_ERROR;
     }
 
@@ -458,7 +410,7 @@ static int get_providers_name(CURL *curl, cache_buffer *secondb)
     size_t j;
     char *s;
 
-    if(CURLE_OK != curlget(curl, UID_pRegistryURL, curlbuffer, sizeof(curlbuffer))) {
+    if(CURLE_OK != UID_httpget(curl, UID_pRegistryURL, curlbuffer, sizeof(curlbuffer))) {
         return 1;
     }
 
