@@ -14,6 +14,7 @@
 
 #include <string.h>
 #include "UID_httpal.h"
+#include "UID_log.h"
 
 typedef struct  {
     size_t size;
@@ -25,6 +26,7 @@ static size_t curl_callback(char *buffer, size_t size, size_t nmemb, void *ctx)
 {
     size_t l = size*nmemb;
 
+    UID_log(UID_LOG_DEBUG,"httpget callback\n");
     if (l < ((curl_context *)ctx)->size) {
         memcpy(((curl_context *)ctx)->buffer, buffer, l);
         ((curl_context *)ctx)->buffer += l;
@@ -54,13 +56,21 @@ CURLcode UID_httpget(CURL *curl, char *url, char *buffer, size_t size)
     ctx.buffer = buffer;
     ctx.size = size;
 
+    UID_log(UID_LOG_DEBUG,"enter httpget curl=%p\n", curl);
+    CURLcode retval = curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 45L);
+    UID_log(UID_LOG_DEBUG,"setopt returns %d\n", retval);
+    retval = curl_easy_setopt(curl, CURLOPT_TIMEOUT, 45L);
+    UID_log(UID_LOG_DEBUG,"setopt returns %d\n", retval);
     /* Define our callback to get called when there's data to be written */
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_callback);
     /* Set a pointer to our struct to pass to the callback */
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ctx);
     curl_easy_setopt(curl, CURLOPT_URL, url);
 
-    return curl_easy_perform(curl);
+    UID_log(UID_LOG_DEBUG,"calling easy_perform()\n");
+    retval = curl_easy_perform(curl);
+    UID_log(UID_LOG_DEBUG,"easy_perform() returns %d\n",retval);
+    return retval;
 }
 
 typedef struct {
