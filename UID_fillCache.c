@@ -22,9 +22,8 @@
 #include "UID_utils.h"
 #include "UID_identity.h"
 #include "UID_dispatch.h"
+#include "UID_log.h"
 
-/// disable debug output
-#define printf(...)
 
 typedef struct  {
     size_t size;
@@ -92,10 +91,10 @@ static int check_vout(int n, yajl_val vout, UID_SecurityProfile *sp)
     // check validity (vout n not spent)
     const char * path[] = { "spentIndex", (const char *) 0, (const char *) 0 };
     if (NULL != yajl_tree_get(vout->u.array.values[n], path, yajl_t_number)) {
-        printf("        ### spent!!\n");
+        UID_log(UID_LOG_INFO,"        ### spent!!\n");
         return 0;  // vout spent
     }
-    printf("        ### not spent!!\n");
+    UID_log(UID_LOG_INFO,"        ### not spent!!\n");
 
     // get the addresses of the first vout (array)
     path[0] = "scriptPubKey";
@@ -113,7 +112,7 @@ static int check_vout(int n, yajl_val vout, UID_SecurityProfile *sp)
     if (0 != strcmp(s, sp->serviceProviderAddress)) {
         return 0;
     }
-    printf("        %s %s\n", s, sp->serviceProviderAddress);
+    UID_log(UID_LOG_INFO,"        %s %s\n", s, sp->serviceProviderAddress);
     return 1;
 }
 
@@ -156,7 +155,7 @@ static int parse_imprinting(yajl_val jnode, UID_SecurityProfile *sp)
     if ( NULL == s ) {
         return 0;
     }
-    printf("        user:  %s\n", s);
+    UID_log(UID_LOG_INFO,"        user:  %s\n", s);
     strncpy(sp->serviceUserAddress, s, sizeof(sp->serviceUserAddress));
     memset(&(sp->profile), 0x00, sizeof(sp->profile));
     memset(&(sp->profile.bit_mask), 0xFF, UID_RPC_RESERVED/8);
@@ -191,7 +190,7 @@ static int parse_provider(yajl_val jnode, UID_SecurityProfile *sp)
     if (0 != strcmp(s, sp->serviceProviderAddress)) {
         return 0;
     }
-    printf("        %s %s\n", s, sp->serviceProviderAddress);
+    UID_log(UID_LOG_INFO,"        %s %s\n", s, sp->serviceProviderAddress);
     // get the vout array
     path[0] = "vout";
     vout = yajl_tree_get(jnode, path, yajl_t_array);
@@ -201,10 +200,10 @@ static int parse_provider(yajl_val jnode, UID_SecurityProfile *sp)
     // check validity (vout n 2 not spent)
     path[0] = "spentIndex";
     if (NULL != yajl_tree_get(vout->u.array.values[2], path, yajl_t_number)) {
-        printf("        ### spent!!\n");
+        UID_log(UID_LOG_INFO,"        ### spent!!\n");
         return 0;  // vout spent
     }
-    printf("        ### not spent!!\n");
+    UID_log(UID_LOG_INFO,"        ### not spent!!\n");
     // get the addresses of the first vout (array)
     path[0] = "scriptPubKey";
     path[1] = "addresses";
@@ -217,7 +216,7 @@ static int parse_provider(yajl_val jnode, UID_SecurityProfile *sp)
     if (NULL == s) {
         return 0;
     }
-    printf("        user:  %s\n", s);
+    UID_log(UID_LOG_INFO,"        user:  %s\n", s);
     strncpy(sp->serviceUserAddress, s, sizeof(sp->serviceUserAddress));
     // get the OP_RETURN (smart contract)
     path[0] = "scriptPubKey";
@@ -226,7 +225,7 @@ static int parse_provider(yajl_val jnode, UID_SecurityProfile *sp)
     if ((NULL == s) || (166 != strlen(s))) {
         return 0;
     }
-    printf("        <%s>\n", s + 6);
+    UID_log(UID_LOG_INFO,"        <%s>\n", s + 6);
     fromhex(s + 6, (uint8_t *)&(sp->profile), sizeof(sp->profile));
 
     return 1;
@@ -259,12 +258,12 @@ static int parse_user(yajl_val jnode, UID_ClientProfile *cp)
     if (NULL == s) {
         return 0;
     }
-    printf("        user:  %s\n", s);
+    UID_log(UID_LOG_INFO,"        user:  %s\n", s);
     // check if it match the address we are looking for
     if (0 != strcmp(s, cp->serviceUserAddress)) {
         return 0;
     }
-    printf("        %s %s\n", s, cp->serviceUserAddress);
+    UID_log(UID_LOG_INFO,"        %s %s\n", s, cp->serviceUserAddress);
     // get the OP_RETURN (smart contract)
     path[0] = "scriptPubKey";
     path[1] = "hex";
@@ -272,15 +271,15 @@ static int parse_user(yajl_val jnode, UID_ClientProfile *cp)
     if ((NULL == s) || (166 != strlen(s))) {
         return 0;
     }
-    printf("        <%s>\n", s + 6);
+    UID_log(UID_LOG_INFO,"        <%s>\n", s + 6);
     // check validity (vout n 2 not spent)
     path[0] = "spentIndex";
     path[1] = NULL;
     if (NULL != yajl_tree_get(vout->u.array.values[2], path, yajl_t_number)) {
-        printf("        ### spent!!\n");
+        UID_log(UID_LOG_INFO,"        ### spent!!\n");
         return 0;  // vout spent
     }
-    printf("        ### not spent!!\n");
+    UID_log(UID_LOG_INFO,"        ### not spent!!\n");
 
     // get the vin array
     path[0] =  "vin";
@@ -346,7 +345,7 @@ static int check_contract(CURL *curl, cache_buffer *secondb, char * tx, char *ad
         yajl_tree_free(jnode);
         return UID_CONTRACTS_SERV_ERROR;
     }
-    printf("    confirmations: %lld\n", YAJL_GET_INTEGER(v));
+    UID_log(UID_LOG_INFO,"    confirmations: %lld\n", YAJL_GET_INTEGER(v));
     if(UID_confirmations <= YAJL_GET_INTEGER(v)) {
 
         if (type == IMPRINTING) {
@@ -401,7 +400,7 @@ static int check_address(CURL *curl, cache_buffer *secondb, char *address, int t
     char url[256];
     yajl_val jnode, transactions;//, v;
 
-    printf("==>> %s\n", address);
+    UID_log(UID_LOG_INFO,"==>> %s\n", address);
     snprintf(url, sizeof(url), UID_GETTXS, address);
     if(CURLE_OK != curlget(curl, url, curlbuffer, sizeof(curlbuffer))) {
         return UID_CONTRACTS_SERV_ERROR;
@@ -416,19 +415,19 @@ static int check_address(CURL *curl, cache_buffer *secondb, char *address, int t
     if (NULL != transactions) {
         res = UID_CONTRACTS_NO_TX;
         if (type == IMPRINTING) {
-            printf("    @@ check for imprinting @@\n");
+            UID_log(UID_LOG_INFO,"    @@ check for imprinting @@\n");
             i = transactions->u.array.len;
             if (i > 0) {
                 // first tx (last on the array)
                 char *str = YAJL_GET_STRING(transactions->u.array.values[i-1]);
-                printf("    ---> %s ---\n", str);
+                UID_log(UID_LOG_INFO,"    ---> %s ---\n", str);
                 res = check_contract(curl, secondb, str, address, type);
             }
         }
         else {
             for (i = 0; i < transactions->u.array.len; i++) {
                 char *str = YAJL_GET_STRING(transactions->u.array.values[i]);
-                printf("    ---> %s ---\n", str);
+                UID_log(UID_LOG_INFO,"    ---> %s ---\n", str);
                 res = check_contract(curl, secondb, str, address, type);
                 if (res != UID_CONTRACTS_OK)
                     break;
@@ -437,7 +436,7 @@ static int check_address(CURL *curl, cache_buffer *secondb, char *address, int t
     }
     else {
         res = UID_CONTRACTS_SERV_ERROR;
-        printf("    parse error, no transactions field\n");
+        UID_log(UID_LOG_INFO,"    parse error, no transactions field\n");
     }
 
     yajl_tree_free(jnode);
@@ -516,7 +515,7 @@ int UID_fillCache(CURL *curl, cache_buffer *secondb)
     (secondb->validCacheEntries) = 0; // void the cache
     (secondb->validClientEntries) = 0; // void the cache
 
-    printf("================================================================\n");
+    UID_log(UID_LOG_INFO,"================================================================\n");
     // look for contract on the first external addresses
     path.p_u = 0;  //provider
     path.account = 0;
@@ -526,7 +525,7 @@ int UID_fillCache(CURL *curl, cache_buffer *secondb)
     if ( UID_CONTRACTS_SERV_ERROR == res )
         return UID_CONTRACTS_SERV_ERROR;
 
-    printf("----------------------------------------------------------------\n");
+    UID_log(UID_LOG_INFO,"----------------------------------------------------------------\n");
     // look for contracts on all internal addresses
     path.p_u = 0;  //provider
     path.account = 1;
@@ -540,7 +539,7 @@ int UID_fillCache(CURL *curl, cache_buffer *secondb)
         else
             gap = 0;
     }
-    printf("----------------------------------------------------------------\n");
+    UID_log(UID_LOG_INFO,"----------------------------------------------------------------\n");
     // look for imprinting on the first external addresses
     if (0 == secondb->validCacheEntries) {
         path.p_u = 0;  //provider
@@ -551,7 +550,7 @@ int UID_fillCache(CURL *curl, cache_buffer *secondb)
         if ( UID_CONTRACTS_SERV_ERROR == res )
             return UID_CONTRACTS_SERV_ERROR;
     }
-    printf("----------------------------------------------------------------\n");
+    UID_log(UID_LOG_INFO,"----------------------------------------------------------------\n");
     path.p_u = 1;  //user
     path.account = 0;
     for (path.n = 0, gap = 0; gap < 5; path.n++) {
