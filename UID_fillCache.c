@@ -409,36 +409,39 @@ static int get_providers_name(CURL *curl, cache_buffer *secondb)
     int i;
     size_t j;
     char *s;
+    char registryurl[256];
 
-    if(CURLE_OK != UID_httpget(curl, UID_pRegistryURL, curlbuffer, sizeof(curlbuffer))) {
-        return 1;
-    }
-
-	jnode = yajl_tree_parse(curlbuffer, NULL, 0);
-	if (NULL == jnode)
-        return 1;
-
-    if (!YAJL_IS_ARRAY(jnode)) {
-        yajl_tree_free(jnode);
-        return 1;
-    }
-
-    const char * path[] = { NULL, (const char *) 0 };
     for (i=0; i<secondb->validClientEntries;i++) {
-        for (j=0; j<jnode->u.array.len; j++) {
-            path[0] = "provider_address";
-            v = yajl_tree_get(jnode->u.array.values[j], path, yajl_t_string);
-            s = YAJL_GET_STRING(v);
-            if (!strcmp(s, secondb->clientCache[i].serviceProviderAddress)) {
-                path[0] = "provider_name";
+        snprintf(registryurl, sizeof(registryurl),"%s?providerAddress=%s", UID_pRegistryURL,secondb->clientCache[i].serviceProviderAddress);
+        if(CURLE_OK != UID_httpget(curl, registryurl, curlbuffer, sizeof(curlbuffer))) {
+            continue;
+        }
+
+        jnode = yajl_tree_parse(curlbuffer, NULL, 0);
+        UID_log(UID_LOG_DEBUG, "url=%s jnode=%p\n", registryurl, jnode);
+        if (NULL == jnode)
+            continue;
+
+        if (!YAJL_IS_ARRAY(jnode)) {
+            yajl_tree_free(jnode);
+            continue;
+        }
+
+        const char * path[] = { NULL, (const char *) 0 };
+            for (j=0; j<jnode->u.array.len; j++) {
+                path[0] = "provider_address";
                 v = yajl_tree_get(jnode->u.array.values[j], path, yajl_t_string);
                 s = YAJL_GET_STRING(v);
-                strncpy(secondb->clientCache[i].serviceProviderName, s, sizeof(secondb->clientCache[i].serviceProviderName));
+                if (!strcmp(s, secondb->clientCache[i].serviceProviderAddress)) {
+                    path[0] = "provider_name";
+                    v = yajl_tree_get(jnode->u.array.values[j], path, yajl_t_string);
+                    s = YAJL_GET_STRING(v);
+                    strncpy(secondb->clientCache[i].serviceProviderName, s, sizeof(secondb->clientCache[i].serviceProviderName));
+                }
             }
-        }
-    }
 
-    yajl_tree_free(jnode);
+        yajl_tree_free(jnode);
+    }
     return 0;
 }
 
