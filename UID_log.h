@@ -25,6 +25,9 @@ void UID_logImplement( char *fmt, ... );
 #define UID_log(level, ...) UID_log_(level, __VA_ARGS__)
 #define UID_log_(level, ...) UID_log ##level(__VA_ARGS__)
 
+#ifndef UID_LOGLEVEL
+    #define UID_LOGLEVEL 0
+#endif
 
 #if UID_LOGLEVEL >= 1
     #define UID_log1(...) UID_logImplement(__VA_ARGS__)
