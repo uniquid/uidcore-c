@@ -13,6 +13,7 @@
  */
 
 #include <string.h>
+#include <curl/curl.h>
 #include "UID_httpal.h"
 #include "UID_log.h"
 
@@ -42,14 +43,14 @@ static size_t curl_callback(char *buffer, size_t size, size_t nmemb, void *ctx)
 /**
  * Get data from url
  *
- * @param[in]  curl   pointer to an initialized CURL struct
+ * @param[in]  curl   pointer to an initialized UID_HttpOBJ struct
  * @param[in]  url    url to contact
  * @param[out] buffer pointer to buffer to be filled
  * @param[in]  size   size of buffer
  *
- * @return     CURLE_OK no error (see curl documentation)
+ * @return     UID_HTTP_OK no error (see curl documentation)
  */
-CURLcode UID_httpget(CURL *curl, char *url, char *buffer, size_t size)
+int UID_httpget(UID_HttpOBJ *curl, char *url, char *buffer, size_t size)
 {
     curl_context ctx;
 
@@ -70,7 +71,7 @@ CURLcode UID_httpget(CURL *curl, char *url, char *buffer, size_t size)
     UID_log(UID_LOG_DEBUG,"calling easy_perform()\n");
     retval = curl_easy_perform(curl);
     UID_log(UID_LOG_DEBUG,"easy_perform() returns %d\n",retval);
-    return retval;
+    return (retval == CURLE_OK ? UID_HTTP_OK : UID_HTTP_GET_ERROR);
 }
 
 typedef struct {
@@ -98,7 +99,7 @@ static size_t send_tx(char *buffer, size_t size, size_t nmemb, void *ctx)
     }
 }
 
-CURLcode UID_httppost(CURL *curl, char *url, char *postdata, char *ret, size_t size)
+int UID_httppost(UID_HttpOBJ *curl, char *url, char *postdata, char *ret, size_t size)
 {
     send_tx_context ctx;
 
@@ -113,5 +114,16 @@ CURLcode UID_httppost(CURL *curl, char *url, char *postdata, char *ret, size_t s
     /* setup post data */
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postdata);
     /* perform the request */
-    return curl_easy_perform(curl);
+    return (CURLE_OK == curl_easy_perform(curl) ? UID_HTTP_OK : UID_HTTP_POST_ERROR);
+}
+
+UID_HttpOBJ *UID_httpinit()
+{
+    return  curl_easy_init();
+}
+
+int UID_httpcleanup(UID_HttpOBJ *curl)
+{
+    curl_easy_cleanup(curl);
+    return UID_HTTP_OK;
 }

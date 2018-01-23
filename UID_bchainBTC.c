@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "UID_httpal.h"
 #include "sha2.h"
 #include "UID_utils.h"
@@ -99,11 +100,11 @@ int  fillDummyCache(void)
  */
 int UID_getContracts(cache_buffer **cache)
 {
-    CURL *curl;
+    UID_HttpOBJ *curl;
     int res;
 
     *cache = current; // set *cahe to current in case of error
-    curl = curl_easy_init();
+    curl = UID_httpinit();
 
     pthread_mutex_lock(&(secondb->in_use));  // lock the resource
 
@@ -121,7 +122,7 @@ int UID_getContracts(cache_buffer **cache)
     }
 
     /* always cleanup */ 
-    curl_easy_cleanup(curl);
+    UID_httpcleanup(curl);
     
     return res;
 }
@@ -204,21 +205,21 @@ UID_ClientProfile *UID_matchProvider(char *name)
  *                       {"txid":"3cd0f12a587945c75edde69e8989260fb4126b6ae803cb26de751e62a47137be"}
  * @param[in]  size      size of ret buffer
  *
- * @return     0 == no error
+ * @return     UID_HTTP_OK == no error
  */
 int UID_sendTx(char *signed_tx, char *ret, size_t size)
 {
-    CURL *curl;
-    CURLcode res;
+    UID_HttpOBJ *curl;
+    int res;
     char url[256];
 
-    curl = curl_easy_init();
+    curl = UID_httpinit();
 
     snprintf(url, sizeof(url), UID_SENDTX);
     res = UID_httppost(curl, url, signed_tx, ret, size);
 
     /* always cleanup */
-    curl_easy_cleanup(curl);
+    UID_httpcleanup(curl);
 
     return res;
 }

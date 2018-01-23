@@ -317,7 +317,7 @@ void UID_signAndSendContract(char *param, char *result, size_t size)
     UID_buildSignedHex(rawtx, rawtx_len, scriptsig, transaction, sizeof(jsontransaction)-TX_OFFSET);
     strcpy(result, "6 - ");
     res = UID_sendTx(jsontransaction, result + 4, size - 4);
-    if (0 == res) {
+    if (UID_HTTP_OK == res) {
         yajl_tree_free(jnode);
         jnode = yajl_tree_parse(result + 4, errbuf, sizeof(errbuf));
         if ( NULL != jnode) {

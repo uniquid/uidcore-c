@@ -268,7 +268,7 @@ int UID_confirmations = 1;
  * check the tx for a valid contract of type "type"
  * if found add it to the cache buffer
  *
- * @param[in]  curl    pointer to an initialized CURL struct
+ * @param[in]  curl    pointer to an initialized UID_HttpOBJ struct
  * @param[out] secondb pointer to the contracts cache buffer
  *                     to be filled
  * @param[in]  tx      transaction to check
@@ -277,13 +277,13 @@ int UID_confirmations = 1;
  * @return     UID_CONTRACTS_OK no error <br>
  *             UID_CONTRACTS_SERV_ERROR error contacting the server
  */
-static int check_contract(CURL *curl, cache_buffer *secondb, char * tx, char *address, int type)
+static int check_contract(UID_HttpOBJ *curl, cache_buffer *secondb, char * tx, char *address, int type)
 {
     yajl_val jnode, v;
     char url[256];
 
     snprintf(url, sizeof(url), UID_GETCONTRACT, tx);
-    if(CURLE_OK != UID_httpget(curl, url, curlbuffer, sizeof(curlbuffer))) {
+    if(UID_HTTP_OK != UID_httpget(curl, url, curlbuffer, sizeof(curlbuffer))) {
         return UID_CONTRACTS_SERV_ERROR;
     }
 
@@ -336,7 +336,7 @@ static int check_contract(CURL *curl, cache_buffer *secondb, char * tx, char *ad
  * if it received transactions. If some TX exists for the address,
  * call check_contract() to look for valid contracts
  *
- * @param[in]  curl    pointer to an initialized CURL struct
+ * @param[in]  curl    pointer to an initialized UID_HttpOBJ struct
  * @param[out] secondb pointer to the contracts cache buffer
  *                     to be filled
  * @param[in]  type    type of contract to look for: PROVIDER IMPRINTING USER
@@ -345,7 +345,7 @@ static int check_contract(CURL *curl, cache_buffer *secondb, char * tx, char *ad
  *             UID_CONTRACTS_NO_TX no transactions for the given address <br>
  *             UID_CONTRACTS_SERV_ERROR error contacting the server
  */
-static int check_address(CURL *curl, cache_buffer *secondb, char *address, int type)
+static int check_address(UID_HttpOBJ *curl, cache_buffer *secondb, char *address, int type)
 {
     int res;
     unsigned i;
@@ -354,7 +354,7 @@ static int check_address(CURL *curl, cache_buffer *secondb, char *address, int t
 
     UID_log(UID_LOG_INFO,"==>> %s\n", address);
     snprintf(url, sizeof(url), UID_GETTXS, address);
-    if(CURLE_OK != UID_httpget(curl, url, curlbuffer, sizeof(curlbuffer))) {
+    if(UID_HTTP_OK != UID_httpget(curl, url, curlbuffer, sizeof(curlbuffer))) {
         return UID_CONTRACTS_SERV_ERROR;
     }
 
@@ -399,11 +399,11 @@ static int check_address(CURL *curl, cache_buffer *secondb, char *address, int t
 /**
  * Gets the providers name of the contracts from the Registry
  *
- * @param[in]  curl    pointer to an initialized CURL struct
+ * @param[in]  curl    pointer to an initialized UID_HttpOBJ struct
  * @param[out] secondb pointer to the contracts cache buffer
  *                     to be filled with the names
  */
-static int get_providers_name(CURL *curl, cache_buffer *secondb)
+static int get_providers_name(UID_HttpOBJ *curl, cache_buffer *secondb)
 {
     yajl_val jnode, v;
     int i;
@@ -413,7 +413,7 @@ static int get_providers_name(CURL *curl, cache_buffer *secondb)
 
     for (i=0; i<secondb->validClientEntries;i++) {
         snprintf(registryurl, sizeof(registryurl),"%s?providerAddress=%s", UID_pRegistryURL,secondb->clientCache[i].serviceProviderAddress);
-        if(CURLE_OK != UID_httpget(curl, registryurl, curlbuffer, sizeof(curlbuffer))) {
+        if(UID_HTTP_OK != UID_httpget(curl, registryurl, curlbuffer, sizeof(curlbuffer))) {
             continue;
         }
 
@@ -452,7 +452,7 @@ static int get_providers_name(CURL *curl, cache_buffer *secondb)
  * - provider contracts <br>
  * - user contracts <br>
  *
- * @param[in]  curl    pointer to an initialized CURL struct
+ * @param[in]  curl    pointer to an initialized UID_HttpOBJ struct
  * @param[out] secondb pointer to the contracts cache buffer
  *                     to be filled
  *
@@ -461,7 +461,7 @@ static int get_providers_name(CURL *curl, cache_buffer *secondb)
  *
  * @todo handle errors from get_providers_name
  */
-int UID_fillCache(CURL *curl, cache_buffer *secondb)
+int UID_fillCache(UID_HttpOBJ *curl, cache_buffer *secondb)
 {
     int res, gap;
     char b58addr[36];

@@ -21,6 +21,6 @@
 extern int UID_confirmations;
 extern char *UID_pRegistryURL;
 
-int UID_fillCache(CURL *curl, cache_buffer *secondb);
+int UID_fillCache(UID_HttpOBJ *curl, cache_buffer *secondb);
 
 #endif // __UID_FILLCACHE_H
