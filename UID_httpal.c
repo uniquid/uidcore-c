@@ -5,11 +5,14 @@
  * @author M. Palumbi
  */
 
+
 /**
  * @file UID_httpal.h
  *
- * http access abstraction layer
- *
+ * http access abstraction layer.<br>
+ * Here is given an implementation using the curl library.
+ * The user of uidcore-c library must give its own implementation
+ * if lib curl is not available on the target system.
  */
 
 #include <string.h>
@@ -48,7 +51,7 @@ static size_t curl_callback(char *buffer, size_t size, size_t nmemb, void *ctx)
  * @param[out] buffer pointer to buffer to be filled
  * @param[in]  size   size of buffer
  *
- * @return     UID_HTTP_OK no error (see curl documentation)
+ * @return     UID_HTTP_OK no error
  */
 int UID_httpget(UID_HttpOBJ *curl, char *url, char *buffer, size_t size)
 {
@@ -99,6 +102,19 @@ static size_t send_tx(char *buffer, size_t size, size_t nmemb, void *ctx)
     }
 }
 
+/**
+ * Post data to url
+ * with the following format<br>
+ * Content-Type: application/x-www-form-urlencoded
+ *
+ * @param[in]  curl   pointer to an initialized UID_HttpOBJ struct
+ * @param[in]  url    url to contact
+ * @param[in]  postdata    data to be posted
+ * @param[out] ret    pointer to the buffer to be filled
+ * @param[in]  size   size of buffer
+ *
+ * @return     UID_HTTP_OK no error
+ */
 int UID_httppost(UID_HttpOBJ *curl, char *url, char *postdata, char *ret, size_t size)
 {
     send_tx_context ctx;

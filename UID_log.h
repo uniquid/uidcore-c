@@ -1,7 +1,7 @@
 /**
- * @file   UID_httpal.h
+ * @file   UID_log.h
  *
- * @date   1/dec/2017
+ * @date   11/dec/2017
  * @author M. Palumbi
  */
 

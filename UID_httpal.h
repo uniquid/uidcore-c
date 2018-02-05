@@ -10,8 +10,6 @@
 
 #include "UID_globals.h"
 typedef void  UID_HttpOBJ;
-//typedef int CURLcode;
-//#define CURLE_OK UID_OK
 
 
 int UID_httpget(UID_HttpOBJ *curl, char *url, char *buffer, size_t size);
