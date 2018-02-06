@@ -9,7 +9,7 @@
 #ifndef __UID_GLOBALS_H
 #define __UID_GLOBALS_H
 
-
+#include <stdint.h>
 
 #define BTC_ADDRESS_MIN_LENGHT 26
 #define BTC_ADDRESS_MAX_LENGHT 35
@@ -50,6 +50,11 @@ typedef char BTC_Signature[BTC_SIGNATURE_LENGHT+1]; //Private key
 #define UID_TX_INDEX_OUT_RANGE		16
 #define UID_TX_NOMEM				17
 #define UID_TX_PARSE_ERROR			18
+
+#define UID_HTTP_OK					UID_OK
+#define UID_HTTP_GET_ERROR  		19
+#define UID_HTTP_POST_ERROR  		20
+#define UID_HTTP_CLEANUP_ERROR 		21
 
 typedef struct
 {

@@ -10,7 +10,7 @@
 #ifndef __UID_FILLCACHE_H
 #define __UID_FILLCACHE_H
 
-#include <curl/curl.h>
+#include "UID_httpal.h"
 #include "UID_bchainBTC.h"
 
 #ifndef UID_CURL_BUFFER_SIZE
@@ -21,6 +21,6 @@
 extern int UID_confirmations;
 extern char *UID_pRegistryURL;
 
-int UID_fillCache(CURL *curl, cache_buffer *secondb);
+int UID_fillCache(UID_HttpOBJ *curl, cache_buffer *secondb);
 
 #endif // __UID_FILLCACHE_H

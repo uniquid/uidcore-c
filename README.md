@@ -8,14 +8,15 @@ it depends on the following libraries:
 
 - __trezor_crypto__ (block-chain related cryptography)
 - __yajl__ (JSON parser)
-- __curl__ (block-chain access)
+- __curl__ (block-chain access) - the library user can do its own implementation of UID_httpal.c if unable to use curl
 - __pthread__ (for the synchronization mutex)
 
 There is no use of malloc() in the library code, though
 yajl and curl use malloc in their implementations.<br>
 yajl offers a way to implement your own malloc().
 
-It is planned to delete dependencies from __yajl__ and __curl__ library
+It is planned to delete dependencies from __yajl__<br>
+cmake is needed to build __yajl__ under Linux
 
 ### How to build ###
 

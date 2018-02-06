@@ -20,7 +20,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <curl/curl.h>
+#include <stdio.h>
+#include "UID_httpal.h"
 #include "sha2.h"
 #include "UID_utils.h"
 #include "UID_globals.h"
@@ -99,11 +100,11 @@ int  fillDummyCache(void)
  */
 int UID_getContracts(cache_buffer **cache)
 {
-    CURL *curl;
+    UID_HttpOBJ *curl;
     int res;
 
     *cache = current; // set *cahe to current in case of error
-    curl = curl_easy_init();
+    curl = UID_httpinit();
 
     pthread_mutex_lock(&(secondb->in_use));  // lock the resource
 
@@ -121,7 +122,7 @@ int UID_getContracts(cache_buffer **cache)
     }
 
     /* always cleanup */ 
-    curl_easy_cleanup(curl);
+    UID_httpcleanup(curl);
     
     return res;
 }
@@ -194,31 +195,6 @@ UID_ClientProfile *UID_matchProvider(char *name)
     return ret_val;
 }
 
-typedef struct {
-    size_t buffer_size;
-    char  *buffer;
-} send_tx_context;
-
-/**
- * callback from curl_easy_perform
- * returns the answer for the send from insight-api
- */
-static size_t send_tx(void *buffer, size_t size, size_t nmemb, send_tx_context *ctx)
-{
-    size_t l = size*nmemb;
-
-    if (l < ctx->buffer_size) {
-        memcpy(ctx->buffer, buffer, l);
-        ctx->buffer += l;
-        *ctx->buffer = 0;
-        ctx->buffer_size -= l;
-        return l;
-    }
-    else {
-        return -1;
-    }
-}
-
 /**
  * Sends a signed transaction to the block-chain using
  * Insight API service
@@ -229,32 +205,21 @@ static size_t send_tx(void *buffer, size_t size, size_t nmemb, send_tx_context *
  *                       {"txid":"3cd0f12a587945c75edde69e8989260fb4126b6ae803cb26de751e62a47137be"}
  * @param[in]  size      size of ret buffer
  *
- * @return     0 == no error
+ * @return     UID_HTTP_OK == no error
  */
 int UID_sendTx(char *signed_tx, char *ret, size_t size)
 {
-    CURL *curl;
-    CURLcode res;
-    send_tx_context ctx;
+    UID_HttpOBJ *curl;
+    int res;
     char url[256];
 
-    curl = curl_easy_init();
-    /* Define our callback to get called when there's data to be written */
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, send_tx);
-    /* Set a pointer to our struct to pass to the callback */
-    ctx.buffer_size = size;
-    ctx.buffer = ret;
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &ctx);
+    curl = UID_httpinit();
 
     snprintf(url, sizeof(url), UID_SENDTX);
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    /* setup post data */
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, signed_tx);
-    /* perform the request */
-    res = curl_easy_perform(curl);
+    res = UID_httppost(curl, url, signed_tx, ret, size);
 
     /* always cleanup */
-    curl_easy_cleanup(curl);
+    UID_httpcleanup(curl);
 
     return res;
 }
