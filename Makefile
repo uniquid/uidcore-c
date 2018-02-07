@@ -47,7 +47,7 @@ $(LIB-YAJL): yajl/build/Makefile
 	make -C yajl/build
 
 $(LIB-TREZOR):
-	make -C trezor-crypto
+	make -C trezor-crypto libtrezor-crypto.so
 
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -o $@ -c $<
