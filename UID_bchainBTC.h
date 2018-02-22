@@ -14,8 +14,12 @@
 #include "UID_globals.h"
 #include "UID_identity.h"
 
-#define CONTRACTS_CACHE_SIZE 200 // number of locally cached contracts
-#define CLIENT_CACHE_SIZE 50 // number of locally cached client contracts
+#ifndef UID_CONTRACTS_CACHE_SIZE
+    #define UID_CONTRACTS_CACHE_SIZE 200 // number of locally cached contracts
+#endif // #ifndef UID_CONTRACTS_CACHE_SIZE
+#ifndef UID_CLIENT_CACHE_SIZE
+    #define UID_CLIENT_CACHE_SIZE 50 // number of locally cached client contracts
+#endif // #ifndef UID_CLIENT_CACHE_SIZE
 #define PROFILE_SIZE 80 // OP_RETURN lenght...
 #define UID_NAME_LENGHT 32
 
@@ -54,9 +58,9 @@ typedef struct
 } UID_ClientProfile;
 
 typedef struct {
-    UID_SecurityProfile contractsCache[CONTRACTS_CACHE_SIZE];
+    UID_SecurityProfile contractsCache[UID_CONTRACTS_CACHE_SIZE];
     int validCacheEntries;
-    UID_ClientProfile clientCache[CLIENT_CACHE_SIZE];
+    UID_ClientProfile clientCache[UID_CLIENT_CACHE_SIZE];
     int validClientEntries;
     pthread_mutex_t in_use;
 } cache_buffer;

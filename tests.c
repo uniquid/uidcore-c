@@ -575,6 +575,30 @@ void test_case_cache3(void)
 	CU_ASSERT( 0 == cache->validClientEntries);
 }
 
+void test_case_signandsend(void)
+{
+	char result[250] = {0};
+	char param[] = "{\"paths\":[\"0/1/1\"],\"tx\":\""
+					"01000000"
+					"01"
+					"fe86ad88cc3b81b365dd56fb3949b030cfc24532771d4d69d09b1f93659e2227"
+					"03000000"
+					"19"
+					"76a914c08e00f694bcd1530043b7eaffa96fd65bdf875588ac"
+					"ffffffff"
+					"04"
+					"10270000000000001976a91447ce8d6c424c45f3519b7f6f7c96abe7b18d715b88ac"
+					"0000000000000000536a4c5000000000001c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+					"30750000000000001976a9148bbf7e254925ebd7a4911e7d16cb858341f9e05588ac"
+					"50f80c00000000001976a91430fb38483f5a8f035ee955cc2d6684d76a2e3ecc88ac"
+					"00000000\"}";
+
+	unlink("identity.db");
+	UID_getLocalIdentity("tprv8ZgxMBicQKsPdQNuYWLfbuYng8SAMPaThga8UcwED6ehSFCQNvRdBBV36GLAcxWvZw1etrHfhAAuzJg51xe9JeiV2fcvPkEtr8ZA6QYGpJr");
+	UID_signAndSendContract(param, result, sizeof(result));
+	CU_ASSERT_STRING_EQUAL(result, "6 - transaction already in block chain. Code:-27");
+}
+
 /*
 #include "bip32.h"
 #include "curves.h"
@@ -669,7 +693,8 @@ int main ( void )
    /* add the tests to the suite */
    if ( (NULL == CU_add_test(pSuite, "test_case_cache1", test_case_cache1)) ||
         (NULL == CU_add_test(pSuite, "test_case_cache2", test_case_cache2)) ||
-        (NULL == CU_add_test(pSuite, "test_case_cache3", test_case_cache3))
+        (NULL == CU_add_test(pSuite, "test_case_cache3", test_case_cache3)) ||
+        (NULL == CU_add_test(pSuite, "test_case_signandsend", test_case_signandsend))
       )
    {
       CU_cleanup_registry();
