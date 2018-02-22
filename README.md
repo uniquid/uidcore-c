@@ -23,7 +23,22 @@ cmake is needed to build __yajl__ under Linux
 Because of the large number of environments that the library targets
 we give a simple make build system that builds for Linux
 
-just run
+
+These packages should be enaugh to compile the library on a fresh installed Ubuntu 17.10<br>
+build-essential<br>
+cmake<br>
+libcurl4-openssl-dev<br>
+
+To build the documentation you need:<br>
+libcunit1-dev
+
+to run the test suite you need:<br>
+doxygen
+
+Download the sources from gitthub with<br>
+git clone --recurse-submodules git@github.com:uniquid/uidcore-c.git
+
+cd in the uidcore-c directory then just run
 
 __make__<br>
 to build the the shared library
