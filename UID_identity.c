@@ -186,17 +186,19 @@ char *UID_getTpub(void)
  * @param[in]  path bip32 path of the private-key to use
  * @param[in]  hash 32 bytes long buffer holding the digest to be signed
  * @param[out] sig  pointer to a 64 bytes long buffer to be filled with the signature
+ * @param[out] pby  pointer to signature recovery byte - it can be NULL
  * @return          0 == no error
  *
  * \todo improve error handling
  */
-int UID_signAt(UID_Bip32Path *path, uint8_t hash[32], uint8_t sig[64])
+int UID_signAt(UID_Bip32Path *path, uint8_t hash[32], uint8_t sig[64], uint8_t *pby)
 {
-    uint8_t pby = 0;
+    //uint8_t pby = 0;
     HDNode node;
 
+    if(pby) *pby = 0;
     UID_deriveAt(path, &node);
-    ecdsa_sign_digest(&secp256k1, node.private_key, hash, sig, &pby);
+    ecdsa_sign_digest(&secp256k1, node.private_key, hash, sig, pby);
     return 0;
 }
 

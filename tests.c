@@ -60,7 +60,7 @@ void test_case_identity2(void)
 							 "\x68\x31\x91\x53\xe5\x72\x6f\x63\x8c\xf1\x9e\xcc\xff\xa3\x8a\xf3\x0a\x3a\x46\x4f\x14\xf9\x35\xba\xf0\xc1\xc9\x45\x98\xd7\xdf\xe0";
 
 		UID_Bip32Path path = {0, 0, 17};
-		UID_signAt(&path, hash, sig);
+		UID_signAt(&path, hash, sig, NULL);
 		CU_ASSERT(0 == memcmp(sig, result, sizeof(result)));
 	}
 

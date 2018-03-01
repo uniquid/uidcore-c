@@ -226,7 +226,7 @@ int UID_buildScriptSig(uint8_t *rawtx, size_t rawtx_len, UID_Bip32Path *path, in
         ecdsa_get_pubkeyhash(public_key, pubkeyhash);
         res = UID_digestRawTx(rawtx, rawtx_len, i, pubkeyhash, hash);
         if (UID_TX_OK != res) return res;
-        UID_signAt(&path[i], hash, sig);  // ecdsa_sign_digest(&secp256k1, private_key, hash, sig, &pby);
+        UID_signAt(&path[i], hash, sig, NULL);  // ecdsa_sign_digest(&secp256k1, private_key, hash, sig, &pby);
 
         len_der = ecdsa_sig_to_der(sig, scriptsig[i]+2); // OP_PUSH(len of DER) || DER
         scriptsig[i][0] = 1 + len_der + 1 + 1 + 33;      // len script: OP_PUSH(len of DER) DER hash-type OP_PUSH(len of pubkey) pubkey
