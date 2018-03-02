@@ -35,6 +35,7 @@
  - UID_signAt()
  - UID_getPubkeyAt()
  - UID_getAddressAt()
+ - UID_tprvFromSeed()
  - cryptoMessageSign()
  - cryptoMessageVerify()
 

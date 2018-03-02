@@ -473,6 +473,31 @@ int clean_JavaVectors_suite(void)
 
 /************* Test case functions ****************/
 
+void test_case_tprvFromSeed(void)
+{
+{
+    // seed = 01b30b9f68e59936712f0c416ceb1c73f01fa97f665acfa898e6e3c19c5ab577
+    uint8_t seed[32] = {0x01,0xb3,0x0b,0x9f,0x68,0xe5,0x99,0x36,0x71,0x2f,0x0c,0x41,0x6c,0xeb,0x1c,0x73,0xf0,0x1f,0xa9,0x7f,0x66,0x5a,0xcf,0xa8,0x98,0xe6,0xe3,0xc1,0x9c,0x5a,0xb5,0x77};
+    char tprv[256]={0};
+
+    UID_tprvFromSeed(seed, tprv, sizeof(tprv));
+    CU_ASSERT_STRING_EQUAL(
+		"tprv8ZgxMBicQKsPeUjbnmwN54rKdA1UCsoJsY3ngzhVxyqeTV5pPNo77heffPbSfWVy8vLkTcMwpQHTxJzjz8euKsdDzETM5WKyKFYNLxMAcmQ",
+		tprv);
+}
+{
+    char privateKey[256];
+    uint8_t seed[32] = {0};
+
+    fromhex("6ecc96fd114b975295c45ccfbb8bd15390ec1af65f2d5505ad25884166bdcaec",seed, sizeof(seed));
+    UID_tprvFromSeed(seed, privateKey, sizeof(privateKey));
+    CU_ASSERT_STRING_EQUAL(
+		"tprv8ZgxMBicQKsPeF9bnvZrQCjeySPx82J1BpJbrJ4HLLQwDHyNMiQ9uBsKDeh6GhwwmtRAzd142o2ji8M55CcBbcNhgbrUxE1FENw9baLgYnD",
+		privateKey);
+}
+
+}
+
 void test_case_JavaVectors_signtx(void)
 {
 {
@@ -599,25 +624,6 @@ void test_case_signandsend(void)
 	CU_ASSERT_STRING_EQUAL(result, "6 - transaction already in block chain. Code:-27");
 }
 
-/*
-#include "bip32.h"
-#include "curves.h"
-#include "secp256k1.h"
-void test_case_seed(void)
-{
-	HDNode node_m;
-    char privateKey[256];
-    uint8_t seed[32] = {0};
-
-    fromhex("6ecc96fd114b975295c45ccfbb8bd15390ec1af65f2d5505ad25884166bdcaec",seed, sizeof(seed));
-    hdnode_from_seed(seed, sizeof(seed), SECP256K1_NAME, &node_m);
-    hdnode_serialize_private(&node_m, 0 , privateKey, sizeof(privateKey));
-    CU_ASSERT_STRING_EQUAL(
-			"tprv8ZgxMBicQKsPeF9bnvZrQCjeySPx82J1BpJbrJ4HLLQwDHyNMiQ9uBsKDeh6GhwwmtRAzd142o2ji8M55CcBbcNhgbrUxE1FENw9baLgYnD",
-			privateKey);
-}
-*/
-
 /************* Test Runner Code goes here **************/
 
 int main ( void )
@@ -676,7 +682,8 @@ int main ( void )
    }
 
    /* add the tests to the suite */
-   if ( (NULL == CU_add_test(pSuite, "test_case_JavaVectors_signtx", test_case_JavaVectors_signtx))
+   if ( (NULL == CU_add_test(pSuite, "test_case_JavaVectors_signtx", test_case_JavaVectors_signtx)) ||
+        (NULL == CU_add_test(pSuite, "test_case_tprvFromSeed", test_case_tprvFromSeed))
       )
    {
       CU_cleanup_registry();

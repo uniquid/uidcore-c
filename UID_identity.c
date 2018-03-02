@@ -170,6 +170,23 @@ void UID_getLocalIdentity(char *tprv)
 }
 
 /**
+ * Returns the tprv string from seed
+ *
+ * @param[in]  seed     32 byte buffer containing the seed (binary form)
+ * @param[out] tprv     string buffer to be filled with the tprv
+ * @param[in]  tprvsize size of the tprv buffer
+ * @return              string containin the tprv
+ */
+char *UID_tprvFromSeed(uint8_t seed[32], char *tprv, int tprvsize)
+{
+    HDNode node;
+
+    hdnode_from_seed(seed, 32, SECP256K1_NAME, &node);
+    hdnode_serialize_private(&node, 0 /*uint32_t fingerprint*/, tprv, tprvsize);
+    return tprv;
+}
+
+/**
  * Returns the xpub for imprinting
  *
  * @return xpub @ m/44'/0'
