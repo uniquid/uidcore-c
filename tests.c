@@ -10,6 +10,7 @@
 #include "UID_dispatch.h"
 #include "UID_utils.h"
 #include "UID_transaction.h"
+#include "base64.h"
 
 #include <stdio.h>  // for printf
 #include <unistd.h> // unlink
@@ -523,6 +524,42 @@ void test_case_JavaVectors_signtx(void)
 }
 }
 
+void test_case_signMessage(void)
+{
+{
+	UID_Bip32Path path = {0,0,0};
+	char *msgVector = "Hello World!";
+	char *sigVector = "IOAhyp0at0puRgDZD3DJl0S2FjgLEo0q7nBdgzDrWpbDR+B3daIlN3R20lhcpQKZFWl8/ttxUXzQYS0EFso2VLo=";
+	char *adrVector = "mj3Ggr43QMSea1s6H3nYJRE3m5GjhGFcLb";
+
+	char signature[89] = {0};
+	CU_ASSERT(UID_SIGN_OK == UID_signMessage(msgVector, &path, signature, sizeof(signature)));
+	CU_ASSERT_STRING_EQUAL(sigVector, signature);
+
+	uint8_t signature_bin[65] = {0};
+	size_t size = 0;
+	CU_ASSERT( 0 == mbedtls_base64_decode(signature_bin, sizeof(signature_bin), &size, (unsigned char *)sigVector, strlen(sigVector)) );
+	CU_ASSERT( 0 == cryptoMessageVerify((uint8_t *)msgVector, strlen(msgVector), adrVector, signature_bin) );
+	CU_ASSERT( UID_SIGN_OK == UID_verifyMessage(msgVector, sigVector, adrVector));
+}
+{
+	UID_Bip32Path path = {1,0,0};
+	char *msgVector = "Hello World!";
+	char *sigVector = "H3UHssQig0Vef9VIzUmDW0HV37vpm5ZZGF0zbw6xxMMoTTbUm/efPIQDcx5IlOgflC7BcR90aXHsV7BBaQx+b9Q=";
+	char *adrVector = "mgXg8FWaYaDVcsvjJq4jW7vrxQCRtjPchs";
+
+	char signature[89] = {0};
+	CU_ASSERT(UID_SIGN_OK == UID_signMessage(msgVector, &path, signature, sizeof(signature)));
+	CU_ASSERT_STRING_EQUAL(sigVector, signature);
+
+	uint8_t signature_bin[65] = {0};
+	size_t size = 0;
+	CU_ASSERT( 0 == mbedtls_base64_decode(signature_bin, sizeof(signature_bin), &size, (unsigned char *)sigVector, strlen(sigVector)) );
+	CU_ASSERT( 0 == cryptoMessageVerify((uint8_t *)msgVector, strlen(msgVector), adrVector, signature_bin) );
+	CU_ASSERT( UID_SIGN_OK == UID_verifyMessage(msgVector, sigVector, adrVector));
+}
+}
+
 /**************************** Cache test suite *******************************/
 
 /* Test Suite setup and cleanup functions: */
@@ -683,7 +720,8 @@ int main ( void )
 
    /* add the tests to the suite */
    if ( (NULL == CU_add_test(pSuite, "test_case_JavaVectors_signtx", test_case_JavaVectors_signtx)) ||
-        (NULL == CU_add_test(pSuite, "test_case_tprvFromSeed", test_case_tprvFromSeed))
+        (NULL == CU_add_test(pSuite, "test_case_tprvFromSeed", test_case_tprvFromSeed)) ||
+        (NULL == CU_add_test(pSuite, "test_case_signMessage", test_case_signMessage))
       )
    {
       CU_cleanup_registry();

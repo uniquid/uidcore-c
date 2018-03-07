@@ -56,6 +56,12 @@ typedef char BTC_Signature[BTC_SIGNATURE_LENGHT+1]; //Private key
 #define UID_HTTP_POST_ERROR  		20
 #define UID_HTTP_CLEANUP_ERROR 		21
 
+#define UID_SIGN_OK                 UID_OK
+#define UID_SIGN_FAILED             22
+#define UID_SIGN_SMALL_BUFFER       23
+#define UID_SIGN_INVALID_CHARACTER  24
+#define UID_SIGN_VERIFY_ERROR       25
+
 typedef struct
 {
     BTC_PrivateKey privateKey;
