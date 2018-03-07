@@ -29,7 +29,7 @@ LIB-YAJL := yajl/build/yajl-2.1.1/lib/libyajl_s.a
 LIB-TREZOR := trezor-crypto/libtrezor-crypto.so
 
 SRCS	:= $(shell find -maxdepth 1 -name "UID_*.c")
-SRCS  += 
+SRCS  += base64.c
 LIBS	+= -L $(dir $(LIB-YAJL)) -l $(patsubst lib%,%, $(basename $(notdir $(LIB-YAJL))))
 LIBS	+= -L $(dir $(LIB-TREZOR)) -l $(patsubst lib%,%, $(basename $(notdir $(LIB-TREZOR))))
 
