@@ -11,6 +11,7 @@
 #include "UID_utils.h"
 #include "UID_transaction.h"
 #include "base64.h"
+#include "UID_capBAC.h"
 
 #include <stdio.h>  // for printf
 #include <unistd.h> // unlink
@@ -532,7 +533,7 @@ void test_case_signMessage(void)
 	char *sigVector = "IOAhyp0at0puRgDZD3DJl0S2FjgLEo0q7nBdgzDrWpbDR+B3daIlN3R20lhcpQKZFWl8/ttxUXzQYS0EFso2VLo=";
 	char *adrVector = "mj3Ggr43QMSea1s6H3nYJRE3m5GjhGFcLb";
 
-	char signature[89] = {0};
+	BTC_Signature signature = {0};
 	CU_ASSERT(UID_SIGN_OK == UID_signMessage(msgVector, &path, signature, sizeof(signature)));
 	CU_ASSERT_STRING_EQUAL(sigVector, signature);
 
@@ -548,7 +549,7 @@ void test_case_signMessage(void)
 	char *sigVector = "H3UHssQig0Vef9VIzUmDW0HV37vpm5ZZGF0zbw6xxMMoTTbUm/efPIQDcx5IlOgflC7BcR90aXHsV7BBaQx+b9Q=";
 	char *adrVector = "mgXg8FWaYaDVcsvjJq4jW7vrxQCRtjPchs";
 
-	char signature[89] = {0};
+	BTC_Signature signature = {0};
 	CU_ASSERT(UID_SIGN_OK == UID_signMessage(msgVector, &path, signature, sizeof(signature)));
 	CU_ASSERT_STRING_EQUAL(sigVector, signature);
 
@@ -661,6 +662,81 @@ void test_case_signandsend(void)
 	CU_ASSERT_STRING_EQUAL(result, "6 - transaction already in block chain. Code:-27");
 }
 
+/**************************** CapBAC test suite *******************************/
+
+/* Test Suite setup and cleanup functions: */
+
+int init_capBAC_suite(void)
+{
+	unlink("identity.db");
+	UID_getLocalIdentity("tprv8ZgxMBicQKsPeUjbnmwN54rKdA1UCsoJsY3ngzhVxyqeTV5pPNo77heffPbSfWVy8vLkTcMwpQHTxJzjz8euKsdDzETM5WKyKFYNLxMAcmQ");
+	UID_pApplianceURL = "http://explorer.uniquid.co:3001/insight-api";
+	UID_pRegistryURL = "http://appliance4.uniquid.co:8080/registry";
+	return 0;
+}
+
+int clean_capBAC_suite(void)
+{
+	unlink("identity.db");
+	return 0;
+}
+
+/************* Test case functions ****************/
+
+void test_case_prepareToSign(void)
+{
+{
+	UID_UniquidCapability capability = {
+		"muwk2Z1HiysDAADXC5UMvpvmmCjuZdFnoP",
+		"1234",
+		"12345",
+		{0},
+		1234,
+		12345,
+		{0} };
+
+	char buffer[UID_SERIALIZED_CAPABILITY_SIZE];
+
+	CU_ASSERT(UID_CAPBAC_OK == UID_prepareToSign(&capability, buffer, sizeof(buffer)));
+	CU_ASSERT_STRING_EQUAL(buffer,
+		"muwk2Z1HiysDAADXC5UMvpvmmCjuZdFnoP12341234500000000000000000000000000000000000000123412345");
+}
+{
+	UID_UniquidCapability capability = {
+		"muwk2Z1HiysDAADXC5UMvpvmmCjuZdFnoP",
+		"mp246b2KBN5xncctJxtj7UHiEo5GfiewMT",
+		"mvmmEz4nduzpLk4KR6JMQn3LyZuHYt6NTc",
+		{0,{0,0xFE}},
+		0xffffffffffffffff,
+		0xffffffffffffffff,
+		{0} };
+
+	char buffer[UID_SERIALIZED_CAPABILITY_SIZE];
+
+	CU_ASSERT(UID_CAPBAC_OK == UID_prepareToSign(&capability, buffer, sizeof(buffer)));
+
+	CU_ASSERT_STRING_EQUAL(buffer,
+		"muwk2Z1HiysDAADXC5UMvpvmmCjuZdFnoPmp246b2KBN5xncctJxtj7UHiEo5GfiewMTmvmmEz4nduzpLk4KR6JMQn3LyZuHYt6NTc0000fe00000000000000000000000000000000-1-1");
+}
+{
+	UID_UniquidCapability capability = {
+		"muwk2Z1HiysDAADXC5UMvpvmmCjuZdFnoP",
+		"mp246b2KBN5xncctJxtj7UHiEo5GfiewMT",
+		"mvmmEz4nduzpLk4KR6JMQn3LyZuHYt6NTc",
+		{0,{0,0xFE}},
+		0x7fffffffffffffff,
+		0x7fffffffffffffff,
+		{0} };
+
+	char buffer[UID_SERIALIZED_CAPABILITY_SIZE];
+
+	CU_ASSERT(UID_CAPBAC_OK == UID_prepareToSign(&capability, buffer, sizeof(buffer)));
+
+	CU_ASSERT_STRING_EQUAL(buffer,
+		"muwk2Z1HiysDAADXC5UMvpvmmCjuZdFnoPmp246b2KBN5xncctJxtj7UHiEo5GfiewMTmvmmEz4nduzpLk4KR6JMQn3LyZuHYt6NTc0000fe0000000000000000000000000000000092233720368547758079223372036854775807");
+}
+}
+
 /************* Test Runner Code goes here **************/
 
 int main ( void )
@@ -722,6 +798,21 @@ int main ( void )
    if ( (NULL == CU_add_test(pSuite, "test_case_JavaVectors_signtx", test_case_JavaVectors_signtx)) ||
         (NULL == CU_add_test(pSuite, "test_case_tprvFromSeed", test_case_tprvFromSeed)) ||
         (NULL == CU_add_test(pSuite, "test_case_signMessage", test_case_signMessage))
+      )
+   {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   /* add a suite to the registry */
+   pSuite = CU_add_suite( "CapBAC suite", init_capBAC_suite, clean_capBAC_suite );
+   if ( NULL == pSuite ) {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   /* add the tests to the suite */
+   if ( (NULL == CU_add_test(pSuite, "test_case_prepareToSign", test_case_prepareToSign))
       )
    {
       CU_cleanup_registry();
