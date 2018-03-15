@@ -226,7 +226,7 @@ int UID_verifyMessage(char *message, char *b64signature, char *address)
 	if(MBEDTLS_ERR_BASE64_BUFFER_TOO_SMALL == ret) return UID_SIGN_SMALL_BUFFER;
 	if(0 != ret) return UID_SIGN_INVALID_CHARACTER;
 	ret = cryptoMessageVerify((uint8_t *)message, strlen(message), address, signature_bin);
-	return (0 == ret ? UID_SIGN_OK : UID_SIGN_INVALID_CHARACTER);
+	return (0 == ret ? UID_SIGN_OK : UID_SIGN_VERIFY_ERROR);
 }
 
 /**
