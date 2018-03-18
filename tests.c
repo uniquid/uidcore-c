@@ -12,6 +12,7 @@
 #include "UID_transaction.h"
 #include "base64.h"
 #include "UID_capBAC.h"
+#include "UID_time.h"
 
 #include <stdio.h>  // for printf
 #include <unistd.h> // unlink
@@ -737,6 +738,19 @@ void test_case_prepareToSign(void)
 }
 }
 
+void test_case_getTime(void)
+{
+	int64_t time;
+	time_t ttime;
+
+	time = UID_getTime();
+	ttime = time/1000;
+	printf("\n\nCURRENT TIME (please verify)\n%ld => %s and %d ms\n\n", time, ctime(&ttime), (int)(time - (time/1000*1000)));
+	// uncomment to verify manually
+	//printf("enter y if correct: ");
+	//CU_ASSERT('y' == getchar());
+}
+
 /************* Test Runner Code goes here **************/
 
 int main ( void )
@@ -812,7 +826,8 @@ int main ( void )
    }
 
    /* add the tests to the suite */
-   if ( (NULL == CU_add_test(pSuite, "test_case_prepareToSign", test_case_prepareToSign))
+   if ( (NULL == CU_add_test(pSuite, "test_case_prepareToSign", test_case_prepareToSign)) ||
+        (NULL == CU_add_test(pSuite, "test_case_getTime", test_case_getTime))
       )
    {
       CU_cleanup_registry();
