@@ -18,17 +18,9 @@
  */
 
 #include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdio.h>
 #include "UID_httpal.h"
-#include "sha2.h"
-#include "UID_utils.h"
-#include "UID_globals.h"
-#include "UID_identity.h"
 #include "UID_bchainBTC.h"
 #include "UID_fillCache.h"
-#include "yajl/yajl_parse.h"
 
 /**
  * double buffer for contract cache<br>
@@ -193,33 +185,4 @@ UID_ClientProfile *UID_matchProvider(char *name)
 
     pthread_mutex_unlock(&(ptr->in_use));  // unlock the resource
     return ret_val;
-}
-
-/**
- * Sends a signed transaction to the block-chain using
- * Insight API service
- *
- * @param[in]  signed_tx signed transaction as hex string (ascii)
- * @param[out] ret       string buffer to be filled with the
- *                       result from Insight  API. The txid if all OK, es: <br>
- *                       {"txid":"3cd0f12a587945c75edde69e8989260fb4126b6ae803cb26de751e62a47137be"}
- * @param[in]  size      size of ret buffer
- *
- * @return     UID_HTTP_OK == no error
- */
-int UID_sendTx(char *signed_tx, char *ret, size_t size)
-{
-    UID_HttpOBJ *curl;
-    int res;
-    char url[256];
-
-    curl = UID_httpinit();
-
-    snprintf(url, sizeof(url), UID_SENDTX);
-    res = UID_httppost(curl, url, signed_tx, ret, size);
-
-    /* always cleanup */
-    UID_httpcleanup(curl);
-
-    return res;
 }

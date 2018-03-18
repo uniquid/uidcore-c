@@ -68,7 +68,6 @@ typedef struct {
 int UID_getContracts(cache_buffer **cache);
 UID_SecurityProfile *UID_matchContract(BTC_Address serviceUserAddress);
 UID_ClientProfile *UID_matchProvider(char *name);
-int UID_sendTx(char *signed_tx, char *ret, size_t size);
 
 #endif
 
