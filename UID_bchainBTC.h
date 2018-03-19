@@ -33,11 +33,16 @@
 
 extern char *UID_pApplianceURL;
 
+#define UID_SMARTC_INITIALIZER {0,{0},{0},0,0}
+
 typedef struct {
     uint8_t version;
     uint8_t bit_mask[18];
-    uint8_t n_di_n;
-    uint8_t guarantor[3][20];
+//    uint8_t n_di_n;
+//    uint8_t guarantor[3][20];
+    uint8_t dummy[3*20+1-16];
+	int64_t since;
+	int64_t until;
 } UID_smart_contract;
 
 /// trick to raise a compiler error if the size of the struct is different than expected
@@ -68,6 +73,7 @@ typedef struct {
 int UID_getContracts(cache_buffer **cache);
 UID_SecurityProfile *UID_matchContract(BTC_Address serviceUserAddress);
 UID_ClientProfile *UID_matchProvider(char *name);
+int UID_insertProvideChannel(UID_SecurityProfile *channel);
 
 #endif
 

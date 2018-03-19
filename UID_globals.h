@@ -65,6 +65,10 @@ typedef char BTC_Signature[BTC_SIGNATURE_LENGHT+1]; //(recovery byte + signature
 #define UID_CAPBAC_OK               UID_OK
 #define UID_CAPBAC_SMALL_BUFFER     26
 #define UID_CAPBAC_SER_ERROR        27
+#define UID_CAPBAC_UNTRUSTED_AUTH   28
+#define UID_CAPBAC_MALFORMED        29
+
+#define UID_CDB_OK                  UID_OK
 
 typedef struct
 {

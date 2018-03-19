@@ -26,14 +26,19 @@
  * double buffer for contract cache<br>
  * UID_getContracts may fill seconb while current is read
  */
-cache_buffer cache0 = { { { {0},{0},{0,{0},0,{{0}}} } }, 0, { { {0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER };
-cache_buffer cache1 = { { { {0},{0},{0,{0},0,{{0}}} } }, 0, { { {0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER };
+static cache_buffer cache0 = { { { {0},{0},UID_SMARTC_INITIALIZER } }, 0, { { {0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER };
+static cache_buffer cache1 = { { { {0},{0},UID_SMARTC_INITIALIZER } }, 0, { { {0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER };
+/**
+ * capability contract cache
+ */
+static cache_buffer capDB  = { { { {0},{0},UID_SMARTC_INITIALIZER } }, UID_CONTRACTS_CACHE_SIZE, { { {0},{0},{0} } }, UID_CLIENT_CACHE_SIZE, PTHREAD_MUTEX_INITIALIZER };
 
 /**
- * pointers to the main and secondary buffer
+ * pointers to the main, secondary and capability buffer
  */
 cache_buffer *current = &cache0;
 cache_buffer *secondb = &cache1;
+cache_buffer *capDBp  = &capDB;
 
 /**
  * Base url of the Insight API appliance
@@ -185,4 +190,17 @@ UID_ClientProfile *UID_matchProvider(char *name)
 
     pthread_mutex_unlock(&(ptr->in_use));  // unlock the resource
     return ret_val;
+}
+
+/**
+ * Insert a channel in the contract DataBase
+ *
+ * @param[] channel channel to be inserted
+ *
+ * @return          UID_CDB_OK if no error
+ */
+int UID_insertProvideChannel(UID_SecurityProfile *channel)
+{
+    (void)channel;
+    return UID_CDB_OK;
 }

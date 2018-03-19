@@ -17,6 +17,7 @@
  * (including the C string \0 terminating byte)
  */
 #define UID_SERIALIZED_CAPABILITY_SIZE (3*(sizeof(BTC_Address)-1) + 2*sizeof(UID_Rights) + 2*20 + 1)
+#define UID_CAPABILITY_BIT 29
 
 typedef struct {
     uint8_t version;
@@ -39,5 +40,6 @@ typedef struct {
 } UID_UniquidCapability;
 
 int UID_prepareToSign(UID_UniquidCapability *cap, char *buffer, size_t size);
+int UID_receiveProviderCapability(UID_UniquidCapability *cap);
 
 #endif
