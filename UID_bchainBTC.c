@@ -21,6 +21,8 @@
 #include "UID_httpal.h"
 #include "UID_bchainBTC.h"
 #include "UID_fillCache.h"
+#include "UID_time.h"
+#include "UID_log.h"
 
 /**
  * double buffer for contract cache<br>
@@ -155,6 +157,33 @@ UID_SecurityProfile *UID_matchContract(BTC_Address serviceUserAddress)
     }
 
     pthread_mutex_unlock(&(ptr->in_use));  // unlock the resource
+    if (NULL != ret_val)
+        return ret_val;
+
+    ptr = capDBp;
+    pthread_mutex_lock(&(ptr->in_use));  // lock the resource
+
+    for(i=0; i<(ptr->validCacheEntries); i++)
+    {
+        if (strcmp((ptr->contractsCache)[i].serviceUserAddress, serviceUserAddress) == 0)
+        {   // found the contract
+            //if ((ptr->contractsCache)[i].profile == 0) break; // profile == 0 contract revoked! return NULL
+            int64_t time = UID_getTime();
+            if (time < (ptr->contractsCache)[i].profile.since) {
+                UID_log(UID_LOG_ERROR, "In func <%s> " "Contract not yet valid\n", __func__);
+                continue;
+            }
+            if (time > (ptr->contractsCache)[i].profile.until) {
+                UID_log(UID_LOG_ERROR, "In func <%s> " "Contract not more valid\n", __func__);
+                continue;
+            }
+            memcpy(&goodContract,  (ptr->contractsCache) + i, sizeof(goodContract)); // copy to goodContract
+            ret_val = &goodContract; // return pointer to it
+            break;
+        }
+    }
+
+    pthread_mutex_unlock(&(ptr->in_use));  // unlock the resource
     return ret_val;
 }
 
@@ -202,5 +231,9 @@ UID_ClientProfile *UID_matchProvider(char *name)
 int UID_insertProvideChannel(UID_SecurityProfile *channel)
 {
     (void)channel;
+    pthread_mutex_lock(&(capDBp->in_use));  // lock the resource
+    memcpy(&(capDBp->contractsCache[0]), channel, sizeof(UID_SecurityProfile));
+    capDBp->validCacheEntries = 1;
+    pthread_mutex_unlock(&(capDBp->in_use));  // unlock the resource
     return UID_CDB_OK;
 }
