@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "UID_bchainBTC.h"
 #include "UID_dispatch.h"
 #include "UID_capBAC.h"
@@ -35,7 +36,7 @@ int UID_prepareToSign(UID_UniquidCapability *cap, char *buffer, size_t size)
     char hexbuf[2*sizeof(UID_Rights)+1] = {0};
 
     tohex((uint8_t *)&(cap->rights), sizeof(UID_Rights), hexbuf);
-    int ret = snprintf(buffer, size, "%s%s%s%s%ld%ld", cap->assigner, cap->resourceID, cap->assignee, hexbuf, cap->since, cap->until );
+    int ret = snprintf(buffer, size, "%s%s%s%s%"PRId64"%"PRId64, cap->assigner, cap->resourceID, cap->assignee, hexbuf, cap->since, cap->until );
 
     if (ret < 0) return UID_CAPBAC_SER_ERROR;
     if ((size_t)ret < size) return UID_CAPBAC_OK;
