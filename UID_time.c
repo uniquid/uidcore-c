@@ -27,5 +27,5 @@ int64_t UID_getTime(void)
     struct timespec spec;
 
     clock_gettime(CLOCK_REALTIME, &spec);
-    return spec.tv_sec*1000 + spec.tv_nsec/1000000;
+    return (int64_t)(spec.tv_sec)*1000 + spec.tv_nsec/1000000;
 }
