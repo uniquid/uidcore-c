@@ -148,6 +148,8 @@ int init_general_suite(void)
 {
 	extern cache_buffer *current;
 	uint8_t bit_mask1[18] = { 0x00, 0x00, 0x00, 0x80     }; // bit 31 ON
+	uint8_t bit_mask2[18] = { 0x00, 0x00, 0x00, 0x40     };
+	uint8_t bit_mask3[18] = { 0x00, 0x00, 0x00, 0x3e     };
 
     strncpy(current->contractsCache[0].serviceUserAddress, "my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV", sizeof(BTC_Address));
     strncpy(current->contractsCache[0].serviceProviderAddress, "mw5oLLjxSNsPRdDgArCZseGEQJVdNYNK5U", sizeof(BTC_Address));
@@ -155,7 +157,13 @@ int init_general_suite(void)
     strncpy(current->contractsCache[1].serviceUserAddress, "myUFCeVGwkJv3PXy4zc1KSWRT8dC5iTvhU", sizeof(BTC_Address));
     strncpy(current->contractsCache[1].serviceProviderAddress, "mtEQ22KCcjpz73hWfNvJoq6tqMEcRUKk3m", sizeof(BTC_Address));
     memset(current->contractsCache[1].profile.bit_mask, 0, sizeof(current->contractsCache[1].profile.bit_mask));
-    current->validCacheEntries = 2;
+    strncpy(current->contractsCache[2].serviceUserAddress, "msi5CAqcnMP6aiAQ3Q82W9bUCGj9nMWHTM", sizeof(BTC_Address));
+    strncpy(current->contractsCache[2].serviceProviderAddress, "mvMD34qjTuMSoaHifCmjtjiPLXgfFNtCiV", sizeof(BTC_Address));
+    memcpy(current->contractsCache[2].profile.bit_mask, bit_mask2, sizeof(current->contractsCache[0].profile.bit_mask));
+    strncpy(current->contractsCache[3].serviceUserAddress, "n42d4KwDcCKsidov224rsA7GKLtTsVbhoo", sizeof(BTC_Address));
+    strncpy(current->contractsCache[3].serviceProviderAddress, "mhxNWQnP91TJ1AU7j8BUjrxLCTPbjLoU6m", sizeof(BTC_Address));
+    memcpy(current->contractsCache[3].profile.bit_mask, bit_mask3, sizeof(current->contractsCache[0].profile.bit_mask));
+    current->validCacheEntries = 4;
     strncpy(current->clientCache[0].serviceProviderName, "LocalMachine", sizeof(((UID_ClientProfile *)0)->serviceProviderName));
     strncpy(current->clientCache[0].serviceProviderAddress, "mw5oLLjxSNsPRdDgArCZseGEQJVdNYNK5U", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));
     strncpy(current->clientCache[0].serviceUserAddress, "my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));
@@ -584,28 +592,28 @@ int clean_cache_suite(void)
 void test_case_cache1(void)
 {
 	cache_buffer *cache;
-//	UID_ClientProfile *profile = NULL;
+	UID_ClientProfile *profile = NULL;
 	UID_SecurityProfile *contract = NULL;
 
 	unlink("identity.db");
 	UID_getLocalIdentity("tprv8ZgxMBicQKsPeF9bnvZrQCjeySPx82J1BpJbrJ4HLLQwDHyNMiQ9uBsKDeh6GhwwmtRAzd142o2ji8M55CcBbcNhgbrUxE1FENw9baLgYnD");
-	CU_ASSERT(0 == UID_getContracts(&cache));
+	CU_ASSERT(1 == UID_getContracts(&cache));
 	CU_ASSERT(4 == cache->validCacheEntries);
-	CU_ASSERT(1 == cache->validClientEntries);
+	CU_ASSERT(3 == cache->validClientEntries);
 
-//	profile = UID_matchProvider("Node0");
-//	CU_ASSERT(NULL != profile);
-//	CU_ASSERT_STRING_EQUAL(profile->serviceProviderAddress, "murzfjMUddDbFjir2fEYCis8mpaphrdHKV");
+	profile = UID_matchProvider("LocalMachine");
+	CU_ASSERT_FATAL(NULL != profile);
+	CU_ASSERT_STRING_EQUAL(profile->serviceProviderAddress, "mw5oLLjxSNsPRdDgArCZseGEQJVdNYNK5U");
 
 	contract = UID_matchContract("msi5CAqcnMP6aiAQ3Q82W9bUCGj9nMWHTM");
-	CU_ASSERT(NULL != contract);
+	CU_ASSERT_FATAL(NULL != contract);
 	CU_ASSERT_STRING_EQUAL(contract->serviceProviderAddress, "mvMD34qjTuMSoaHifCmjtjiPLXgfFNtCiV");
 	CU_ASSERT_EQUAL(0x40, contract->profile.bit_mask[3]);
 
 	contract = UID_matchContract("n42d4KwDcCKsidov224rsA7GKLtTsVbhoo");
-	CU_ASSERT(NULL != contract);
+	CU_ASSERT_FATAL(NULL != contract);
 	CU_ASSERT_STRING_EQUAL(contract->serviceProviderAddress, "mhxNWQnP91TJ1AU7j8BUjrxLCTPbjLoU6m");
-	CU_ASSERT_EQUAL(0x3e, contract->profile.bit_mask[4]);
+	CU_ASSERT_EQUAL(0x3e, contract->profile.bit_mask[3]);
 }
 
 void test_case_cache2(void)
@@ -614,29 +622,9 @@ void test_case_cache2(void)
 
 	unlink("identity.db");
 	UID_getLocalIdentity("tprv8ZgxMBicQKsPdoj3tQG8Z2bzNsCTsk9heayJQA1pQStVx2hLEyVwx6gfHZ2p4dSzbvaEw7qrDXnX54vTVbkLghZcB24TXuj1ADXPUCvyfcy");
-	CU_ASSERT(0 == UID_getContracts(&cache));
-	CU_ASSERT( 0 == cache->validCacheEntries);
-	CU_ASSERT( 0 == cache->validClientEntries);
-}
-
-/* fake imprinter:
- * tprv8ZgxMBicQKsPeEzhahZn1jqJjNyQ3G7HLbEZKU9krP8cdeBXmzVSzt7kCPEofHbmMo5k18mVB7am8rFiQLAzJdchG7zMUWbTUCiJ3w1s9oM
- * @ m/44'/0'/0/1/1/1
- * tx: ebafc4c80422e441bed962f6da1c481051de3f5569b101600ad290699090960e 100 coin
- *
- * mtN3H7sFPC5V5bNy7t4qg9ku9EKSNhKrHE -> mxZ19o2oq6gGVeES1x7rZUHbwxqMkWFBoo
- *                                       mmdJjnUHNiTZTAR46YAdtB4eVB4CeB6Rvb
- */
-
-void test_case_cache3(void)
-{
-	cache_buffer *cache;
-
-	unlink("identity.db");
-	UID_getLocalIdentity("tprv8ZgxMBicQKsPdLB7wadJ2LDnCQ4ra1pyWQrVJGPQNrQkm8XX5K9i6ucFYM6H9aeSEgGCL8JFamvgiVtpmVjBiruNYegiW9LCBL2HCoYWRAa");
-	CU_ASSERT(0 == UID_getContracts(&cache));
-	CU_ASSERT( 1 == cache->validCacheEntries);
-	CU_ASSERT( 0 == cache->validClientEntries);
+	CU_ASSERT( 1 == UID_getContracts(&cache));
+	CU_ASSERT( 4 == cache->validCacheEntries);
+	CU_ASSERT( 3 == cache->validClientEntries);
 }
 
 void test_case_signandsend(void)
@@ -660,7 +648,7 @@ void test_case_signandsend(void)
 	unlink("identity.db");
 	UID_getLocalIdentity("tprv8ZgxMBicQKsPdQNuYWLfbuYng8SAMPaThga8UcwED6ehSFCQNvRdBBV36GLAcxWvZw1etrHfhAAuzJg51xe9JeiV2fcvPkEtr8ZA6QYGpJr");
 	UID_signAndSendContract(param, result, sizeof(result));
-	CU_ASSERT_STRING_EQUAL(result, "6 - transaction already in block chain. Code:-27");
+	CU_ASSERT_STRING_EQUAL(result, "0 - 0100000001fe86ad88cc3b81b365dd56fb3949b030cfc24532771d4d69d09b1f93659e2227030000006b483045022100f0c4ae67e60870bb98a230db6330888419e4bc2fdc4ce9b36b036a95bba70b1402202d838206f1df0569555964c2eb5d2241fdc77a5d211f772310d6d00a62061a9d012103548488137870979483d70fce824e89922e74b1f30a4ee7ec74bd5bce5dec9006ffffffff0410270000000000001976a91447ce8d6c424c45f3519b7f6f7c96abe7b18d715b88ac0000000000000000536a4c5000000000001c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030750000000000001976a9148bbf7e254925ebd7a4911e7d16cb858341f9e05588ac50f80c00000000001976a91430fb38483f5a8f035ee955cc2d6684d76a2e3ecc88ac00000000");
 }
 
 /**************************** CapBAC test suite *******************************/
@@ -844,7 +832,6 @@ int main ( void )
    /* add the tests to the suite */
    if ( (NULL == CU_add_test(pSuite, "test_case_cache1", test_case_cache1)) ||
         (NULL == CU_add_test(pSuite, "test_case_cache2", test_case_cache2)) ||
-        (NULL == CU_add_test(pSuite, "test_case_cache3", test_case_cache3)) ||
         (NULL == CU_add_test(pSuite, "test_case_signandsend", test_case_signandsend))
       )
    {

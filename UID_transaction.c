@@ -254,7 +254,6 @@ int UID_buildScriptSig(uint8_t *rawtx, size_t rawtx_len, UID_Bip32Path *path, in
 
 static UID_ScriptSig scriptsig[UID_CONTRACT_MAX_IN];
 static UID_Bip32Path bip32path[UID_CONTRACT_MAX_IN];
-#define TX_OFFSET 6
 static uint8_t rawtx[1500];
 static size_t rawtx_len;
 static char errbuf[1024];
@@ -311,8 +310,13 @@ void UID_signAndSendContract(char *param, char *result, size_t size)
     str = YAJL_GET_STRING(v);
 
     rawtx_len = fromhex(str, rawtx, sizeof(rawtx));
+    
+    if (UID_buildScriptSig(rawtx, rawtx_len, bip32path, i, scriptsig, UID_CONTRACT_MAX_IN) != UID_TX_OK) {
+        snprintf(result, size, "4 - UID_signAndSendContract() build script sig error: \"%s\" string not found", path[0]);
+        goto clean_return;
+    }
+    
     strcpy(result, "0 - ");
-    UID_buildScriptSig(rawtx, rawtx_len, bip32path, i, scriptsig, UID_CONTRACT_MAX_IN);
     UID_buildSignedHex(rawtx, rawtx_len, scriptsig, result + 4, size - 4);
 
 clean_return:
