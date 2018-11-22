@@ -311,8 +311,9 @@ void UID_signAndSendContract(char *param, char *result, size_t size)
 
     rawtx_len = fromhex(str, rawtx, sizeof(rawtx));
     
-    if (UID_buildScriptSig(rawtx, rawtx_len, bip32path, i, scriptsig, UID_CONTRACT_MAX_IN) != UID_TX_OK) {
-        snprintf(result, size, "4 - UID_signAndSendContract() build script sig error: \"%s\" string not found", path[0]);
+    i = UID_buildScriptSig(rawtx, rawtx_len, bip32path, i, scriptsig, UID_CONTRACT_MAX_IN);
+    if (i != UID_TX_OK) {
+        snprintf(result, size, "5 - UID_signAndSendContract() build script sig error: %d", i);
         goto clean_return;
     }
     
