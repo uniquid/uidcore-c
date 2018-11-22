@@ -254,9 +254,6 @@ int UID_buildScriptSig(uint8_t *rawtx, size_t rawtx_len, UID_Bip32Path *path, in
 
 static UID_ScriptSig scriptsig[UID_CONTRACT_MAX_IN];
 static UID_Bip32Path bip32path[UID_CONTRACT_MAX_IN];
-#define TX_OFFSET 6
-static char jsontransaction[3000] = "rawtx=";
-static char *transaction = jsontransaction+TX_OFFSET; //point to end of -->rawtx=<--
 static uint8_t rawtx[1500];
 static size_t rawtx_len;
 static char errbuf[1024];
@@ -280,7 +277,7 @@ void UID_signAndSendContract(char *param, char *result, size_t size)
 {
     yajl_val jnode, paths, v;
     char *str;
-    unsigned i, res;
+    unsigned i;
 
 	jnode = yajl_tree_parse(param, errbuf, sizeof(errbuf));
     if (jnode == NULL) {
@@ -313,25 +310,15 @@ void UID_signAndSendContract(char *param, char *result, size_t size)
     str = YAJL_GET_STRING(v);
 
     rawtx_len = fromhex(str, rawtx, sizeof(rawtx));
-    UID_buildScriptSig(rawtx, rawtx_len, bip32path, i, scriptsig, UID_CONTRACT_MAX_IN);
-    UID_buildSignedHex(rawtx, rawtx_len, scriptsig, transaction, sizeof(jsontransaction)-TX_OFFSET);
-    strcpy(result, "6 - ");
-    res = UID_sendTx(jsontransaction, result + 4, size - 4);
-    if (UID_HTTP_OK == res) {
-        yajl_tree_free(jnode);
-        jnode = yajl_tree_parse(result + 4, errbuf, sizeof(errbuf));
-        if ( NULL != jnode) {
-            path[0] = "txid";
-            v = yajl_tree_get(jnode, path, yajl_t_string);
-            if ( NULL != v) {
-                str = YAJL_GET_STRING(v);
-                snprintf(result, size, "0 - %s", str);
-            }
-        }
+    
+    i = UID_buildScriptSig(rawtx, rawtx_len, bip32path, i, scriptsig, UID_CONTRACT_MAX_IN);
+    if (i != UID_TX_OK) {
+        snprintf(result, size, "5 - UID_signAndSendContract() build script sig error: %d", i);
+        goto clean_return;
     }
-    else {
-        snprintf(result, size, "5 - UID_sendTx() return <%d>", res);
-    }
+    
+    strcpy(result, "0 - ");
+    UID_buildSignedHex(rawtx, rawtx_len, scriptsig, result + 4, size - 4);
 
 clean_return:
     yajl_tree_free(jnode);
