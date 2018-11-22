@@ -17,6 +17,7 @@
 #include <stdio.h>  // for printf
 #include <unistd.h> // unlink
 
+extern cache_buffer *current;
 
 /**************************** Identity test suite *******************************/
 
@@ -146,10 +147,7 @@ void test_case_identity4(void)
 
 int init_general_suite(void)
 {
-	extern cache_buffer *current;
 	uint8_t bit_mask1[18] = { 0x00, 0x00, 0x00, 0x80     }; // bit 31 ON
-	uint8_t bit_mask2[18] = { 0x00, 0x00, 0x00, 0x40     };
-	uint8_t bit_mask3[18] = { 0x00, 0x00, 0x00, 0x3e     };
 
     strncpy(current->contractsCache[0].serviceUserAddress, "my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV", sizeof(BTC_Address));
     strncpy(current->contractsCache[0].serviceProviderAddress, "mw5oLLjxSNsPRdDgArCZseGEQJVdNYNK5U", sizeof(BTC_Address));
@@ -157,13 +155,7 @@ int init_general_suite(void)
     strncpy(current->contractsCache[1].serviceUserAddress, "myUFCeVGwkJv3PXy4zc1KSWRT8dC5iTvhU", sizeof(BTC_Address));
     strncpy(current->contractsCache[1].serviceProviderAddress, "mtEQ22KCcjpz73hWfNvJoq6tqMEcRUKk3m", sizeof(BTC_Address));
     memset(current->contractsCache[1].profile.bit_mask, 0, sizeof(current->contractsCache[1].profile.bit_mask));
-    strncpy(current->contractsCache[2].serviceUserAddress, "msi5CAqcnMP6aiAQ3Q82W9bUCGj9nMWHTM", sizeof(BTC_Address));
-    strncpy(current->contractsCache[2].serviceProviderAddress, "mvMD34qjTuMSoaHifCmjtjiPLXgfFNtCiV", sizeof(BTC_Address));
-    memcpy(current->contractsCache[2].profile.bit_mask, bit_mask2, sizeof(current->contractsCache[0].profile.bit_mask));
-    strncpy(current->contractsCache[3].serviceUserAddress, "n42d4KwDcCKsidov224rsA7GKLtTsVbhoo", sizeof(BTC_Address));
-    strncpy(current->contractsCache[3].serviceProviderAddress, "mhxNWQnP91TJ1AU7j8BUjrxLCTPbjLoU6m", sizeof(BTC_Address));
-    memcpy(current->contractsCache[3].profile.bit_mask, bit_mask3, sizeof(current->contractsCache[0].profile.bit_mask));
-    current->validCacheEntries = 4;
+    current->validCacheEntries = 2;
     strncpy(current->clientCache[0].serviceProviderName, "LocalMachine", sizeof(((UID_ClientProfile *)0)->serviceProviderName));
     strncpy(current->clientCache[0].serviceProviderAddress, "mw5oLLjxSNsPRdDgArCZseGEQJVdNYNK5U", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));
     strncpy(current->clientCache[0].serviceUserAddress, "my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));
@@ -174,7 +166,6 @@ int init_general_suite(void)
     strncpy(current->clientCache[2].serviceProviderAddress, "mtEQ22KCcjpz73hWfNvJoq6tqMEcRUKk3m", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));
     strncpy(current->clientCache[2].serviceUserAddress, "n1UevZASvVyNhAB2d5Nm9EaHFeooJZbSP7", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));
     current->validClientEntries = 3;
-
 
 	unlink("identity.db");
 	UID_getLocalIdentity("tprv8ZgxMBicQKsPdoj3tQG8Z2bzNsCTsk9heayJQA1pQStVx2hLEyVwx6gfHZ2p4dSzbvaEw7qrDXnX54vTVbkLghZcB24TXuj1ADXPUCvyfcy");
@@ -578,6 +569,17 @@ int init_cache_suite(void)
 {
 	UID_pApplianceURL = "http://explorer.uniquid.co:3001/insight-api";
 	UID_pRegistryURL = "http://appliance4.uniquid.co:8080/registry";
+
+	uint8_t bit_mask2[18] = { 0x00, 0x00, 0x00, 0x40     };
+	uint8_t bit_mask3[18] = { 0x00, 0x00, 0x00, 0x3e     };
+
+    strncpy(current->contractsCache[0].serviceUserAddress, "msi5CAqcnMP6aiAQ3Q82W9bUCGj9nMWHTM", sizeof(BTC_Address));
+    strncpy(current->contractsCache[0].serviceProviderAddress, "mvMD34qjTuMSoaHifCmjtjiPLXgfFNtCiV", sizeof(BTC_Address));
+    memcpy(current->contractsCache[0].profile.bit_mask, bit_mask2, sizeof(current->contractsCache[0].profile.bit_mask));
+    strncpy(current->contractsCache[1].serviceUserAddress, "n42d4KwDcCKsidov224rsA7GKLtTsVbhoo", sizeof(BTC_Address));
+    strncpy(current->contractsCache[1].serviceProviderAddress, "mhxNWQnP91TJ1AU7j8BUjrxLCTPbjLoU6m", sizeof(BTC_Address));
+    memcpy(current->contractsCache[1].profile.bit_mask, bit_mask3, sizeof(current->contractsCache[0].profile.bit_mask));
+
 	return 0;
 }
 
@@ -598,7 +600,7 @@ void test_case_cache1(void)
 	unlink("identity.db");
 	UID_getLocalIdentity("tprv8ZgxMBicQKsPeF9bnvZrQCjeySPx82J1BpJbrJ4HLLQwDHyNMiQ9uBsKDeh6GhwwmtRAzd142o2ji8M55CcBbcNhgbrUxE1FENw9baLgYnD");
 	CU_ASSERT(1 == UID_getContracts(&cache));
-	CU_ASSERT(4 == cache->validCacheEntries);
+	CU_ASSERT(2 == cache->validCacheEntries);
 	CU_ASSERT(3 == cache->validClientEntries);
 
 	profile = UID_matchProvider("LocalMachine");
@@ -623,13 +625,13 @@ void test_case_cache2(void)
 	unlink("identity.db");
 	UID_getLocalIdentity("tprv8ZgxMBicQKsPdoj3tQG8Z2bzNsCTsk9heayJQA1pQStVx2hLEyVwx6gfHZ2p4dSzbvaEw7qrDXnX54vTVbkLghZcB24TXuj1ADXPUCvyfcy");
 	CU_ASSERT( 1 == UID_getContracts(&cache));
-	CU_ASSERT( 4 == cache->validCacheEntries);
+	CU_ASSERT( 2 == cache->validCacheEntries);
 	CU_ASSERT( 3 == cache->validClientEntries);
 }
 
 void test_case_signandsend(void)
 {
-	char result[250] = {0};
+	char result[3000] = {0};
 	char param[] = "{\"paths\":[\"0/1/1\"],\"tx\":\""
 					"01000000"
 					"01"
