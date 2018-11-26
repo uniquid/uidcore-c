@@ -1,4 +1,11 @@
 /*
+ * Copyright (c) 2016-2018. Uniquid Inc. or its affiliates. All Rights Reserved.
+ *
+ * License is in the "LICENSE" file accompanying this file.
+ * See the License for the specific language governing permissions and limitations under the License.
+ */
+
+/*
  * @file   UID_fillCache.c
  *
  * @date   05/jan/2016
@@ -522,4 +529,33 @@ int UID_fillCache(UID_HttpOBJ *curl, cache_buffer *secondb)
     get_providers_name(curl, secondb);
 
     return UID_CONTRACTS_OK;
+}
+
+/**
+ * Sends a signed transaction to the block-chain using
+ * Insight API service
+ *
+ * @param[in]  signed_tx signed transaction as hex string (ascii)
+ * @param[out] ret       string buffer to be filled with the
+ *                       result from Insight  API. The txid if all OK, es: <br>
+ *                       {"txid":"3cd0f12a587945c75edde69e8989260fb4126b6ae803cb26de751e62a47137be"}
+ * @param[in]  size      size of ret buffer
+ *
+ * @return     UID_HTTP_OK == no error
+ */
+int UID_sendTx(char *signed_tx, char *ret, size_t size)
+{
+    UID_HttpOBJ *curl;
+    int res;
+    char url[256];
+
+    curl = UID_httpinit();
+
+    snprintf(url, sizeof(url), UID_SENDTX);
+    res = UID_httppost(curl, url, signed_tx, ret, size);
+
+    /* always cleanup */
+    UID_httpcleanup(curl);
+
+    return res;
 }

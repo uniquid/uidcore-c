@@ -1,15 +1,17 @@
 /*
+ * Copyright (c) 2016-2018. Uniquid Inc. or its affiliates. All Rights Reserved.
+ *
+ * License is in the "LICENSE" file accompanying this file.
+ * See the License for the specific language governing permissions and limitations under the License.
+ */
+
+/*
  * @file   UID_bchainBTC.c
  *
  * @date   5/aug/2016
  * @author M. Palumbi
  */
   
- 
-
-
-
-
 /**
  * @file   UID_bchainBTC.h
  *
@@ -18,30 +20,29 @@
  */
 
 #include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <stdio.h>
 #include "UID_httpal.h"
-#include "sha2.h"
-#include "UID_utils.h"
-#include "UID_globals.h"
-#include "UID_identity.h"
 #include "UID_bchainBTC.h"
 #include "UID_fillCache.h"
-#include "yajl/yajl_parse.h"
+#include "UID_time.h"
+#include "UID_log.h"
 
 /**
  * double buffer for contract cache<br>
  * UID_getContracts may fill seconb while current is read
  */
-cache_buffer cache0 = { { { {0},{0},{0,{0},0,{{0}}} } }, 0, { { {0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER };
-cache_buffer cache1 = { { { {0},{0},{0,{0},0,{{0}}} } }, 0, { { {0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER };
+static cache_buffer cache0 = { { { {0},{0},UID_SMARTC_INITIALIZER } }, 0, { { {0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER };
+static cache_buffer cache1 = { { { {0},{0},UID_SMARTC_INITIALIZER } }, 0, { { {0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER };
+/**
+ * capability contract cache
+ */
+static cache_buffer capDB  = { { { {0},{0},UID_SMARTC_INITIALIZER } }, UID_CONTRACTS_CACHE_SIZE, { { {0},{0},{0} } }, UID_CLIENT_CACHE_SIZE, PTHREAD_MUTEX_INITIALIZER };
 
 /**
- * pointers to the main and secondary buffer
+ * pointers to the main, secondary and capability buffer
  */
 cache_buffer *current = &cache0;
 cache_buffer *secondb = &cache1;
+cache_buffer *capDBp  = &capDB;
 
 /**
  * Base url of the Insight API appliance
@@ -158,6 +159,33 @@ UID_SecurityProfile *UID_matchContract(BTC_Address serviceUserAddress)
     }
 
     pthread_mutex_unlock(&(ptr->in_use));  // unlock the resource
+    if (NULL != ret_val)
+        return ret_val;
+
+    ptr = capDBp;
+    pthread_mutex_lock(&(ptr->in_use));  // lock the resource
+
+    for(i=0; i<(ptr->validCacheEntries); i++)
+    {
+        if (strcmp((ptr->contractsCache)[i].serviceUserAddress, serviceUserAddress) == 0)
+        {   // found the contract
+            //if ((ptr->contractsCache)[i].profile == 0) break; // profile == 0 contract revoked! return NULL
+            int64_t time = UID_getTime();
+            if (time < (ptr->contractsCache)[i].profile.since) {
+                UID_log(UID_LOG_ERROR, "In func <%s> " "Contract not yet valid\n", __func__);
+                continue;
+            }
+            if (time > (ptr->contractsCache)[i].profile.until) {
+                UID_log(UID_LOG_ERROR, "In func <%s> " "Contract not more valid\n", __func__);
+                continue;
+            }
+            memcpy(&goodContract,  (ptr->contractsCache) + i, sizeof(goodContract)); // copy to goodContract
+            ret_val = &goodContract; // return pointer to it
+            break;
+        }
+    }
+
+    pthread_mutex_unlock(&(ptr->in_use));  // unlock the resource
     return ret_val;
 }
 
@@ -196,30 +224,18 @@ UID_ClientProfile *UID_matchProvider(char *name)
 }
 
 /**
- * Sends a signed transaction to the block-chain using
- * Insight API service
+ * Insert a channel in the contract DataBase
  *
- * @param[in]  signed_tx signed transaction as hex string (ascii)
- * @param[out] ret       string buffer to be filled with the
- *                       result from Insight  API. The txid if all OK, es: <br>
- *                       {"txid":"3cd0f12a587945c75edde69e8989260fb4126b6ae803cb26de751e62a47137be"}
- * @param[in]  size      size of ret buffer
+ * @param[] channel channel to be inserted
  *
- * @return     UID_HTTP_OK == no error
+ * @return          UID_CDB_OK if no error
  */
-int UID_sendTx(char *signed_tx, char *ret, size_t size)
+int UID_insertProvideChannel(UID_SecurityProfile *channel)
 {
-    UID_HttpOBJ *curl;
-    int res;
-    char url[256];
-
-    curl = UID_httpinit();
-
-    snprintf(url, sizeof(url), UID_SENDTX);
-    res = UID_httppost(curl, url, signed_tx, ret, size);
-
-    /* always cleanup */
-    UID_httpcleanup(curl);
-
-    return res;
+    (void)channel;
+    pthread_mutex_lock(&(capDBp->in_use));  // lock the resource
+    memcpy(&(capDBp->contractsCache[0]), channel, sizeof(UID_SecurityProfile));
+    capDBp->validCacheEntries = 1;
+    pthread_mutex_unlock(&(capDBp->in_use));  // unlock the resource
+    return UID_CDB_OK;
 }

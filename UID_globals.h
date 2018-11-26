@@ -1,4 +1,11 @@
-/**
+/*
+ * Copyright (c) 2016-2018. Uniquid Inc. or its affiliates. All Rights Reserved.
+ *
+ * License is in the "LICENSE" file accompanying this file.
+ * See the License for the specific language governing permissions and limitations under the License.
+ */
+
+ /**
  * @file   UID_globals.h
  *
  * @date   3/aug/2016
@@ -20,7 +27,7 @@
 typedef char BTC_Address[BTC_ADDRESS_MAX_LENGHT+1]; //address base58 coded
 typedef uint8_t BTC_PublicKey[33];  //compressed public key
 typedef uint8_t BTC_PrivateKey[32]; //Private key
-typedef char BTC_Signature[BTC_SIGNATURE_LENGHT+1]; //Private key
+typedef char BTC_Signature[BTC_SIGNATURE_LENGHT+1]; //(recovery byte + signature) base64 encoded
 
 /* error codes for the library functions */
 #define UID_OK 0
@@ -55,6 +62,20 @@ typedef char BTC_Signature[BTC_SIGNATURE_LENGHT+1]; //Private key
 #define UID_HTTP_GET_ERROR  		19
 #define UID_HTTP_POST_ERROR  		20
 #define UID_HTTP_CLEANUP_ERROR 		21
+
+#define UID_SIGN_OK                 UID_OK
+#define UID_SIGN_FAILED             22
+#define UID_SIGN_SMALL_BUFFER       23
+#define UID_SIGN_INVALID_CHARACTER  24
+#define UID_SIGN_VERIFY_ERROR       25
+
+#define UID_CAPBAC_OK               UID_OK
+#define UID_CAPBAC_SMALL_BUFFER     26
+#define UID_CAPBAC_SER_ERROR        27
+#define UID_CAPBAC_UNTRUSTED_AUTH   28
+#define UID_CAPBAC_MALFORMED        29
+
+#define UID_CDB_OK                  UID_OK
 
 typedef struct
 {

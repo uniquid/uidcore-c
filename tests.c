@@ -10,10 +10,14 @@
 #include "UID_dispatch.h"
 #include "UID_utils.h"
 #include "UID_transaction.h"
+#include "base64.h"
+#include "UID_capBAC.h"
+#include "UID_time.h"
 
 #include <stdio.h>  // for printf
 #include <unistd.h> // unlink
 
+extern cache_buffer *current;
 
 /**************************** Identity test suite *******************************/
 
@@ -60,7 +64,7 @@ void test_case_identity2(void)
 							 "\x68\x31\x91\x53\xe5\x72\x6f\x63\x8c\xf1\x9e\xcc\xff\xa3\x8a\xf3\x0a\x3a\x46\x4f\x14\xf9\x35\xba\xf0\xc1\xc9\x45\x98\xd7\xdf\xe0";
 
 		UID_Bip32Path path = {0, 0, 17};
-		UID_signAt(&path, hash, sig);
+		UID_signAt(&path, hash, sig, NULL);
 		CU_ASSERT(0 == memcmp(sig, result, sizeof(result)));
 	}
 
@@ -143,7 +147,6 @@ void test_case_identity4(void)
 
 int init_general_suite(void)
 {
-	extern cache_buffer *current;
 	uint8_t bit_mask1[18] = { 0x00, 0x00, 0x00, 0x80     }; // bit 31 ON
 
     strncpy(current->contractsCache[0].serviceUserAddress, "my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV", sizeof(BTC_Address));
@@ -163,7 +166,6 @@ int init_general_suite(void)
     strncpy(current->clientCache[2].serviceProviderAddress, "mtEQ22KCcjpz73hWfNvJoq6tqMEcRUKk3m", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));
     strncpy(current->clientCache[2].serviceUserAddress, "n1UevZASvVyNhAB2d5Nm9EaHFeooJZbSP7", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));
     current->validClientEntries = 3;
-
 
 	unlink("identity.db");
 	UID_getLocalIdentity("tprv8ZgxMBicQKsPdoj3tQG8Z2bzNsCTsk9heayJQA1pQStVx2hLEyVwx6gfHZ2p4dSzbvaEw7qrDXnX54vTVbkLghZcB24TXuj1ADXPUCvyfcy");
@@ -473,6 +475,31 @@ int clean_JavaVectors_suite(void)
 
 /************* Test case functions ****************/
 
+void test_case_tprvFromSeed(void)
+{
+{
+    // seed = 01b30b9f68e59936712f0c416ceb1c73f01fa97f665acfa898e6e3c19c5ab577
+    uint8_t seed[32] = {0x01,0xb3,0x0b,0x9f,0x68,0xe5,0x99,0x36,0x71,0x2f,0x0c,0x41,0x6c,0xeb,0x1c,0x73,0xf0,0x1f,0xa9,0x7f,0x66,0x5a,0xcf,0xa8,0x98,0xe6,0xe3,0xc1,0x9c,0x5a,0xb5,0x77};
+    char tprv[256]={0};
+
+    UID_tprvFromSeed(seed, tprv, sizeof(tprv));
+    CU_ASSERT_STRING_EQUAL(
+		"tprv8ZgxMBicQKsPeUjbnmwN54rKdA1UCsoJsY3ngzhVxyqeTV5pPNo77heffPbSfWVy8vLkTcMwpQHTxJzjz8euKsdDzETM5WKyKFYNLxMAcmQ",
+		tprv);
+}
+{
+    char privateKey[256];
+    uint8_t seed[32] = {0};
+
+    fromhex("6ecc96fd114b975295c45ccfbb8bd15390ec1af65f2d5505ad25884166bdcaec",seed, sizeof(seed));
+    UID_tprvFromSeed(seed, privateKey, sizeof(privateKey));
+    CU_ASSERT_STRING_EQUAL(
+		"tprv8ZgxMBicQKsPeF9bnvZrQCjeySPx82J1BpJbrJ4HLLQwDHyNMiQ9uBsKDeh6GhwwmtRAzd142o2ji8M55CcBbcNhgbrUxE1FENw9baLgYnD",
+		privateKey);
+}
+
+}
+
 void test_case_JavaVectors_signtx(void)
 {
 {
@@ -498,6 +525,42 @@ void test_case_JavaVectors_signtx(void)
 }
 }
 
+void test_case_signMessage(void)
+{
+{
+	UID_Bip32Path path = {0,0,0};
+	char *msgVector = "Hello World!";
+	char *sigVector = "IOAhyp0at0puRgDZD3DJl0S2FjgLEo0q7nBdgzDrWpbDR+B3daIlN3R20lhcpQKZFWl8/ttxUXzQYS0EFso2VLo=";
+	char *adrVector = "mj3Ggr43QMSea1s6H3nYJRE3m5GjhGFcLb";
+
+	BTC_Signature signature = {0};
+	CU_ASSERT(UID_SIGN_OK == UID_signMessage(msgVector, &path, signature, sizeof(signature)));
+	CU_ASSERT_STRING_EQUAL(sigVector, signature);
+
+	uint8_t signature_bin[65] = {0};
+	size_t size = 0;
+	CU_ASSERT( 0 == mbedtls_base64_decode(signature_bin, sizeof(signature_bin), &size, (unsigned char *)sigVector, strlen(sigVector)) );
+	CU_ASSERT( 0 == cryptoMessageVerify((uint8_t *)msgVector, strlen(msgVector), adrVector, signature_bin) );
+	CU_ASSERT( UID_SIGN_OK == UID_verifyMessage(msgVector, sigVector, adrVector));
+}
+{
+	UID_Bip32Path path = {1,0,0};
+	char *msgVector = "Hello World!";
+	char *sigVector = "H3UHssQig0Vef9VIzUmDW0HV37vpm5ZZGF0zbw6xxMMoTTbUm/efPIQDcx5IlOgflC7BcR90aXHsV7BBaQx+b9Q=";
+	char *adrVector = "mgXg8FWaYaDVcsvjJq4jW7vrxQCRtjPchs";
+
+	BTC_Signature signature = {0};
+	CU_ASSERT(UID_SIGN_OK == UID_signMessage(msgVector, &path, signature, sizeof(signature)));
+	CU_ASSERT_STRING_EQUAL(sigVector, signature);
+
+	uint8_t signature_bin[65] = {0};
+	size_t size = 0;
+	CU_ASSERT( 0 == mbedtls_base64_decode(signature_bin, sizeof(signature_bin), &size, (unsigned char *)sigVector, strlen(sigVector)) );
+	CU_ASSERT( 0 == cryptoMessageVerify((uint8_t *)msgVector, strlen(msgVector), adrVector, signature_bin) );
+	CU_ASSERT( UID_SIGN_OK == UID_verifyMessage(msgVector, sigVector, adrVector));
+}
+}
+
 /**************************** Cache test suite *******************************/
 
 /* Test Suite setup and cleanup functions: */
@@ -506,6 +569,17 @@ int init_cache_suite(void)
 {
 	UID_pApplianceURL = "http://explorer.uniquid.co:3001/insight-api";
 	UID_pRegistryURL = "http://appliance4.uniquid.co:8080/registry";
+
+	uint8_t bit_mask2[18] = { 0x00, 0x00, 0x00, 0x40     };
+	uint8_t bit_mask3[18] = { 0x00, 0x00, 0x00, 0x3e     };
+
+    strncpy(current->contractsCache[0].serviceUserAddress, "msi5CAqcnMP6aiAQ3Q82W9bUCGj9nMWHTM", sizeof(BTC_Address));
+    strncpy(current->contractsCache[0].serviceProviderAddress, "mvMD34qjTuMSoaHifCmjtjiPLXgfFNtCiV", sizeof(BTC_Address));
+    memcpy(current->contractsCache[0].profile.bit_mask, bit_mask2, sizeof(current->contractsCache[0].profile.bit_mask));
+    strncpy(current->contractsCache[1].serviceUserAddress, "n42d4KwDcCKsidov224rsA7GKLtTsVbhoo", sizeof(BTC_Address));
+    strncpy(current->contractsCache[1].serviceProviderAddress, "mhxNWQnP91TJ1AU7j8BUjrxLCTPbjLoU6m", sizeof(BTC_Address));
+    memcpy(current->contractsCache[1].profile.bit_mask, bit_mask3, sizeof(current->contractsCache[0].profile.bit_mask));
+
 	return 0;
 }
 
@@ -520,28 +594,28 @@ int clean_cache_suite(void)
 void test_case_cache1(void)
 {
 	cache_buffer *cache;
-//	UID_ClientProfile *profile = NULL;
+	UID_ClientProfile *profile = NULL;
 	UID_SecurityProfile *contract = NULL;
 
 	unlink("identity.db");
 	UID_getLocalIdentity("tprv8ZgxMBicQKsPeF9bnvZrQCjeySPx82J1BpJbrJ4HLLQwDHyNMiQ9uBsKDeh6GhwwmtRAzd142o2ji8M55CcBbcNhgbrUxE1FENw9baLgYnD");
-	CU_ASSERT(0 == UID_getContracts(&cache));
-	CU_ASSERT(4 == cache->validCacheEntries);
-	CU_ASSERT(1 == cache->validClientEntries);
+	CU_ASSERT(1 == UID_getContracts(&cache));
+	CU_ASSERT(2 == cache->validCacheEntries);
+	CU_ASSERT(3 == cache->validClientEntries);
 
-//	profile = UID_matchProvider("Node0");
-//	CU_ASSERT(NULL != profile);
-//	CU_ASSERT_STRING_EQUAL(profile->serviceProviderAddress, "murzfjMUddDbFjir2fEYCis8mpaphrdHKV");
+	profile = UID_matchProvider("LocalMachine");
+	CU_ASSERT_FATAL(NULL != profile);
+	CU_ASSERT_STRING_EQUAL(profile->serviceProviderAddress, "mw5oLLjxSNsPRdDgArCZseGEQJVdNYNK5U");
 
 	contract = UID_matchContract("msi5CAqcnMP6aiAQ3Q82W9bUCGj9nMWHTM");
-	CU_ASSERT(NULL != contract);
+	CU_ASSERT_FATAL(NULL != contract);
 	CU_ASSERT_STRING_EQUAL(contract->serviceProviderAddress, "mvMD34qjTuMSoaHifCmjtjiPLXgfFNtCiV");
 	CU_ASSERT_EQUAL(0x40, contract->profile.bit_mask[3]);
 
 	contract = UID_matchContract("n42d4KwDcCKsidov224rsA7GKLtTsVbhoo");
-	CU_ASSERT(NULL != contract);
+	CU_ASSERT_FATAL(NULL != contract);
 	CU_ASSERT_STRING_EQUAL(contract->serviceProviderAddress, "mhxNWQnP91TJ1AU7j8BUjrxLCTPbjLoU6m");
-	CU_ASSERT_EQUAL(0x3e, contract->profile.bit_mask[4]);
+	CU_ASSERT_EQUAL(0x3e, contract->profile.bit_mask[3]);
 }
 
 void test_case_cache2(void)
@@ -550,34 +624,14 @@ void test_case_cache2(void)
 
 	unlink("identity.db");
 	UID_getLocalIdentity("tprv8ZgxMBicQKsPdoj3tQG8Z2bzNsCTsk9heayJQA1pQStVx2hLEyVwx6gfHZ2p4dSzbvaEw7qrDXnX54vTVbkLghZcB24TXuj1ADXPUCvyfcy");
-	CU_ASSERT(0 == UID_getContracts(&cache));
-	CU_ASSERT( 0 == cache->validCacheEntries);
-	CU_ASSERT( 0 == cache->validClientEntries);
-}
-
-/* fake imprinter:
- * tprv8ZgxMBicQKsPeEzhahZn1jqJjNyQ3G7HLbEZKU9krP8cdeBXmzVSzt7kCPEofHbmMo5k18mVB7am8rFiQLAzJdchG7zMUWbTUCiJ3w1s9oM
- * @ m/44'/0'/0/1/1/1
- * tx: ebafc4c80422e441bed962f6da1c481051de3f5569b101600ad290699090960e 100 coin
- *
- * mtN3H7sFPC5V5bNy7t4qg9ku9EKSNhKrHE -> mxZ19o2oq6gGVeES1x7rZUHbwxqMkWFBoo
- *                                       mmdJjnUHNiTZTAR46YAdtB4eVB4CeB6Rvb
- */
-
-void test_case_cache3(void)
-{
-	cache_buffer *cache;
-
-	unlink("identity.db");
-	UID_getLocalIdentity("tprv8ZgxMBicQKsPdLB7wadJ2LDnCQ4ra1pyWQrVJGPQNrQkm8XX5K9i6ucFYM6H9aeSEgGCL8JFamvgiVtpmVjBiruNYegiW9LCBL2HCoYWRAa");
-	CU_ASSERT(0 == UID_getContracts(&cache));
-	CU_ASSERT( 1 == cache->validCacheEntries);
-	CU_ASSERT( 0 == cache->validClientEntries);
+	CU_ASSERT( 1 == UID_getContracts(&cache));
+	CU_ASSERT( 2 == cache->validCacheEntries);
+	CU_ASSERT( 3 == cache->validClientEntries);
 }
 
 void test_case_signandsend(void)
 {
-	char result[250] = {0};
+	char result[3000] = {0};
 	char param[] = "{\"paths\":[\"0/1/1\"],\"tx\":\""
 					"01000000"
 					"01"
@@ -596,27 +650,96 @@ void test_case_signandsend(void)
 	unlink("identity.db");
 	UID_getLocalIdentity("tprv8ZgxMBicQKsPdQNuYWLfbuYng8SAMPaThga8UcwED6ehSFCQNvRdBBV36GLAcxWvZw1etrHfhAAuzJg51xe9JeiV2fcvPkEtr8ZA6QYGpJr");
 	UID_signAndSendContract(param, result, sizeof(result));
-	CU_ASSERT_STRING_EQUAL(result, "6 - transaction already in block chain. Code:-27");
+	CU_ASSERT_STRING_EQUAL(result, "0 - 0100000001fe86ad88cc3b81b365dd56fb3949b030cfc24532771d4d69d09b1f93659e2227030000006b483045022100f0c4ae67e60870bb98a230db6330888419e4bc2fdc4ce9b36b036a95bba70b1402202d838206f1df0569555964c2eb5d2241fdc77a5d211f772310d6d00a62061a9d012103548488137870979483d70fce824e89922e74b1f30a4ee7ec74bd5bce5dec9006ffffffff0410270000000000001976a91447ce8d6c424c45f3519b7f6f7c96abe7b18d715b88ac0000000000000000536a4c5000000000001c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000030750000000000001976a9148bbf7e254925ebd7a4911e7d16cb858341f9e05588ac50f80c00000000001976a91430fb38483f5a8f035ee955cc2d6684d76a2e3ecc88ac00000000");
 }
 
-/*
-#include "bip32.h"
-#include "curves.h"
-#include "secp256k1.h"
-void test_case_seed(void)
+/**************************** CapBAC test suite *******************************/
+
+/* Test Suite setup and cleanup functions: */
+
+int init_capBAC_suite(void)
 {
-	HDNode node_m;
-    char privateKey[256];
-    uint8_t seed[32] = {0};
-
-    fromhex("6ecc96fd114b975295c45ccfbb8bd15390ec1af65f2d5505ad25884166bdcaec",seed, sizeof(seed));
-    hdnode_from_seed(seed, sizeof(seed), SECP256K1_NAME, &node_m);
-    hdnode_serialize_private(&node_m, 0 , privateKey, sizeof(privateKey));
-    CU_ASSERT_STRING_EQUAL(
-			"tprv8ZgxMBicQKsPeF9bnvZrQCjeySPx82J1BpJbrJ4HLLQwDHyNMiQ9uBsKDeh6GhwwmtRAzd142o2ji8M55CcBbcNhgbrUxE1FENw9baLgYnD",
-			privateKey);
+	unlink("identity.db");
+	UID_getLocalIdentity("tprv8ZgxMBicQKsPeUjbnmwN54rKdA1UCsoJsY3ngzhVxyqeTV5pPNo77heffPbSfWVy8vLkTcMwpQHTxJzjz8euKsdDzETM5WKyKFYNLxMAcmQ");
+	UID_pApplianceURL = "http://explorer.uniquid.co:3001/insight-api";
+	UID_pRegistryURL = "http://appliance4.uniquid.co:8080/registry";
+	return 0;
 }
-*/
+
+int clean_capBAC_suite(void)
+{
+	unlink("identity.db");
+	return 0;
+}
+
+/************* Test case functions ****************/
+
+void test_case_prepareToSign(void)
+{
+{
+	UID_UniquidCapability capability = {
+		"muwk2Z1HiysDAADXC5UMvpvmmCjuZdFnoP",
+		"1234",
+		"12345",
+		{0},
+		1234,
+		12345,
+		{0} };
+
+	char buffer[UID_SERIALIZED_CAPABILITY_SIZE];
+
+	CU_ASSERT(UID_CAPBAC_OK == UID_prepareToSign(&capability, buffer, sizeof(buffer)));
+	CU_ASSERT_STRING_EQUAL(buffer,
+		"muwk2Z1HiysDAADXC5UMvpvmmCjuZdFnoP12341234500000000000000000000000000000000000000123412345");
+}
+{
+	UID_UniquidCapability capability = {
+		"muwk2Z1HiysDAADXC5UMvpvmmCjuZdFnoP",
+		"mp246b2KBN5xncctJxtj7UHiEo5GfiewMT",
+		"mvmmEz4nduzpLk4KR6JMQn3LyZuHYt6NTc",
+		{0,{0,0xFE}},
+		0xffffffffffffffff,
+		0xffffffffffffffff,
+		{0} };
+
+	char buffer[UID_SERIALIZED_CAPABILITY_SIZE];
+
+	CU_ASSERT(UID_CAPBAC_OK == UID_prepareToSign(&capability, buffer, sizeof(buffer)));
+
+	CU_ASSERT_STRING_EQUAL(buffer,
+		"muwk2Z1HiysDAADXC5UMvpvmmCjuZdFnoPmp246b2KBN5xncctJxtj7UHiEo5GfiewMTmvmmEz4nduzpLk4KR6JMQn3LyZuHYt6NTc0000fe00000000000000000000000000000000-1-1");
+}
+{
+	UID_UniquidCapability capability = {
+		"muwk2Z1HiysDAADXC5UMvpvmmCjuZdFnoP",
+		"mp246b2KBN5xncctJxtj7UHiEo5GfiewMT",
+		"mvmmEz4nduzpLk4KR6JMQn3LyZuHYt6NTc",
+		{0,{0,0xFE}},
+		0x7fffffffffffffff,
+		0x7fffffffffffffff,
+		{0} };
+
+	char buffer[UID_SERIALIZED_CAPABILITY_SIZE];
+
+	CU_ASSERT(UID_CAPBAC_OK == UID_prepareToSign(&capability, buffer, sizeof(buffer)));
+
+	CU_ASSERT_STRING_EQUAL(buffer,
+		"muwk2Z1HiysDAADXC5UMvpvmmCjuZdFnoPmp246b2KBN5xncctJxtj7UHiEo5GfiewMTmvmmEz4nduzpLk4KR6JMQn3LyZuHYt6NTc0000fe0000000000000000000000000000000092233720368547758079223372036854775807");
+}
+}
+
+void test_case_getTime(void)
+{
+	int64_t time;
+	time_t ttime;
+
+	time = UID_getTime();
+	ttime = time/1000;
+	printf("\n\nCURRENT TIME (please verify)\n%ld => %s and %d ms\n\n", time, ctime(&ttime), (int)(time - (time/1000*1000)));
+	// uncomment to verify manually
+	//printf("enter y if correct: ");
+	//CU_ASSERT('y' == getchar());
+}
 
 /************* Test Runner Code goes here **************/
 
@@ -676,7 +799,25 @@ int main ( void )
    }
 
    /* add the tests to the suite */
-   if ( (NULL == CU_add_test(pSuite, "test_case_JavaVectors_signtx", test_case_JavaVectors_signtx))
+   if ( (NULL == CU_add_test(pSuite, "test_case_JavaVectors_signtx", test_case_JavaVectors_signtx)) ||
+        (NULL == CU_add_test(pSuite, "test_case_tprvFromSeed", test_case_tprvFromSeed)) ||
+        (NULL == CU_add_test(pSuite, "test_case_signMessage", test_case_signMessage))
+      )
+   {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   /* add a suite to the registry */
+   pSuite = CU_add_suite( "CapBAC suite", init_capBAC_suite, clean_capBAC_suite );
+   if ( NULL == pSuite ) {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   /* add the tests to the suite */
+   if ( (NULL == CU_add_test(pSuite, "test_case_prepareToSign", test_case_prepareToSign)) ||
+        (NULL == CU_add_test(pSuite, "test_case_getTime", test_case_getTime))
       )
    {
       CU_cleanup_registry();
@@ -693,7 +834,6 @@ int main ( void )
    /* add the tests to the suite */
    if ( (NULL == CU_add_test(pSuite, "test_case_cache1", test_case_cache1)) ||
         (NULL == CU_add_test(pSuite, "test_case_cache2", test_case_cache2)) ||
-        (NULL == CU_add_test(pSuite, "test_case_cache3", test_case_cache3)) ||
         (NULL == CU_add_test(pSuite, "test_case_signandsend", test_case_signandsend))
       )
    {

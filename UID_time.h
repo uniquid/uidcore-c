@@ -6,13 +6,17 @@
  */
 
  /**
- * @file   UID_persistence.h
+ * @file   UID_time.h
  *
- * @date   16/feb/2017
+ * @date   18/mar/2018
  * @author M. Palumbi
  */
 
+#ifndef __UID_TIME_H
+#define __UID_TIME_H
 
+#include <stdint.h>
 
-char *load_tprv(char *privateKey, size_t size);
-void store_tprv(char *privateKey);
+int64_t UID_getTime(void);
+
+#endif

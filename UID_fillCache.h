@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2016-2018. Uniquid Inc. or its affiliates. All Rights Reserved.
+ *
+ * License is in the "LICENSE" file accompanying this file.
+ * See the License for the specific language governing permissions and limitations under the License.
+ */
+
 /**
  * @file   UID_fillCache.h
  *
@@ -22,5 +29,6 @@ extern int UID_confirmations;
 extern char *UID_pRegistryURL;
 
 int UID_fillCache(UID_HttpOBJ *curl, cache_buffer *secondb);
+int UID_sendTx(char *signed_tx, char *ret, size_t size);
 
 #endif // __UID_FILLCACHE_H
