@@ -41,6 +41,7 @@
 extern char *UID_pApplianceURL;
 
 #define UID_SMARTC_INITIALIZER {0,{0},{0},0,0}
+#define UID_CACHE_BUFFER_INITIALIZER { { { {0},{0},UID_SMARTC_INITIALIZER,{0} } }, 0, { { {0},{0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER }
 
 typedef struct {
     uint8_t version;
@@ -60,6 +61,7 @@ typedef struct
     BTC_Address serviceUserAddress;
     BTC_Address serviceProviderAddress;
     UID_smart_contract profile;
+    UID_Bip32Path path;
 } UID_SecurityProfile;
 
 typedef struct
@@ -67,6 +69,7 @@ typedef struct
     char serviceProviderName[UID_NAME_LENGHT];
     BTC_Address serviceProviderAddress;
     BTC_Address serviceUserAddress;
+    UID_Bip32Path path;
 } UID_ClientProfile;
 
 typedef struct {

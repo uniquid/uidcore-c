@@ -30,12 +30,12 @@
  * double buffer for contract cache<br>
  * UID_getContracts may fill seconb while current is read
  */
-static cache_buffer cache0 = { { { {0},{0},UID_SMARTC_INITIALIZER } }, 0, { { {0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER };
-static cache_buffer cache1 = { { { {0},{0},UID_SMARTC_INITIALIZER } }, 0, { { {0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER };
+static cache_buffer cache0 = UID_CACHE_BUFFER_INITIALIZER;
+static cache_buffer cache1 = UID_CACHE_BUFFER_INITIALIZER;
 /**
  * capability contract cache
  */
-static cache_buffer capDB  = { { { {0},{0},UID_SMARTC_INITIALIZER } }, UID_CONTRACTS_CACHE_SIZE, { { {0},{0},{0} } }, UID_CLIENT_CACHE_SIZE, PTHREAD_MUTEX_INITIALIZER };
+static cache_buffer capDB  = UID_CACHE_BUFFER_INITIALIZER;
 
 /**
  * pointers to the main, secondary and capability buffer
