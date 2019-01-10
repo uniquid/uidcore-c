@@ -280,11 +280,13 @@ int UID_confirmations = 1;
  *                     to be filled
  * @param[in]  tx      transaction to check
  * @param[in]  type    type of contract to look for: PROVIDER IMPRINTING USER
+ * @param[in]  address address we are looking for
+ * @param[in]  bip32p  Bip32 path of the address
  *
  * @return     UID_CONTRACTS_OK no error <br>
  *             UID_CONTRACTS_SERV_ERROR error contacting the server
  */
-static int check_contract(UID_HttpOBJ *curl, cache_buffer *secondb, char * tx, char *address, int type)
+static int check_contract(UID_HttpOBJ *curl, cache_buffer *secondb, char * tx, char *address, UID_Bip32Path *bip32p, int type)
 {
     yajl_val jnode, v;
     char url[256];
@@ -311,6 +313,7 @@ static int check_contract(UID_HttpOBJ *curl, cache_buffer *secondb, char * tx, c
             UID_SecurityProfile *sp = &(secondb->contractsCache)[secondb->validCacheEntries];
             // fill the provider field
             strncpy(sp->serviceProviderAddress, address, sizeof(sp->serviceProviderAddress));
+            memcpy(&(sp->path), bip32p, sizeof(sp->path));
 
             if (parse_imprinting(jnode, sp))
                 secondb->validCacheEntries++;
@@ -319,6 +322,7 @@ static int check_contract(UID_HttpOBJ *curl, cache_buffer *secondb, char * tx, c
             UID_SecurityProfile *sp = &(secondb->contractsCache)[secondb->validCacheEntries];
             // fill the provider field
             strncpy(sp->serviceProviderAddress, address, sizeof(sp->serviceProviderAddress));
+            memcpy(&(sp->path), bip32p, sizeof(sp->path));
 
             if (parse_provider(jnode, sp))
                 secondb->validCacheEntries++;
@@ -326,6 +330,7 @@ static int check_contract(UID_HttpOBJ *curl, cache_buffer *secondb, char * tx, c
         if (type == USER) {
             UID_ClientProfile *cp = &(secondb->clientCache)[secondb->validClientEntries];
             strncpy(cp->serviceUserAddress, address, sizeof(cp->serviceUserAddress));
+            memcpy(&(cp->path), bip32p, sizeof(cp->path));
 
             if (parse_user(jnode, cp))
                 secondb->validClientEntries++;
@@ -346,19 +351,22 @@ static int check_contract(UID_HttpOBJ *curl, cache_buffer *secondb, char * tx, c
  * @param[in]  curl    pointer to an initialized UID_HttpOBJ struct
  * @param[out] secondb pointer to the contracts cache buffer
  *                     to be filled
+ * @param[in]  bip32p  Bip32 path of the address to check
  * @param[in]  type    type of contract to look for: PROVIDER IMPRINTING USER
  *
  * @return     UID_CONTRACTS_OK transaction exists for the given address <br>
  *             UID_CONTRACTS_NO_TX no transactions for the given address <br>
  *             UID_CONTRACTS_SERV_ERROR error contacting the server
  */
-static int check_address(UID_HttpOBJ *curl, cache_buffer *secondb, char *address, int type)
+static int check_address(UID_HttpOBJ *curl, cache_buffer *secondb, UID_Bip32Path *bip32p, int type)
 {
+    char address[36];
     int res;
     unsigned i;
     char url[256];
     yajl_val jnode, transactions;//, v;
 
+    UID_getAddressAt(bip32p, address, sizeof(address));
     UID_log(UID_LOG_INFO,"==>> %s\n", address);
     snprintf(url, sizeof(url), UID_GETTXS, address);
     if(UID_HTTP_OK != UID_httpget(curl, url, curlbuffer, sizeof(curlbuffer))) {
@@ -380,14 +388,14 @@ static int check_address(UID_HttpOBJ *curl, cache_buffer *secondb, char *address
                 // first tx (last on the array)
                 char *str = YAJL_GET_STRING(transactions->u.array.values[i-1]);
                 UID_log(UID_LOG_INFO,"    ---> %s ---\n", str);
-                res = check_contract(curl, secondb, str, address, type);
+                res = check_contract(curl, secondb, str, address, bip32p, type);
             }
         }
         else {
             for (i = 0; i < transactions->u.array.len; i++) {
                 char *str = YAJL_GET_STRING(transactions->u.array.values[i]);
                 UID_log(UID_LOG_INFO,"    ---> %s ---\n", str);
-                res = check_contract(curl, secondb, str, address, type);
+                res = check_contract(curl, secondb, str, address, bip32p, type);
                 if (res != UID_CONTRACTS_OK)
                     break;
             }
@@ -471,7 +479,6 @@ static int get_providers_name(UID_HttpOBJ *curl, cache_buffer *secondb)
 int UID_fillCache(UID_HttpOBJ *curl, cache_buffer *secondb)
 {
     int res, gap;
-    char b58addr[36];
     UID_Bip32Path path;
 
     (secondb->validCacheEntries) = 0; // void the cache
@@ -482,8 +489,7 @@ int UID_fillCache(UID_HttpOBJ *curl, cache_buffer *secondb)
     path.p_u = 0;  //provider
     path.account = 0;
     path.n = 0;
-    UID_getAddressAt(&path, b58addr, sizeof(b58addr));
-    res = check_address(curl, secondb, b58addr, PROVIDER);
+    res = check_address(curl, secondb, &path, PROVIDER);
     if ( UID_CONTRACTS_SERV_ERROR == res )
         return UID_CONTRACTS_SERV_ERROR;
 
@@ -492,8 +498,7 @@ int UID_fillCache(UID_HttpOBJ *curl, cache_buffer *secondb)
     path.p_u = 0;  //provider
     path.account = 1;
     for (path.n = 0, gap = 0; gap < 5; path.n++) {
-        UID_getAddressAt(&path, b58addr, sizeof(b58addr));
-        res = check_address(curl, secondb, b58addr, PROVIDER);
+        res = check_address(curl, secondb, &path, PROVIDER);
         if ( UID_CONTRACTS_SERV_ERROR == res )
             return UID_CONTRACTS_SERV_ERROR;
         if ( UID_CONTRACTS_NO_TX == res )
@@ -507,8 +512,7 @@ int UID_fillCache(UID_HttpOBJ *curl, cache_buffer *secondb)
         path.p_u = 0;  //provider
         path.account = 0;
         path.n = 0;
-        UID_getAddressAt(&path, b58addr, sizeof(b58addr));
-        res = check_address(curl, secondb, b58addr, IMPRINTING);
+        res = check_address(curl, secondb, &path, IMPRINTING);
         if ( UID_CONTRACTS_SERV_ERROR == res )
             return UID_CONTRACTS_SERV_ERROR;
     }
@@ -516,8 +520,7 @@ int UID_fillCache(UID_HttpOBJ *curl, cache_buffer *secondb)
     path.p_u = 1;  //user
     path.account = 0;
     for (path.n = 0, gap = 0; gap < 5; path.n++) {
-        UID_getAddressAt(&path, b58addr, sizeof(b58addr));
-        res = check_address(curl, secondb, b58addr, USER);
+        res = check_address(curl, secondb, &path, USER);
         if ( UID_CONTRACTS_SERV_ERROR == res )
             return UID_CONTRACTS_SERV_ERROR;
         if ( UID_CONTRACTS_NO_TX == res )

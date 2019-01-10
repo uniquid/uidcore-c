@@ -91,6 +91,7 @@ int UID_receiveProviderCapability(UID_UniquidCapability *cap)
     memcpy(channel.serviceProviderAddress, cap->resourceID, sizeof(BTC_Address));
     memcpy(channel.serviceUserAddress, cap->assignee, sizeof(BTC_Address));
     memcpy(&(channel.profile.version), &(cap->rights), sizeof(UID_Rights));
+    memcpy(&(channel.path), &(profile->path), sizeof(channel.path));
     channel.profile.since = cap->since;
     channel.profile.until = cap->until;
     ret = UID_insertProvideChannel(&channel);

@@ -28,7 +28,7 @@
     #define UID_CLIENT_CACHE_SIZE 50 // number of locally cached client contracts
 #endif // #ifndef UID_CLIENT_CACHE_SIZE
 #define PROFILE_SIZE 80 // OP_RETURN lenght...
-#define UID_NAME_LENGHT 32
+#define UID_NAME_LENGHT 64
 
 #define UID_APPLIANCE "http://appliance3.uniquid.co:8080/insight-api"
 //#define UID_APPLIANCE "http://appliance1.uniquid.co:3001/insight-api"
@@ -41,6 +41,7 @@
 extern char *UID_pApplianceURL;
 
 #define UID_SMARTC_INITIALIZER {0,{0},{0},0,0}
+#define UID_CACHE_BUFFER_INITIALIZER { { { {0},{0},UID_SMARTC_INITIALIZER,{0} } }, 0, { { {0},{0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER }
 
 typedef struct {
     uint8_t version;
@@ -60,6 +61,7 @@ typedef struct
     BTC_Address serviceUserAddress;
     BTC_Address serviceProviderAddress;
     UID_smart_contract profile;
+    UID_Bip32Path path;
 } UID_SecurityProfile;
 
 typedef struct
@@ -67,6 +69,7 @@ typedef struct
     char serviceProviderName[UID_NAME_LENGHT];
     BTC_Address serviceProviderAddress;
     BTC_Address serviceUserAddress;
+    UID_Bip32Path path;
 } UID_ClientProfile;
 
 typedef struct {
