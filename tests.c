@@ -187,18 +187,18 @@ void test_case_general1(void)
 	// user
 	CU_ASSERT_NOT_EQUAL(0, UID_createChannel("noName", &u_ctx));
 	CU_ASSERT_EQUAL(0, UID_createChannel("LocalMachine", &u_ctx));
-	CU_ASSERT_STRING_EQUAL("mw5oLLjxSNsPRdDgArCZseGEQJVdNYNK5U", u_ctx.peerid);
-	CU_ASSERT_STRING_EQUAL("my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV", u_ctx.myid);
+	CU_ASSERT_STRING_EQUAL("mw5oLLjxSNsPRdDgArCZseGEQJVdNYNK5U", u_ctx.contract.serviceProviderAddress);
+	CU_ASSERT_STRING_EQUAL("my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV", u_ctx.contract.serviceUserAddress);
 {
 	uint8_t msg[500] = {0};
 	size_t size = 3;
 	int64_t sID0 = 0;
-	CU_ASSERT_NOT_EQUAL(0, UID_formatReqMsg(u_ctx.myid, 31, "Test ECHO", msg, &size, &sID0));
+	CU_ASSERT_NOT_EQUAL(0, UID_formatReqMsg(u_ctx.contract.serviceUserAddress, 31, "Test ECHO", msg, &size, &sID0));
 }
 	uint8_t msg[500] = {0};
 	size_t size = sizeof(msg);
 	int64_t sID0 = 0;
-	CU_ASSERT_EQUAL(0, UID_formatReqMsg(u_ctx.myid, 31, "Test ECHO", msg, &size, &sID0));
+	CU_ASSERT_EQUAL(0, UID_formatReqMsg(u_ctx.contract.serviceUserAddress, 31, "Test ECHO", msg, &size, &sID0));
 	CU_ASSERT_NOT_EQUAL(sizeof(msg), size);
 	CU_ASSERT_NOT_EQUAL(0, sID0);
 
@@ -221,7 +221,7 @@ void test_case_general1(void)
 	int64_t sID1 = 0;
 	CU_ASSERT_EQUAL(0, UID_parseReqMsg(fmsg, fsize, sender, sizeof(sender), &method, params, sizeof(params), &sID1));
 
-	CU_ASSERT_STRING_EQUAL(u_ctx.myid, sender);
+	CU_ASSERT_STRING_EQUAL(u_ctx.contract.serviceUserAddress, sender);
 	CU_ASSERT_EQUAL(31,method);
 	CU_ASSERT_STRING_EQUAL("Test ECHO", params);
 	CU_ASSERT_EQUAL(sID0, sID1);
@@ -250,7 +250,7 @@ void test_case_general1(void)
 	int64_t sID2 = 0;
 	CU_ASSERT_EQUAL(0, UID_parseRespMsg(response, rsize, r_sender, sizeof(r_sender), &r_error, r_result, sizeof(r_result), &sID2));
 
-	CU_ASSERT_STRING_EQUAL(u_ctx.peerid, r_sender);
+	CU_ASSERT_STRING_EQUAL(u_ctx.contract.serviceProviderAddress, r_sender);
 	CU_ASSERT_EQUAL(0, r_error);
 	CU_ASSERT_STRING_EQUAL("UID_echo: <Test ECHO>", r_result);
 	CU_ASSERT_EQUAL(sID1, sID2);

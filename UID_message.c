@@ -42,13 +42,12 @@
  *                        (contract informations and may be encryption context)
  * @return                0 == no error
  */
-int UID_createChannel(char *destMachine, UID_ClientChannelCtx *ctx)
+int UID_createChannel(char *destMachine, UID_ClientChannelCtx *channel_ctx)
 {
-    UID_ClientProfile *provider;
+    UID_ClientProfile *contract;
 
-	if (NULL == (provider = UID_matchProvider(destMachine))) return UID_MSG_NOT_FOUND;
-    strncpy(ctx->myid, provider->serviceUserAddress, sizeof(ctx->myid));
-    strncpy(ctx->peerid, provider->serviceProviderAddress, sizeof(ctx->peerid));
+	if (NULL == (contract = UID_matchProvider(destMachine))) return UID_MSG_NOT_FOUND;
+    memcpy(&(channel_ctx->contract), contract, sizeof(channel_ctx->contract));
 
     return UID_MSG_OK;
 }

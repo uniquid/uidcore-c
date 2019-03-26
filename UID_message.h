@@ -21,8 +21,7 @@
 #include "UID_bchainBTC.h"
 
 typedef struct {
-    BTC_Address peerid;
-    BTC_Address myid;
+    UID_ClientProfile contract;
 } UID_ClientChannelCtx;
 
 typedef struct {
