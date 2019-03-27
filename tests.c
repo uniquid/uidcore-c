@@ -147,27 +147,6 @@ void test_case_identity4(void)
 
 int init_general_suite(void)
 {
-	uint8_t bit_mask1[18] = { 0x00, 0x00, 0x00, 0x80     }; // bit 31 ON
-
-    strncpy(current->contractsCache[0].serviceUserAddress, "my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV", sizeof(BTC_Address));
-    strncpy(current->contractsCache[0].serviceProviderAddress, "mw5oLLjxSNsPRdDgArCZseGEQJVdNYNK5U", sizeof(BTC_Address));
-    memcpy(current->contractsCache[0].profile.bit_mask, bit_mask1, sizeof(current->contractsCache[0].profile.bit_mask));
-    strncpy(current->contractsCache[1].serviceUserAddress, "myUFCeVGwkJv3PXy4zc1KSWRT8dC5iTvhU", sizeof(BTC_Address));
-    strncpy(current->contractsCache[1].serviceProviderAddress, "mtEQ22KCcjpz73hWfNvJoq6tqMEcRUKk3m", sizeof(BTC_Address));
-    memset(current->contractsCache[1].profile.bit_mask, 0, sizeof(current->contractsCache[1].profile.bit_mask));
-    current->validCacheEntries = 2;
-    strncpy(current->clientCache[0].serviceProviderName, "LocalMachine", sizeof(((UID_ClientProfile *)0)->serviceProviderName));
-    strncpy(current->clientCache[0].serviceProviderAddress, "mw5oLLjxSNsPRdDgArCZseGEQJVdNYNK5U", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));
-    strncpy(current->clientCache[0].serviceUserAddress, "my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));
-    strncpy(current->clientCache[1].serviceProviderName, "UID984fee057c6d", sizeof(((UID_ClientProfile *)0)->serviceProviderName));
-    strncpy(current->clientCache[1].serviceProviderAddress, "mtEQ22KCcjpz73hWfNvJoq6tqMEcRUKk3m", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));
-    strncpy(current->clientCache[1].serviceUserAddress, "myUFCeVGwkJv3PXy4zc1KSWRT8dC5iTvhU", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));
-    strncpy(current->clientCache[2].serviceProviderName, "nocontract", sizeof(((UID_ClientProfile *)0)->serviceProviderName));
-    strncpy(current->clientCache[2].serviceProviderAddress, "mtEQ22KCcjpz73hWfNvJoq6tqMEcRUKk3m", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));
-    strncpy(current->clientCache[2].serviceUserAddress, "n1UevZASvVyNhAB2d5Nm9EaHFeooJZbSP7", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));
-    current->validClientEntries = 3;
-
-
 	unlink("identity.db");
 	UID_getLocalIdentity("tprv8ZgxMBicQKsPdoj3tQG8Z2bzNsCTsk9heayJQA1pQStVx2hLEyVwx6gfHZ2p4dSzbvaEw7qrDXnX54vTVbkLghZcB24TXuj1ADXPUCvyfcy");
 	return 0;
@@ -179,84 +158,6 @@ int clean_general_suite(void)
 }
 
 /************* Test case functions ****************/
-
-void test_case_general1(void)
-{
-	UID_ClientChannelCtx u_ctx;
-
-	// user
-	CU_ASSERT_NOT_EQUAL(0, UID_createChannel("noName", &u_ctx));
-	CU_ASSERT_EQUAL(0, UID_createChannel("LocalMachine", &u_ctx));
-	CU_ASSERT_STRING_EQUAL("mw5oLLjxSNsPRdDgArCZseGEQJVdNYNK5U", u_ctx.contract.serviceProviderAddress);
-	CU_ASSERT_STRING_EQUAL("my3CohS9f57yCqNy4yAPbBRqLaAAJ9oqXV", u_ctx.contract.serviceUserAddress);
-{
-	uint8_t msg[500] = {0};
-	size_t size = 3;
-	int64_t sID0 = 0;
-	CU_ASSERT_NOT_EQUAL(0, UID_formatReqMsg(u_ctx.contract.serviceUserAddress, 31, "Test ECHO", msg, &size, &sID0));
-}
-	uint8_t msg[500] = {0};
-	size_t size = sizeof(msg);
-	int64_t sID0 = 0;
-	CU_ASSERT_EQUAL(0, UID_formatReqMsg(u_ctx.contract.serviceUserAddress, 31, "Test ECHO", msg, &size, &sID0));
-	CU_ASSERT_NOT_EQUAL(sizeof(msg), size);
-	CU_ASSERT_NOT_EQUAL(0, sID0);
-
-	// provider
-	uint8_t fmsg[500] = {0};
-	size_t fsize = sizeof(fmsg);
-	UID_ServerChannelCtx sctx;
-	UID_accept_channel(msg, size, &sctx, fmsg, &fsize);
-
-{
-	char sender[35] = {0};
-	int method = 0;
-	char params[100] = {0};
-	int64_t sID1 = 0;
-	CU_ASSERT_NOT_EQUAL(0, UID_parseReqMsg((uint8_t *)"Foo bar", fsize, sender, sizeof(sender), &method, params, sizeof(params), &sID1));
-}
-	char sender[35] = {0};
-	int method = 0;
-	char params[100] = {0};
-	int64_t sID1 = 0;
-	CU_ASSERT_EQUAL(0, UID_parseReqMsg(fmsg, fsize, sender, sizeof(sender), &method, params, sizeof(params), &sID1));
-
-	CU_ASSERT_STRING_EQUAL(u_ctx.contract.serviceUserAddress, sender);
-	CU_ASSERT_EQUAL(31,method);
-	CU_ASSERT_STRING_EQUAL("Test ECHO", params);
-	CU_ASSERT_EQUAL(sID0, sID1);
-	CU_ASSERT_STRING_EQUAL(sender, sctx.contract.serviceUserAddress);
-
-	CU_ASSERT_NOT_EQUAL(0, UID_checkPermission(method, sctx.contract.profile));
-	CU_ASSERT_EQUAL(0, UID_checkPermission(30, sctx.contract.profile));
-
-	char result[100];
-	CU_ASSERT_EQUAL(0, UID_performRequest(method, params, result, sizeof(result)));
-
-	CU_ASSERT_STRING_EQUAL("UID_echo: <Test ECHO>", result);
-
-	uint8_t response[500] = {0};
-	size_t rsize = sizeof(response);
-	CU_ASSERT_EQUAL(0, UID_formatRespMsg(sctx.contract.serviceProviderAddress, result, 0, sID1, response, &rsize));
-
-	CU_ASSERT_NOT_EQUAL(sizeof(response), rsize);
-
-	CU_ASSERT_EQUAL(0, UID_closeServerChannel(&sctx));
-
-	//user
-	char r_sender[35] = {0};
-	int r_error = -1;
-	char r_result[100] = {0};
-	int64_t sID2 = 0;
-	CU_ASSERT_EQUAL(0, UID_parseRespMsg(response, rsize, r_sender, sizeof(r_sender), &r_error, r_result, sizeof(r_result), &sID2));
-
-	CU_ASSERT_STRING_EQUAL(u_ctx.contract.serviceProviderAddress, r_sender);
-	CU_ASSERT_EQUAL(0, r_error);
-	CU_ASSERT_STRING_EQUAL("UID_echo: <Test ECHO>", r_result);
-	CU_ASSERT_EQUAL(sID1, sID2);
-
-	CU_ASSERT_EQUAL(0, UID_closeChannel(&u_ctx));
-}
 
 void test_case_utils1(void)
 {
@@ -456,6 +357,141 @@ void test_case_transaction2(void)
 			"210374acc0a086b7348652408749f3c0b74e81c32918d6c8ff505996ec242d7cbf2dffffffff"
 			"01f0053101000000001976a914f9c9560f6d4cf2f652e6c75b3f8cf635cbcfc81188ac00000000",
 			hexeouttx);
+}
+
+/**************************** Message test suite *******************************/
+
+/* Test Suite setup and cleanup functions: */
+
+// tprv8ZgxMBicQKsPeYmGVadBmYo7tWvkGL1fR861naGjsRJWWebvB2Qf7accpUYg5F2idRwv5sLAmZSBege7ifpNNH8r4YjQnnRHiSWYhRfKFXc LTC testnet
+//
+// [[ muFKsZFbLueHP1MvFQuWDUVedXmcFB6P7K mkMxPBMyq8rsraubXKq4QVZZpiV7aRhPCi 0/0/0 0000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 ]]
+// [[ mmAA9FT3DwmpMACp3kc5eiRw8MLDFGCU2s muHK9jTHSuKudkwS97aCRukuWGwJpXe6CE 0/1/0 0000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 ]]
+// [[ muA68BvzDRRjC4z39QMMmPEmjdAVmMvB2c msDrwP1qzchTiMTVmDnSBRoMejEU78oS8V 0/1/1 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 ]]
+// [[ mmAA9FT3DwmpMACp3kc5eiRw8MLDFGCU2s muHK9jTHSuKudkwS97aCRukuWGwJpXe6CE 1/0/1 <c-sdk-client-id4c993a158209> ]]
+// [[ muA68BvzDRRjC4z39QMMmPEmjdAVmMvB2c msDrwP1qzchTiMTVmDnSBRoMejEU78oS8V 1/0/2 <c-sdk-client-id4c993a158209> ]]
+
+int init_message_suite(void)
+{
+	uint8_t bit_mask0[18] = { 0x00, 0x00, 0x00, 0x40     }; // bit 30 ON
+	uint8_t bit_mask1[18] = { 0x00, 0x00, 0x00, 0x80     }; // bit 31 ON
+
+    strncpy(current->contractsCache[0].serviceProviderAddress, "muFKsZFbLueHP1MvFQuWDUVedXmcFB6P7K", sizeof(BTC_Address));
+    strncpy(current->contractsCache[0].serviceUserAddress, "mkMxPBMyq8rsraubXKq4QVZZpiV7aRhPCi", sizeof(BTC_Address));
+    memcpy(current->contractsCache[0].profile.bit_mask, bit_mask0, sizeof(current->contractsCache[0].profile.bit_mask));
+	current->contractsCache[0].path.p_u = 0; current->contractsCache[0].path.account = 0; current->contractsCache[0].path.n = 0; // 0/0/0
+    strncpy(current->contractsCache[1].serviceProviderAddress, "mmAA9FT3DwmpMACp3kc5eiRw8MLDFGCU2s", sizeof(BTC_Address));
+    strncpy(current->contractsCache[1].serviceUserAddress, "muHK9jTHSuKudkwS97aCRukuWGwJpXe6CE", sizeof(BTC_Address));
+    memcpy(current->contractsCache[1].profile.bit_mask, bit_mask1, sizeof(current->contractsCache[0].profile.bit_mask));
+	current->contractsCache[1].path.p_u = 0; current->contractsCache[1].path.account = 1; current->contractsCache[1].path.n = 0; // 0/1/0
+    strncpy(current->contractsCache[2].serviceProviderAddress, "muA68BvzDRRjC4z39QMMmPEmjdAVmMvB2c", sizeof(BTC_Address));
+    strncpy(current->contractsCache[2].serviceUserAddress, "msDrwP1qzchTiMTVmDnSBRoMejEU78oS8V", sizeof(BTC_Address));
+    memset(current->contractsCache[2].profile.bit_mask, 0, sizeof(current->contractsCache[1].profile.bit_mask));
+	current->contractsCache[2].path.p_u = 0; current->contractsCache[2].path.account = 1; current->contractsCache[2].path.n = 1; // 0/1/1
+    current->validCacheEntries = 3;
+    strncpy(current->clientCache[0].serviceProviderName, "LocalMachine", sizeof(((UID_ClientProfile *)0)->serviceProviderName));
+    strncpy(current->clientCache[0].serviceProviderAddress, "mmAA9FT3DwmpMACp3kc5eiRw8MLDFGCU2s", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));
+    strncpy(current->clientCache[0].serviceUserAddress, "muHK9jTHSuKudkwS97aCRukuWGwJpXe6CE", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));
+	current->clientCache[0].path.p_u = 1; current->clientCache[0].path.account = 0; current->clientCache[0].path.n = 1; // 1/0/1
+    strncpy(current->clientCache[1].serviceProviderName, "LocalMachine2", sizeof(((UID_ClientProfile *)0)->serviceProviderName));
+    strncpy(current->clientCache[1].serviceProviderAddress, "muA68BvzDRRjC4z39QMMmPEmjdAVmMvB2c", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));
+    strncpy(current->clientCache[1].serviceUserAddress, "msDrwP1qzchTiMTVmDnSBRoMejEU78oS8V", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));
+	current->clientCache[1].path.p_u = 1; current->clientCache[1].path.account = 0; current->clientCache[1].path.n = 2; // 1/0/2
+    strncpy(current->clientCache[2].serviceProviderName, "nocontract", sizeof(((UID_ClientProfile *)0)->serviceProviderName));
+    strncpy(current->clientCache[2].serviceProviderAddress, "muA68BvzDRRjC4z39QMMmPEmjdAVmMvB2c", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));
+    strncpy(current->clientCache[2].serviceUserAddress, "n1UevZASvVyNhAB2d5Nm9EaHFeooJZbSP7", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));
+	current->clientCache[2].path.p_u = 1; current->clientCache[2].path.account = 0; current->clientCache[2].path.n = 3; // 1/0/3
+    current->validClientEntries = 3;
+
+
+	unlink("identity.db");
+	UID_getLocalIdentity("tprv8ZgxMBicQKsPeYmGVadBmYo7tWvkGL1fR861naGjsRJWWebvB2Qf7accpUYg5F2idRwv5sLAmZSBege7ifpNNH8r4YjQnnRHiSWYhRfKFXc");
+	return 0;
+}
+int clean_message_suite(void)
+{
+	unlink("identity.db");
+	return 0;
+}
+
+/************* Test case functions ****************/
+
+void test_case_message1(void)
+{
+	UID_ClientChannelCtx u_ctx;
+
+	// user
+	CU_ASSERT_NOT_EQUAL(0, UID_createChannel("noName", &u_ctx));
+	CU_ASSERT_EQUAL(0, UID_createChannel("LocalMachine", &u_ctx));
+	CU_ASSERT_STRING_EQUAL("mmAA9FT3DwmpMACp3kc5eiRw8MLDFGCU2s", u_ctx.contract.serviceProviderAddress);
+	CU_ASSERT_STRING_EQUAL("muHK9jTHSuKudkwS97aCRukuWGwJpXe6CE", u_ctx.contract.serviceUserAddress);
+{
+	uint8_t msg[500] = {0};
+	size_t size = 3;
+	int64_t sID0 = 0;
+	CU_ASSERT_NOT_EQUAL(0, UID_formatReqMsg(u_ctx.contract.serviceUserAddress, 31, "Test ECHO", msg, &size, &sID0));
+}
+	uint8_t msg[500] = {0};
+	size_t size = sizeof(msg);
+	int64_t sID0 = 0;
+	CU_ASSERT_EQUAL(0, UID_formatReqMsg(u_ctx.contract.serviceUserAddress, 31, "Test ECHO", msg, &size, &sID0));
+	CU_ASSERT_NOT_EQUAL(sizeof(msg), size);
+	CU_ASSERT_NOT_EQUAL(0, sID0);
+
+	// provider
+	uint8_t fmsg[500] = {0};
+	size_t fsize = sizeof(fmsg);
+	UID_ServerChannelCtx sctx;
+	UID_accept_channel(msg, size, &sctx, fmsg, &fsize);
+
+{
+	char sender[35] = {0};
+	int method = 0;
+	char params[100] = {0};
+	int64_t sID1 = 0;
+	CU_ASSERT_NOT_EQUAL(0, UID_parseReqMsg((uint8_t *)"Foo bar", fsize, sender, sizeof(sender), &method, params, sizeof(params), &sID1));
+}
+	char sender[35] = {0};
+	int method = 0;
+	char params[100] = {0};
+	int64_t sID1 = 0;
+	CU_ASSERT_EQUAL(0, UID_parseReqMsg(fmsg, fsize, sender, sizeof(sender), &method, params, sizeof(params), &sID1));
+
+	CU_ASSERT_STRING_EQUAL(u_ctx.contract.serviceUserAddress, sender);
+	CU_ASSERT_EQUAL(31,method);
+	CU_ASSERT_STRING_EQUAL("Test ECHO", params);
+	CU_ASSERT_EQUAL(sID0, sID1);
+	CU_ASSERT_STRING_EQUAL(sender, sctx.contract.serviceUserAddress);
+
+	CU_ASSERT_NOT_EQUAL(0, UID_checkPermission(method, sctx.contract.profile));
+	CU_ASSERT_EQUAL(0, UID_checkPermission(30, sctx.contract.profile));
+
+	char result[100];
+	CU_ASSERT_EQUAL(0, UID_performRequest(method, params, result, sizeof(result)));
+
+	CU_ASSERT_STRING_EQUAL("UID_echo: <Test ECHO>", result);
+
+	uint8_t response[500] = {0};
+	size_t rsize = sizeof(response);
+	CU_ASSERT_EQUAL(0, UID_formatRespMsg(sctx.contract.serviceProviderAddress, result, 0, sID1, response, &rsize));
+
+	CU_ASSERT_NOT_EQUAL(sizeof(response), rsize);
+
+	CU_ASSERT_EQUAL(0, UID_closeServerChannel(&sctx));
+
+	//user
+	char r_sender[35] = {0};
+	int r_error = -1;
+	char r_result[100] = {0};
+	int64_t sID2 = 0;
+	CU_ASSERT_EQUAL(0, UID_parseRespMsg(response, rsize, r_sender, sizeof(r_sender), &r_error, r_result, sizeof(r_result), &sID2));
+
+	CU_ASSERT_STRING_EQUAL(u_ctx.contract.serviceProviderAddress, r_sender);
+	CU_ASSERT_EQUAL(0, r_error);
+	CU_ASSERT_STRING_EQUAL("UID_echo: <Test ECHO>", r_result);
+	CU_ASSERT_EQUAL(sID1, sID2);
+
+	CU_ASSERT_EQUAL(0, UID_closeChannel(&u_ctx));
 }
 
 /**************************** JavaVectors test suite *******************************/
@@ -794,14 +830,28 @@ int main ( void )
    }
 
    /* add the tests to the suite */
-   if ( (NULL == CU_add_test(pSuite, "test_case_general1", test_case_general1)) ||
-        (NULL == CU_add_test(pSuite, "test_case_utils1", test_case_utils1)) ||
+   if ( (NULL == CU_add_test(pSuite, "test_case_utils1", test_case_utils1)) ||
         (NULL == CU_add_test(pSuite, "test_case_utils2", test_case_utils2)) ||
         (NULL == CU_add_test(pSuite, "test_case_utils3", test_case_utils3)) ||
         (NULL == CU_add_test(pSuite, "test_case_utils4", test_case_utils4)) ||
         (NULL == CU_add_test(pSuite, "test_case_utils5", test_case_utils5)) ||
         (NULL == CU_add_test(pSuite, "test_case_transaction1", test_case_transaction1)) ||
         (NULL == CU_add_test(pSuite, "test_case_transaction2", test_case_transaction2))
+      )
+   {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   /* add a suite to the registry */
+   pSuite = CU_add_suite( "Message suite", init_message_suite, clean_message_suite );
+   if ( NULL == pSuite ) {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   /* add the tests to the suite */
+   if ( (NULL == CU_add_test(pSuite, "test_case_message1", test_case_message1))
       )
    {
       CU_cleanup_registry();
