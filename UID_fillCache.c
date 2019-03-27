@@ -534,6 +534,7 @@ int UID_fillCache(UID_HttpOBJ *curl, cache_buffer *secondb)
     return UID_CONTRACTS_OK;
 }
 
+#ifdef UID_IMPLEMENTSENDTX
 /**
  * Sends a signed transaction to the block-chain using
  * Insight API service
@@ -562,3 +563,4 @@ int UID_sendTx(char *signed_tx, char *ret, size_t size)
 
     return res;
 }
+#endif //UID_IMPLEMENTSENDTX

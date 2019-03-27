@@ -20,7 +20,9 @@ typedef void  UID_HttpOBJ;
 
 
 int UID_httpget(UID_HttpOBJ *curl, char *url, char *buffer, size_t size);
+#ifdef UID_IMPLEMENTSENDTX
 int UID_httppost(UID_HttpOBJ *curl, char *url, char *postdata, char *ret, size_t size);
+#endif //UID_IMPLEMENTSENDTX
 
 UID_HttpOBJ *UID_httpinit(void);
 int UID_httpcleanup(UID_HttpOBJ *curl);
