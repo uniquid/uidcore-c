@@ -28,7 +28,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#include "sha2.h"
 #include "ecdsa.h"
 #include "secp256k1.h"
 #include "base58.h"
@@ -146,6 +145,71 @@ uint32_t ser_length(uint32_t len, uint8_t *out)
 }
 
 /**
+ * Initialize the bitcoin message hash
+ *
+ * @param[in]  message_len  total len of the message to be hashed (sum of all partial_len)
+ * @param[in]  ctx          cotntext to accumulate partial hashes
+ */
+void UID_hashMessage_init(size_t message_len, SHA256_CTX *ctx)
+{
+    sha256_Init(ctx);
+    sha256_Update(ctx, (const uint8_t *)"\x18" "Bitcoin Signed Message:" "\n", 25);
+    uint8_t varint[5];
+    uint32_t l = ser_length(message_len, varint);
+    sha256_Update(ctx, varint, l);
+}
+
+/**
+ * Update the hash context with new data
+ *
+ * @param[in]  partial_message  partial message data
+ * @param[in]  partial_len      size of the partial message data
+ * @param[in]  ctx              cotntext to accumulate partial hashes
+ */
+void UID_hashMessage_update(char *partial_message, size_t partial_len, SHA256_CTX *ctx)
+{
+    sha256_Update(ctx, (const uint8_t *)partial_message, partial_len);
+}
+
+/**
+ * Evaluate the hash of the message
+ *
+ * @param[out] hash buffer to be filled with the hash
+ * @param[in]  ctx  cotntext to accumulate partial hashes
+ */
+void UID_hashMessage_final(uint8_t hash[32], SHA256_CTX *ctx)
+{
+    sha256_Final(ctx, hash);
+    sha256_Raw(hash, 32, hash);
+}
+
+/**
+ * Compute the bitcoin message signature \@specific BIP32 path from the hash
+ *
+ * @param[in]  hash         hash of the message to be signed
+ * @param[in]  path         BIP32 path
+ * @param[out] b64signature buffer to be filled with the signature (base64 coded NULL terminated string)
+ * @param[in]  ssize        size of the b64signature buffer
+ *
+ * @return                  UID_SIGN_OK if no error
+ */
+int UID_signMessageHash(uint8_t hash[32], UID_Bip32Path *path, char *b64signature, size_t ssize)
+{
+    uint8_t signature[65] = {0};
+    uint8_t pby;
+    //int result = ecdsa_sign_digest(&secp256k1, privkey, hash, signature + 1, &pby);
+    int result = UID_signAt(path, hash, signature + 1, &pby);
+    if (result != UID_SIGN_OK) return UID_SIGN_FAILED;
+    signature[0] = 27 + pby + 4;
+
+    size_t olen = 0;
+    int ret;
+    ret = mbedtls_base64_encode((unsigned char *)b64signature, ssize, &olen, signature, sizeof(signature));
+    if (0 == ret) return UID_SIGN_OK;
+    return UID_SIGN_SMALL_BUFFER;
+}
+
+/**
  * Compute the bitcoin message signature \@specific BIP32 path
  *
  * @param[in]  message      string holding the message to be signed
@@ -159,29 +223,13 @@ int UID_signMessage(char *message, UID_Bip32Path *path, char *b64signature, size
 {
     SHA256_CTX ctx;
     size_t message_len;
-    uint8_t signature[65] = {0};
+    uint8_t hash[32];
 
     message_len = strlen(message);
-    sha256_Init(&ctx);
-    sha256_Update(&ctx, (const uint8_t *)"\x18" "Bitcoin Signed Message:" "\n", 25);
-    uint8_t varint[5];
-    uint32_t l = ser_length(message_len, varint);
-    sha256_Update(&ctx, varint, l);
-    sha256_Update(&ctx, (const uint8_t *)message, message_len);
-    uint8_t hash[32];
-    sha256_Final(&ctx, hash);
-    sha256_Raw(hash, 32, hash);
-    uint8_t pby;
-    //int result = ecdsa_sign_digest(&secp256k1, privkey, hash, signature + 1, &pby);
-    int result = UID_signAt(path, hash, signature + 1, &pby);
-    if (result != UID_SIGN_OK) return UID_SIGN_FAILED;
-    signature[0] = 27 + pby + 4;
-
-    size_t olen = 0;
-    int ret;
-    ret = mbedtls_base64_encode((unsigned char *)b64signature, ssize, &olen, signature, sizeof(signature));
-    if (0 == ret) return UID_SIGN_OK;
-    return UID_SIGN_SMALL_BUFFER;
+    UID_hashMessage_init(message_len, &ctx);
+    UID_hashMessage_update(message, message_len, &ctx);
+    UID_hashMessage_final(hash, &ctx);
+    return UID_signMessageHash(hash, path, b64signature, ssize);
 }
 
 /**
