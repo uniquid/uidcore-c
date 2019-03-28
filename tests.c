@@ -399,7 +399,7 @@ int init_message_suite(void)
     current->clientCache[1].path.p_u = 1; current->clientCache[1].path.account = 0; current->clientCache[1].path.n = 2; // 1/0/2
     strncpy(current->clientCache[2].serviceProviderName, "nocontract", sizeof(((UID_ClientProfile *)0)->serviceProviderName));
     strncpy(current->clientCache[2].serviceProviderAddress, "muA68BvzDRRjC4z39QMMmPEmjdAVmMvB2c", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));
-    strncpy(current->clientCache[2].serviceUserAddress, "n1UevZASvVyNhAB2d5Nm9EaHFeooJZbSP7", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));
+    strncpy(current->clientCache[2].serviceUserAddress, "mmE4Vq6nM1A2Q8opMPC7pksV3RLqM1qm7v", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));
     current->clientCache[2].path.p_u = 1; current->clientCache[2].path.account = 0; current->clientCache[2].path.n = 3; // 1/0/3
     current->validClientEntries = 3;
 
@@ -489,7 +489,70 @@ void test_case_message1(void)
     CU_ASSERT_STRING_EQUAL(u_ctx.contract.serviceProviderAddress, r_sender);
     CU_ASSERT_EQUAL(0, r_error);
     CU_ASSERT_STRING_EQUAL("UID_echo: <Test ECHO>", r_result);
-    CU_ASSERT_EQUAL(sID1, sID2);
+    CU_ASSERT_EQUAL(sID0, sID2);
+
+    CU_ASSERT_EQUAL(0, UID_closeChannel(&u_ctx));
+}
+
+void test_case_message2(void)
+{
+    UID_ClientChannelCtx u_ctx;
+
+    // user
+    CU_ASSERT_EQUAL(0, UID_createChannel("nocontract", &u_ctx));
+    CU_ASSERT_STRING_EQUAL("muA68BvzDRRjC4z39QMMmPEmjdAVmMvB2c", u_ctx.contract.serviceProviderAddress);
+    CU_ASSERT_STRING_EQUAL("mmE4Vq6nM1A2Q8opMPC7pksV3RLqM1qm7v", u_ctx.contract.serviceUserAddress);
+
+    uint8_t msg[500] = {0};
+    size_t size = sizeof(msg);
+    int64_t sID0 = 0;
+    CU_ASSERT_EQUAL(0, UID_formatReqMsg(u_ctx.contract.serviceUserAddress, 31, "Test ECHO", msg, &size, &sID0));
+    CU_ASSERT_NOT_EQUAL(sizeof(msg), size);
+    CU_ASSERT_NOT_EQUAL(0, sID0);
+
+    // provider
+    uint8_t fmsg[500] = {0};
+    size_t fsize = sizeof(fmsg);
+    UID_ServerChannelCtx sctx;
+    CU_ASSERT_EQUAL(UID_MSG_NO_CONTRACT, UID_accept_channel(msg, size, &sctx, fmsg, &fsize));
+
+    //user
+    CU_ASSERT_EQUAL(0, UID_closeChannel(&u_ctx));
+}
+
+void test_case_message3(void)
+{
+    UID_ClientChannelCtx u_ctx;
+
+    // user
+    CU_ASSERT_EQUAL(0, UID_createChannel("nocontract", &u_ctx));
+    CU_ASSERT_STRING_EQUAL("muA68BvzDRRjC4z39QMMmPEmjdAVmMvB2c", u_ctx.contract.serviceProviderAddress);
+    CU_ASSERT_STRING_EQUAL("mmE4Vq6nM1A2Q8opMPC7pksV3RLqM1qm7v", u_ctx.contract.serviceUserAddress);
+
+    uint8_t msg[500] = {0};
+    size_t size = sizeof(msg);
+    int64_t sID0 = 0;
+    CU_ASSERT_EQUAL(0, UID_formatReqMsg(u_ctx.contract.serviceUserAddress, 31, "Test ECHO", msg, &size, &sID0));
+    CU_ASSERT_NOT_EQUAL(sizeof(msg), size);
+    CU_ASSERT_NOT_EQUAL(0, sID0);
+
+    // provider
+    uint8_t response[500] = {0};
+    size_t rsize = sizeof(response);
+    int64_t sID1 = sID0;
+    CU_ASSERT_EQUAL(0, UID_formatRespMsg("mmAA9FT3DwmpMACp3kc5eiRw8MLDFGCU2s", "UID_echo: <Test ECHO>", 0, sID1, response, &rsize));
+
+    //user
+    char r_sender[35] = {0};
+    int r_error = -1;
+    char r_result[100] = {0};
+    int64_t sID2 = 0;
+    CU_ASSERT_EQUAL(0, UID_parseRespMsg(response, rsize, r_sender, sizeof(r_sender), &r_error, r_result, sizeof(r_result), &sID2));
+
+    CU_ASSERT_STRING_NOT_EQUAL(u_ctx.contract.serviceProviderAddress, r_sender);
+    CU_ASSERT_EQUAL(0, r_error);
+    CU_ASSERT_STRING_EQUAL("UID_echo: <Test ECHO>", r_result);
+    CU_ASSERT_EQUAL(sID0, sID2);
 
     CU_ASSERT_EQUAL(0, UID_closeChannel(&u_ctx));
 }
@@ -851,7 +914,9 @@ int main ( void )
    }
 
    /* add the tests to the suite */
-   if ( (NULL == CU_add_test(pSuite, "test_case_message1", test_case_message1))
+   if ( (NULL == CU_add_test(pSuite, "test_case_message1", test_case_message1)) ||
+        (NULL == CU_add_test(pSuite, "test_case_message2", test_case_message2)) ||
+        (NULL == CU_add_test(pSuite, "test_case_message3", test_case_message3))
       )
    {
       CU_cleanup_registry();
