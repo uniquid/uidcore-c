@@ -285,6 +285,68 @@ int UID_verifyMessage(char *message, char *b64signature, char *address)
 }
 
 /**
+ * Recover the address from the ash and signature
+ *
+ * @param[in]  hash         hash that was signed
+ * @param[in]  b64signature recovery byte + signature base64 coded
+ * @param[out] address      buffer to be filled with the address
+ *
+ * @return                  UID_SIGN_OK == address succesfully recovered
+ */
+int UID_addressFromSignedHash(uint8_t hash[32], char *b64signature, BTC_Address address)
+{
+    bignum256 r, s, e;
+    curve_point cp, cp2;
+    uint8_t pubkey[65];
+    uint8_t signature[65] = {0};
+    int ret;
+    size_t size = 0;
+
+    // decode signature
+    ret = mbedtls_base64_decode(signature, sizeof(signature), &size, (unsigned char *)b64signature, strlen(b64signature));
+    if(MBEDTLS_ERR_BASE64_BUFFER_TOO_SMALL == ret) return UID_SIGN_SMALL_BUFFER;
+    if(0 != ret) return UID_SIGN_INVALID_CHARACTER;
+
+  uint8_t nV = signature[0];
+  if (nV < 27 || nV >= 35) {
+          return UID_SIGN_INVALID_RECOVERY_BYTE;
+  }
+  bool compressed;
+  compressed = (nV >= 31);
+  if (compressed) {
+          nV -= 4;
+  }
+  uint8_t recid = nV - 27;
+  // read r and s
+  bn_read_be(signature + 1, &r);
+  bn_read_be(signature + 33, &s);
+  // x = r
+  memcpy(&cp.x, &r, sizeof(bignum256));
+  // compute y from x
+  uncompress_coords(&secp256k1, recid % 2, &cp.x, &cp.y);
+    // e = -hash
+    bn_read_be(hash, &e);
+    bn_subtract(&secp256k1.order, &e, &e);
+    // r = r^-1
+    bn_inverse(&r, &secp256k1.order);
+    point_multiply(&secp256k1, &s, &cp, &cp);
+    scalar_multiply(&secp256k1, &e, &cp2);
+    point_add(&secp256k1, &cp2, &cp);
+    point_multiply(&secp256k1, &r, &cp, &cp);
+    pubkey[0] = 0x04;
+    bn_write_be(&cp.x, pubkey + 1);
+    bn_write_be(&cp.y, pubkey + 33);
+    // check if the address is correct
+    if (compressed) {
+        pubkey[0] = 0x02 | (cp.y.val[0] & 0x01);
+    }
+
+    ecdsa_get_address(pubkey, /*version*/ NETWORK_BYTE, address, sizeof(BTC_Address));
+
+    return UID_SIGN_OK;
+}
+
+/**
  * Verify the signature of a bitcoin message
  *
  * @param[in] message     buffer holding the message to be verified

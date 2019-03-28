@@ -68,12 +68,13 @@ typedef char BTC_Signature[BTC_SIGNATURE_LENGHT+1]; //(recovery byte + signature
 #define UID_SIGN_SMALL_BUFFER       23
 #define UID_SIGN_INVALID_CHARACTER  24
 #define UID_SIGN_VERIFY_ERROR       25
+#define UID_SIGN_INVALID_RECOVERY_BYTE 26
 
 #define UID_CAPBAC_OK               UID_OK
-#define UID_CAPBAC_SMALL_BUFFER     26
-#define UID_CAPBAC_SER_ERROR        27
-#define UID_CAPBAC_UNTRUSTED_AUTH   28
-#define UID_CAPBAC_MALFORMED        29
+#define UID_CAPBAC_SMALL_BUFFER     27
+#define UID_CAPBAC_SER_ERROR        28
+#define UID_CAPBAC_UNTRUSTED_AUTH   29
+#define UID_CAPBAC_MALFORMED        30
 
 #define UID_CDB_OK                  UID_OK
 

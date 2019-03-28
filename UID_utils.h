@@ -30,6 +30,7 @@ void UID_hashMessage_update(char *partial_message, size_t partial_len, SHA256_CT
 void UID_hashMessage_final(uint8_t hash[32], SHA256_CTX *ctx);
 int UID_signMessageHash(uint8_t hash[32], UID_Bip32Path *path, char *b64signature, size_t ssize);
 int UID_signMessage(char *message, UID_Bip32Path *path, char *b64signature, size_t ssize);
+int UID_addressFromSignedHash(uint8_t hash[32], char *b64signature, BTC_Address address);
 int UID_verifyMessage(char *message, char *b64signature, char *address);
 
 

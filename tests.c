@@ -642,6 +642,15 @@ void test_case_signMessage(void)
     CU_ASSERT( 0 == mbedtls_base64_decode(signature_bin, sizeof(signature_bin), &size, (unsigned char *)sigVector, strlen(sigVector)) );
     CU_ASSERT( 0 == cryptoMessageVerify((uint8_t *)msgVector, strlen(msgVector), adrVector, signature_bin) );
     CU_ASSERT( UID_SIGN_OK == UID_verifyMessage(msgVector, sigVector, adrVector));
+
+    SHA256_CTX ctx;
+    BTC_Address address = {0};
+    uint8_t hash[32] = {0};
+    UID_hashMessage_init(strlen(msgVector), &ctx);
+    UID_hashMessage_update(msgVector, strlen(msgVector), &ctx);
+    UID_hashMessage_final(hash, &ctx);
+    CU_ASSERT_EQUAL(UID_SIGN_OK, UID_addressFromSignedHash(hash, sigVector, address));
+    CU_ASSERT_STRING_EQUAL(address, adrVector);
 }
 {
     UID_Bip32Path path = {1,0,0};
@@ -658,6 +667,15 @@ void test_case_signMessage(void)
     CU_ASSERT( 0 == mbedtls_base64_decode(signature_bin, sizeof(signature_bin), &size, (unsigned char *)sigVector, strlen(sigVector)) );
     CU_ASSERT( 0 == cryptoMessageVerify((uint8_t *)msgVector, strlen(msgVector), adrVector, signature_bin) );
     CU_ASSERT( UID_SIGN_OK == UID_verifyMessage(msgVector, sigVector, adrVector));
+
+    SHA256_CTX ctx;
+    BTC_Address address = {0};
+    uint8_t hash[32] = {0};
+    UID_hashMessage_init(strlen(msgVector), &ctx);
+    UID_hashMessage_update(msgVector, strlen(msgVector), &ctx);
+    UID_hashMessage_final(hash, &ctx);
+    CU_ASSERT_EQUAL(UID_SIGN_OK, UID_addressFromSignedHash(hash, sigVector, address));
+    CU_ASSERT_STRING_EQUAL(address, adrVector);
 }
 }
 
