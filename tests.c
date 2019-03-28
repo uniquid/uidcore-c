@@ -442,7 +442,7 @@ void test_case_message1(void)
 	uint8_t fmsg[500] = {0};
 	size_t fsize = sizeof(fmsg);
 	UID_ServerChannelCtx sctx;
-	UID_accept_channel(msg, size, &sctx, fmsg, &fsize);
+	CU_ASSERT_EQUAL(0, UID_accept_channel(msg, size, &sctx, fmsg, &fsize));
 
 {
 	char sender[35] = {0};
