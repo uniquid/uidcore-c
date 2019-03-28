@@ -296,8 +296,8 @@ static int check_contract(UID_HttpOBJ *curl, cache_buffer *secondb, char * tx, c
         return UID_CONTRACTS_SERV_ERROR;
     }
 
-	jnode = yajl_tree_parse(curlbuffer, NULL, 0);
-	if (NULL == jnode)
+    jnode = yajl_tree_parse(curlbuffer, NULL, 0);
+    if (NULL == jnode)
         return UID_CONTRACTS_SERV_ERROR;
 
     const char * path[] = { "confirmations", (const char *) 0, (const char *) 0 };
@@ -373,8 +373,8 @@ static int check_address(UID_HttpOBJ *curl, cache_buffer *secondb, UID_Bip32Path
         return UID_CONTRACTS_SERV_ERROR;
     }
 
-	jnode = yajl_tree_parse(curlbuffer, NULL, 0);
-	if (NULL == jnode)
+    jnode = yajl_tree_parse(curlbuffer, NULL, 0);
+    if (NULL == jnode)
         return UID_CONTRACTS_SERV_ERROR;
 
     const char * path[] = { "transactions",(const char *) 0 };

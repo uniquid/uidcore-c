@@ -46,7 +46,7 @@ int UID_createChannel(char *destMachine, UID_ClientChannelCtx *channel_ctx)
 {
     UID_ClientProfile *contract;
 
-	if (NULL == (contract = UID_matchProvider(destMachine))) return UID_MSG_NOT_FOUND;
+    if (NULL == (contract = UID_matchProvider(destMachine))) return UID_MSG_NOT_FOUND;
     memcpy(&(channel_ctx->contract), contract, sizeof(channel_ctx->contract));
 
     return UID_MSG_OK;
@@ -137,7 +137,7 @@ int UID_accept_channel(uint8_t *in_msg, size_t in_size, UID_ServerChannelCtx *ch
     int ret;
 
     // parse message
-	node = yajl_tree_parse((char *)in_msg, NULL, 0);
+    node = yajl_tree_parse((char *)in_msg, NULL, 0);
     if (node == NULL) return UID_MSG_JPARSE_ERROR;
 
     ret = UID_MSG_JPARSE_ERROR;
@@ -190,7 +190,7 @@ int UID_parseReqMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *
     const char * _params[] = { "body", "params", (const char *) 0 };
 
     // parse message
-	node = yajl_tree_parse((char *)msg, NULL, 0);
+    node = yajl_tree_parse((char *)msg, NULL, 0);
     if (node == NULL) return UID_MSG_JPARSE_ERROR;
 
 // get the sender
@@ -301,7 +301,7 @@ int UID_parseRespMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int 
     const char * _result[] = { "body", "result", (const char *) 0 };
 
     // parse message
-	node = yajl_tree_parse((char *)msg, NULL, 0);
+    node = yajl_tree_parse((char *)msg, NULL, 0);
     if (node == NULL) return UID_MSG_JPARSE_ERROR;
 
 // get the sender

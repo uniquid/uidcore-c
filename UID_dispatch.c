@@ -25,7 +25,7 @@
 
 static void UID_echo(char *param, char *result, size_t size)
 {
-	snprintf(result, size, "UID_echo: <%s>", param);
+    snprintf(result, size, "UID_echo: <%s>", param);
 }
 
 UID_SystemFuntion UID_systemFunctions[UID_RPC_RESERVED] = {

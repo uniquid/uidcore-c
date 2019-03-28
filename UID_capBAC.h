@@ -39,11 +39,11 @@ typedef struct {
 
     BTC_Address resourceID; // serviceProviderAddress
     BTC_Address assignee;   // serviceUserAddress
-	UID_Rights rights;
-	int64_t since;
-	int64_t until;
+    UID_Rights rights;
+    int64_t since;
+    int64_t until;
 
-	BTC_Signature assignerSignature; // signature
+    BTC_Signature assignerSignature; // signature
 } UID_UniquidCapability;
 
 int UID_prepareToSign(UID_UniquidCapability *cap, char *buffer, size_t size);
