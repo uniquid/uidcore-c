@@ -17,15 +17,13 @@ int perform_request(uint8_t *buffer, size_t size, uint8_t *response, size_t *rsi
     int ret;
     int method;
     int64_t sID;
-    BTC_Address sender;
     char params[1024];
     char result[1024] = {0};
     int error;
 
     // parse the request
-    ret = UID_parseReqMsg(buffer, size, sender, sizeof(sender), &method, params, sizeof(params), &sID);
+    ret = UID_parseReqMsg(buffer, size, &method, params, sizeof(params), &sID);
     if (ret) return ret;
-    if (strcmp(sender,channel_ctx->contract.serviceUserAddress)) return UID_MSG_INVALID_SENDER;
 
     // check the contract for permission
     if(UID_checkPermission(method, channel_ctx->contract.profile)) {
@@ -53,7 +51,7 @@ int perform_request(uint8_t *buffer, size_t size, uint8_t *response, size_t *rsi
 
 
     // format the response message
-    ret = UID_formatRespMsg(channel_ctx->contract.serviceProviderAddress, result, error, sID, response, rsize);
+    ret = UID_formatRespMsg(&(channel_ctx->contract.path), result, error, sID, response, rsize);
     if (ret) return ret;
 
     return UID_MSG_OK;

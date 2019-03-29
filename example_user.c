@@ -11,7 +11,7 @@ int parse_result(uint8_t *buffer, size_t size, UID_ClientChannelCtx *ctx, char *
     int ret = UID_parseRespMsg(buffer, size, sender, sizeof(sender), &error, res, rsize, &sID);
     if ( ret ) return ret;
     if (error) return UID_MSG_RPC_ERROR | error;
-    if (strcmp(sender, ctx->peerid)) return UID_MSG_INVALID_SENDER;
+    if (strcmp(sender, ctx->contract.serviceProviderAddress)) return UID_MSG_INVALID_SENDER;
     if (sID != id) return UID_MSG_ID_MISMATCH;
     return 0;
 }
@@ -34,7 +34,7 @@ void RPC_request(void)
     uint8_t buffer[1024];
     size_t size = sizeof(buffer);
     int64_t id;
-    if ( UID_MSG_OK != (ret = UID_formatReqMsg(ctx.myid, method, "parameter to the method", buffer, &size, &id)) ) {
+    if ( UID_MSG_OK != (ret = UID_formatReqMsg(&ctx.contract.path, method, "parameter to the method", buffer, &size, &id)) ) {
 
 //			< manage_error(ret) >
 
