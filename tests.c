@@ -429,12 +429,12 @@ void test_case_message1(void)
     uint8_t msg[500] = {0};
     size_t size = 3;
     int64_t sID0 = 0;
-    CU_ASSERT_NOT_EQUAL(0, UID_formatReqMsg(u_ctx.contract.serviceUserAddress, 31, "Test ECHO", msg, &size, &sID0));
+    CU_ASSERT_NOT_EQUAL(0, UID_formatReqMsg(&u_ctx.contract.path, 31, "{ \"Test\" : \"ECHO\" }", msg, &size, &sID0));
 }
     uint8_t msg[500] = {0};
     size_t size = sizeof(msg);
     int64_t sID0 = 0;
-    CU_ASSERT_EQUAL(0, UID_formatReqMsg(u_ctx.contract.serviceUserAddress, 31, "Test ECHO", msg, &size, &sID0));
+    CU_ASSERT_EQUAL(0, UID_formatReqMsg(&u_ctx.contract.path, 31, "{ \"Test\" : \"ECHO\" }", msg, &size, &sID0));
     CU_ASSERT_NOT_EQUAL(sizeof(msg), size);
     CU_ASSERT_NOT_EQUAL(0, sID0);
 
@@ -445,23 +445,20 @@ void test_case_message1(void)
     CU_ASSERT_EQUAL(0, UID_accept_channel(msg, size, &sctx, fmsg, &fsize));
 
 {
-    char sender[35] = {0};
     int method = 0;
     char params[100] = {0};
     int64_t sID1 = 0;
-    CU_ASSERT_NOT_EQUAL(0, UID_parseReqMsg((uint8_t *)"Foo bar", fsize, sender, sizeof(sender), &method, params, sizeof(params), &sID1));
+    CU_ASSERT_NOT_EQUAL(0, UID_parseReqMsg((uint8_t *)"Foo bar", fsize, &method, params, sizeof(params), &sID1));
 }
-    char sender[35] = {0};
     int method = 0;
     char params[100] = {0};
     int64_t sID1 = 0;
-    CU_ASSERT_EQUAL(0, UID_parseReqMsg(fmsg, fsize, sender, sizeof(sender), &method, params, sizeof(params), &sID1));
+    CU_ASSERT_EQUAL(0, UID_parseReqMsg(fmsg, fsize, &method, params, sizeof(params), &sID1));
 
-    CU_ASSERT_STRING_EQUAL(u_ctx.contract.serviceUserAddress, sender);
     CU_ASSERT_EQUAL(31,method);
-    CU_ASSERT_STRING_EQUAL("Test ECHO", params);
+    CU_ASSERT_STRING_EQUAL("{ \"Test\" : \"ECHO\" }", params);
     CU_ASSERT_EQUAL(sID0, sID1);
-    CU_ASSERT_STRING_EQUAL(sender, sctx.contract.serviceUserAddress);
+    CU_ASSERT_STRING_EQUAL(u_ctx.contract.serviceUserAddress, sctx.contract.serviceUserAddress);
 
     CU_ASSERT_NOT_EQUAL(0, UID_checkPermission(method, sctx.contract.profile));
     CU_ASSERT_EQUAL(0, UID_checkPermission(30, sctx.contract.profile));
@@ -469,18 +466,18 @@ void test_case_message1(void)
     char result[100];
     CU_ASSERT_EQUAL(0, UID_performRequest(method, params, result, sizeof(result)));
 
-    CU_ASSERT_STRING_EQUAL("UID_echo: <Test ECHO>", result);
+    CU_ASSERT_STRING_EQUAL("UID_echo: <{ \"Test\" : \"ECHO\" }>", result);
 
     uint8_t response[500] = {0};
     size_t rsize = sizeof(response);
-    CU_ASSERT_EQUAL(0, UID_formatRespMsg(sctx.contract.serviceProviderAddress, result, 0, sID1, response, &rsize));
+    CU_ASSERT_EQUAL(0, UID_formatRespMsg(&sctx.contract.path, result, 0, sID1, response, &rsize));
 
     CU_ASSERT_NOT_EQUAL(sizeof(response), rsize);
 
     CU_ASSERT_EQUAL(0, UID_closeServerChannel(&sctx));
 
     //user
-    char r_sender[35] = {0};
+    BTC_Address r_sender = {0};
     int r_error = -1;
     char r_result[100] = {0};
     int64_t sID2 = 0;
@@ -488,7 +485,7 @@ void test_case_message1(void)
 
     CU_ASSERT_STRING_EQUAL(u_ctx.contract.serviceProviderAddress, r_sender);
     CU_ASSERT_EQUAL(0, r_error);
-    CU_ASSERT_STRING_EQUAL("UID_echo: <Test ECHO>", r_result);
+    CU_ASSERT_STRING_EQUAL("UID_echo: <{ \"Test\" : \"ECHO\" }>", r_result);
     CU_ASSERT_EQUAL(sID0, sID2);
 
     CU_ASSERT_EQUAL(0, UID_closeChannel(&u_ctx));
@@ -506,7 +503,7 @@ void test_case_message2(void)
     uint8_t msg[500] = {0};
     size_t size = sizeof(msg);
     int64_t sID0 = 0;
-    CU_ASSERT_EQUAL(0, UID_formatReqMsg(u_ctx.contract.serviceUserAddress, 31, "Test ECHO", msg, &size, &sID0));
+    CU_ASSERT_EQUAL(0, UID_formatReqMsg(&u_ctx.contract.path, 31, "Test ECHO", msg, &size, &sID0));
     CU_ASSERT_NOT_EQUAL(sizeof(msg), size);
     CU_ASSERT_NOT_EQUAL(0, sID0);
 
@@ -532,7 +529,7 @@ void test_case_message3(void)
     uint8_t msg[500] = {0};
     size_t size = sizeof(msg);
     int64_t sID0 = 0;
-    CU_ASSERT_EQUAL(0, UID_formatReqMsg(u_ctx.contract.serviceUserAddress, 31, "Test ECHO", msg, &size, &sID0));
+    CU_ASSERT_EQUAL(0, UID_formatReqMsg(&u_ctx.contract.path, 31, "Test ECHO", msg, &size, &sID0));
     CU_ASSERT_NOT_EQUAL(sizeof(msg), size);
     CU_ASSERT_NOT_EQUAL(0, sID0);
 
@@ -540,10 +537,11 @@ void test_case_message3(void)
     uint8_t response[500] = {0};
     size_t rsize = sizeof(response);
     int64_t sID1 = sID0;
-    CU_ASSERT_EQUAL(0, UID_formatRespMsg("mmAA9FT3DwmpMACp3kc5eiRw8MLDFGCU2s", "UID_echo: <Test ECHO>", 0, sID1, response, &rsize));
+    UID_Bip32Path path = {0,1,0}; //"mmAA9FT3DwmpMACp3kc5eiRw8MLDFGCU2s"
+    CU_ASSERT_EQUAL(0, UID_formatRespMsg(&path, "UID_echo: <Test ECHO>", 0, sID1, response, &rsize));
 
     //user
-    char r_sender[35] = {0};
+    BTC_Address r_sender = {0};
     int r_error = -1;
     char r_result[100] = {0};
     int64_t sID2 = 0;
