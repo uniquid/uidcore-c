@@ -388,7 +388,11 @@ int init_message_suite(void)
     strncpy(current->contractsCache[2].serviceUserAddress, "msDrwP1qzchTiMTVmDnSBRoMejEU78oS8V", sizeof(BTC_Address));
     memset(current->contractsCache[2].profile.bit_mask, 0, sizeof(current->contractsCache[1].profile.bit_mask));
     current->contractsCache[2].path.p_u = 0; current->contractsCache[2].path.account = 1; current->contractsCache[2].path.n = 1; // 0/1/1
-    current->validCacheEntries = 3;
+    strncpy(current->contractsCache[3].serviceProviderAddress, "mi2praSDTpTZ4aCzX3kc9G6yXSAzUntyz7", sizeof(BTC_Address));
+    strncpy(current->contractsCache[3].serviceUserAddress, "n2kJt7RrQdNNDBkMst3DD8LiCX41iaGiYS", sizeof(BTC_Address));
+    memcpy(current->contractsCache[3].profile.bit_mask, bit_mask0, sizeof(current->contractsCache[3].profile.bit_mask));
+    current->contractsCache[3].path.p_u = 0; current->contractsCache[2].path.account = 1; current->contractsCache[2].path.n = 11; // 0/1/11
+    current->validCacheEntries = 4;
     strncpy(current->clientCache[0].serviceProviderName, "LocalMachine", sizeof(((UID_ClientProfile *)0)->serviceProviderName));
     strncpy(current->clientCache[0].serviceProviderAddress, "mmAA9FT3DwmpMACp3kc5eiRw8MLDFGCU2s", sizeof(((UID_ClientProfile *)0)->serviceProviderAddress));
     strncpy(current->clientCache[0].serviceUserAddress, "muHK9jTHSuKudkwS97aCRukuWGwJpXe6CE", sizeof(((UID_ClientProfile *)0)->serviceUserAddress));
@@ -553,6 +557,20 @@ void test_case_message3(void)
     CU_ASSERT_EQUAL(sID0, sID2);
 
     CU_ASSERT_EQUAL(0, UID_closeChannel(&u_ctx));
+}
+
+/*
+    test disabled.
+    UID_getTime() should return 1553873439618 to pass
+*/
+void test_case_message4(void)
+{
+    char *message = "{\"signature\":\"H2iIxPCB4UAHjMFJ4x8fwwVlzfU/NzGIqfs79SV6fGUgPgulFBuKLsk/fSmlw03MyO5f99sF/nAArGxN3z17m5w=\",\"body\":{\"method\":30,\"id\":1553873439618,\"params\":\"{\\\"tx\\\":\\\"0100000001afa17eee1bd34ec919573f6c80b28b840e8fd333c7f825c82c8490aeaed2deef000000004847304402207fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a002207fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a001ffffffff04a0860100000000001976a91444537901630cb19d9844b13c9fcce289ff2fad9788ac0000000000000000536a4c500000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e0930400000000001976a91444537901630cb19d9844b13c9fcce289ff2fad9788ac2cbf0a00000000001976a91401643f5a3f01a5bbb9e7d3bbe380219314e21c4c88ac00000000\\\",\\\"paths\\\":[\\\"0/0/0\\\"]}\"}}";
+    uint8_t fmsg[1500] = {0};
+    size_t fsize = sizeof(fmsg);
+    UID_ServerChannelCtx sctx;
+    CU_ASSERT_EQUAL(UID_MSG_OK, UID_accept_channel((uint8_t *)message, sizeof(message), &sctx, fmsg, &fsize));
+    CU_ASSERT_STRING_EQUAL("n2kJt7RrQdNNDBkMst3DD8LiCX41iaGiYS", sctx.contract.serviceUserAddress)
 }
 
 /**************************** JavaVectors test suite *******************************/
@@ -933,6 +951,7 @@ int main ( void )
    if ( (NULL == CU_add_test(pSuite, "test_case_message1", test_case_message1)) ||
         (NULL == CU_add_test(pSuite, "test_case_message2", test_case_message2)) ||
         (NULL == CU_add_test(pSuite, "test_case_message3", test_case_message3))
+        // || (NULL == CU_add_test(pSuite, "test_case_message4", test_case_message4))
       )
    {
       CU_cleanup_registry();
