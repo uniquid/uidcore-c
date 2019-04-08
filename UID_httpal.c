@@ -89,6 +89,7 @@ typedef struct {
     char  *buffer;
 } send_tx_context;
 
+#ifdef UID_IMPLEMENTSENDTX
 /**
  * callback from curl_easy_perform
  * returns the answer for the send from insight-api
@@ -139,6 +140,7 @@ int UID_httppost(UID_HttpOBJ *curl, char *url, char *postdata, char *ret, size_t
     /* perform the request */
     return (CURLE_OK == curl_easy_perform(curl) ? UID_HTTP_OK : UID_HTTP_POST_ERROR);
 }
+#endif //UID_IMPLEMENTSENDTX
 
 UID_HttpOBJ *UID_httpinit()
 {

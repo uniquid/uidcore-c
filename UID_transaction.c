@@ -86,19 +86,19 @@ int UID_digestRawTx(uint8_t *rawtx, size_t len, unsigned in, uint8_t address[20]
     uint8_t *ptr,*out;
     uint64_t n_inputs, i, l;
     size_t s;
-	SHA256_CTX	context;
+    SHA256_CTX	context;
 
-	sha256_Init(&context);
+    sha256_Init(&context);
 
     s = decode_varint(rawtx+4, &n_inputs);
     if (in >= n_inputs) return UID_TX_INDEX_OUT_RANGE;
-	sha256_Update(&context, rawtx, 4 + s);
+    sha256_Update(&context, rawtx, 4 + s);
 
     ptr = rawtx + 4 + s;  // points to the beginning of first input
 
     for (i = 0; i < n_inputs; i++) {
-    	sha256_Update(&context, ptr, 36);
-    	ptr += 36;
+        sha256_Update(&context, ptr, 36);
+        ptr += 36;
         s = decode_varint(ptr, &l);
 
         if (in == i)
@@ -130,8 +130,8 @@ int UID_digestRawTx(uint8_t *rawtx, size_t len, unsigned in, uint8_t address[20]
     sha256_Update(&context, out, (ptr - out));
     sha256_Update(&context, (uint8_t *)"\x1\x0\x0\x0", 4); // hash code type
 
-	sha256_Final(&context, hash);
-	sha256_Raw(hash, 32, hash);
+    sha256_Final(&context, hash);
+    sha256_Raw(hash, 32, hash);
 
     return UID_TX_OK;
 }
@@ -162,9 +162,9 @@ int UID_buildSignedHex(uint8_t *rawtx, size_t len, UID_ScriptSig *scriptsig, cha
 
     hextx = hexouttx;
     s = decode_varint(rawtx+4, &n_inputs);
-	tohex(rawtx, 4 + s, hextx);
-	ptr = rawtx + 4 + s;
-	hextx += 2*(4 + s);
+    tohex(rawtx, 4 + s, hextx);
+    ptr = rawtx + 4 + s;
+    hextx += 2*(4 + s);
 
     for (i = 0; i < n_inputs; i++) {
         tohex(ptr, 36, hextx);
@@ -193,8 +193,8 @@ int UID_buildSignedHex(uint8_t *rawtx, size_t len, UID_ScriptSig *scriptsig, cha
     ptr += 4;  //lock time
 
     s = (ptr - out);  // skip the hash code type if present
-	tohex(out, s, hextx);
-	hextx[2*s] = 0;
+    tohex(out, s, hextx);
+    hextx[2*s] = 0;
 
     return hextx - hexouttx + 2*s;
 }
@@ -223,9 +223,9 @@ int UID_buildScriptSig(uint8_t *rawtx, size_t rawtx_len, UID_Bip32Path *path, in
     int res;
     uint8_t public_key[33];
     uint8_t pubkeyhash[20];
-	uint8_t hash[32];
+    uint8_t hash[32];
     uint8_t sig[64] = {0};
-	uint8_t len_der;
+    uint8_t len_der;
 
     if(n_script < n_inputs) return UID_TX_NOMEM;
     for( i=0; i<n_inputs; i++) {
@@ -247,14 +247,14 @@ int UID_buildScriptSig(uint8_t *rawtx, size_t rawtx_len, UID_Bip32Path *path, in
 /*
  * TODO: this code goes in segmentation fault
  {
-	uint8_t rawtx[200] = {0};
-	UID_ScriptSig scriptsig[2] = {{0}};
-	UID_Bip32Path path[2] = {{0,1,3},{0,0,2}};
-	int len = fromhex("0100000001"
-			"d67835ed9b1bcd2946c225e59da4a110476225b3b1fb477fbb9826195cddf312010000001976a9141b2fc485361b251b53579dd8636532e2ebded02c88acffffffff"
-			"403eda54f5096fceeb78a91a51a17a727e9d763da2ab48b3d173fa5feaa22d33010000001976a9141d1c309a3051f416cc8b0b389adbeacdd097094c88acffffffff"
-			"01f0053101000000001976a914f9c9560f6d4cf2f652e6c75b3f8cf635cbcfc81188ac00000000",rawtx, sizeof(rawtx));
-	CU_ASSERT(UID_TX_OK == UID_buildScriptSig(rawtx, len, path, 2, scriptsig, 2));
+    uint8_t rawtx[200] = {0};
+    UID_ScriptSig scriptsig[2] = {{0}};
+    UID_Bip32Path path[2] = {{0,1,3},{0,0,2}};
+    int len = fromhex("0100000001"
+            "d67835ed9b1bcd2946c225e59da4a110476225b3b1fb477fbb9826195cddf312010000001976a9141b2fc485361b251b53579dd8636532e2ebded02c88acffffffff"
+            "403eda54f5096fceeb78a91a51a17a727e9d763da2ab48b3d173fa5feaa22d33010000001976a9141d1c309a3051f416cc8b0b389adbeacdd097094c88acffffffff"
+            "01f0053101000000001976a914f9c9560f6d4cf2f652e6c75b3f8cf635cbcfc81188ac00000000",rawtx, sizeof(rawtx));
+    CU_ASSERT(UID_TX_OK == UID_buildScriptSig(rawtx, len, path, 2, scriptsig, 2));
 }
 * improve rawtx parsing!!!
 */
@@ -286,7 +286,7 @@ void UID_signAndSendContract(char *param, char *result, size_t size)
     char *str;
     unsigned i;
 
-	jnode = yajl_tree_parse(param, errbuf, sizeof(errbuf));
+    jnode = yajl_tree_parse(param, errbuf, sizeof(errbuf));
     if (jnode == NULL) {
         snprintf(result, size, "1 - parse_error: %s", strlen(errbuf)?"unknown error":errbuf);
         return;
