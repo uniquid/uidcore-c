@@ -701,8 +701,9 @@ void test_case_signMessage(void)
 
 int init_cache_suite(void)
 {
-    UID_pApplianceURL = "http://insight-ltc-testnet.uniquid.co:3001/insight-lite-api";
-    UID_pRegistryURL = "http://127.0.0.1:98080/registry"; // no registry. providername will be ""
+    UID_pApplianceURL = "https://ltc-testnet.uniquid.co/insight-lite-api";
+//    UID_pApplianceURL = "http://insight-ltc-testnet.uniquid.co:3001/insight-lite-api";
+    UID_pRegistryURL = "http://none:98080/registry"; // no registry. providername will be ""
     return 0;
 }
 
