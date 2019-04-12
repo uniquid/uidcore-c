@@ -4,25 +4,25 @@
 OPTFLAGS = -O0 -g -gdwarf-3
 
 CFLAGS   += $(OPTFLAGS) \
-            -std=gnu99 \
-            -W \
-            -Wall \
-            -Wextra \
-            -Wimplicit-function-declaration \
-            -Wredundant-decls \
-            -Wstrict-prototypes \
-            -Wundef \
-            -Wshadow \
-            -Wpointer-arith \
-            -Wformat \
-            -Wreturn-type \
-            -Wsign-compare \
-            -Wmultichar \
-            -Wformat-nonliteral \
-            -Winit-self \
-            -Wuninitialized \
-            -Wformat-security \
-            -Werror
+			-std=gnu99 \
+			-W \
+			-Wall \
+			-Wextra \
+			-Wimplicit-function-declaration \
+			-Wredundant-decls \
+			-Wstrict-prototypes \
+			-Wundef \
+			-Wshadow \
+			-Wpointer-arith \
+			-Wformat \
+			-Wreturn-type \
+			-Wsign-compare \
+			-Wmultichar \
+			-Wformat-nonliteral \
+			-Winit-self \
+			-Wuninitialized \
+			-Wformat-security \
+			-Werror
 
 CFLAGS += -Iyajl/build/yajl-2.1.1/include -Itrezor-crypto
 LIB-YAJL := yajl/build/yajl-2.1.1/lib/libyajl_s.a

@@ -59,12 +59,12 @@ int UID_prepareToSign(UID_UniquidCapability *cap, char *buffer, size_t size)
  */
 int UID_receiveProviderCapability(UID_UniquidCapability *cap)
 {
-	char buffer[UID_SERIALIZED_CAPABILITY_SIZE];
+    char buffer[UID_SERIALIZED_CAPABILITY_SIZE];
     UID_SecurityProfile channel = {0};
     int ret;
 
     // Verify the signature
-	UID_prepareToSign(cap, buffer, sizeof(buffer));
+    UID_prepareToSign(cap, buffer, sizeof(buffer));
     ret = UID_verifyMessage(buffer, cap->assignerSignature, cap->assigner);
     if (UID_SIGN_OK != ret) {
         UID_log(UID_LOG_ERROR, "In func <%s> " "UID_verifyMessage() return %d\n", __func__, ret);

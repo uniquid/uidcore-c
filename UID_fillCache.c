@@ -296,8 +296,8 @@ static int check_contract(UID_HttpOBJ *curl, cache_buffer *secondb, char * tx, c
         return UID_CONTRACTS_SERV_ERROR;
     }
 
-	jnode = yajl_tree_parse(curlbuffer, NULL, 0);
-	if (NULL == jnode)
+    jnode = yajl_tree_parse(curlbuffer, NULL, 0);
+    if (NULL == jnode)
         return UID_CONTRACTS_SERV_ERROR;
 
     const char * path[] = { "confirmations", (const char *) 0, (const char *) 0 };
@@ -373,8 +373,8 @@ static int check_address(UID_HttpOBJ *curl, cache_buffer *secondb, UID_Bip32Path
         return UID_CONTRACTS_SERV_ERROR;
     }
 
-	jnode = yajl_tree_parse(curlbuffer, NULL, 0);
-	if (NULL == jnode)
+    jnode = yajl_tree_parse(curlbuffer, NULL, 0);
+    if (NULL == jnode)
         return UID_CONTRACTS_SERV_ERROR;
 
     const char * path[] = { "transactions",(const char *) 0 };
@@ -534,6 +534,7 @@ int UID_fillCache(UID_HttpOBJ *curl, cache_buffer *secondb)
     return UID_CONTRACTS_OK;
 }
 
+#ifdef UID_IMPLEMENTSENDTX
 /**
  * Sends a signed transaction to the block-chain using
  * Insight API service
@@ -562,3 +563,4 @@ int UID_sendTx(char *signed_tx, char *ret, size_t size)
 
     return res;
 }
+#endif //UID_IMPLEMENTSENDTX

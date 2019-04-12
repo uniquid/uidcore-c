@@ -97,7 +97,7 @@ static HDNode *UID_deriveAt(UID_Bip32Path *path, HDNode *node)
 
 static void derive_m_44H_0H_x(void)
 {
-	uint32_t fingerprint;
+    uint32_t fingerprint;
 
     // [Chain m/44']
     memcpy(&node_m_44H_0H, &node_m, sizeof(HDNode));
@@ -107,8 +107,8 @@ static void derive_m_44H_0H_x(void)
     fingerprint = hdnode_fingerprint(&node_m_44H_0H);
     //memcpy(&node_m_44H_0H, &node_m_44H_0H, sizeof(HDNode));
     hdnode_private_ckd_prime(&node_m_44H_0H, 0);
-	hdnode_fill_public_key(&node_m_44H_0H);
-	hdnode_serialize_public(&node_m_44H_0H, fingerprint, tpub, sizeof(tpub));
+    hdnode_fill_public_key(&node_m_44H_0H);
+    hdnode_serialize_public(&node_m_44H_0H, fingerprint, tpub, sizeof(tpub));
 
     // [Chain m/44'/0'/0]
     memcpy(&node_m_44H_0H_0, &node_m_44H_0H, sizeof(HDNode));
@@ -162,12 +162,12 @@ void UID_getLocalIdentity(char *tprv)
         random_buffer(seed, sizeof(seed));
         hdnode_from_seed(seed, sizeof(seed), SECP256K1_NAME, &node_m);
     }
-	else
-	{
-	    hdnode_deserialize(tprv, &node_m);
-	}
+    else
+    {
+        hdnode_deserialize(tprv, &node_m);
+    }
 
-	derive_m_44H_0H_x();
+    derive_m_44H_0H_x();
 
     if (tprv != privateKey) {
         memset(privateKey, 0, sizeof(privateKey));

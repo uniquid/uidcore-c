@@ -28,7 +28,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
-#include "sha2.h"
 #include "ecdsa.h"
 #include "secp256k1.h"
 #include "base58.h"
@@ -49,20 +48,20 @@
  */
 size_t fromhex(const char *str, uint8_t *buf, size_t len)
 {
-	uint8_t c;
-	size_t l = strlen(str) / 2;
-	if (l > len) return 0;
-	for (size_t i = 0; i < l; i++) {
-		c = 0;
-		if (str[i*2] >= '0' && str[i*2] <= '9') c += (str[i*2] - '0') << 4;
-		if (str[i*2] >= 'a' && str[i*2] <= 'f') c += (10 + str[i*2] - 'a') << 4;
-		if (str[i*2] >= 'A' && str[i*2] <= 'F') c += (10 + str[i*2] - 'A') << 4;
-		if (str[i*2+1] >= '0' && str[i*2+1] <= '9') c += (str[i*2+1] - '0');
-		if (str[i*2+1] >= 'a' && str[i*2+1] <= 'f') c += (10 + str[i*2+1] - 'a');
-		if (str[i*2+1] >= 'A' && str[i*2+1] <= 'F') c += (10 + str[i*2+1] - 'A');
-		buf[i] = c;
-	}
-	return l;
+    uint8_t c;
+    size_t l = strlen(str) / 2;
+    if (l > len) return 0;
+    for (size_t i = 0; i < l; i++) {
+        c = 0;
+        if (str[i*2] >= '0' && str[i*2] <= '9') c += (str[i*2] - '0') << 4;
+        if (str[i*2] >= 'a' && str[i*2] <= 'f') c += (10 + str[i*2] - 'a') << 4;
+        if (str[i*2] >= 'A' && str[i*2] <= 'F') c += (10 + str[i*2] - 'A') << 4;
+        if (str[i*2+1] >= '0' && str[i*2+1] <= '9') c += (str[i*2+1] - '0');
+        if (str[i*2+1] >= 'a' && str[i*2+1] <= 'f') c += (10 + str[i*2+1] - 'a');
+        if (str[i*2+1] >= 'A' && str[i*2+1] <= 'F') c += (10 + str[i*2+1] - 'A');
+        buf[i] = c;
+    }
+    return l;
 }
 
 /**
@@ -78,18 +77,18 @@ size_t fromhex(const char *str, uint8_t *buf, size_t len)
  */
 uint8_t *fromnhex(const char *str, uint8_t *buf, size_t len)
 {
-	uint8_t c;
-	for (size_t i = 0; i < len; i++) {
-		c = 0;
-		if (str[i*2] >= '0' && str[i*2] <= '9') c += (str[i*2] - '0') << 4;
-		if (str[i*2] >= 'a' && str[i*2] <= 'f') c += (10 + str[i*2] - 'a') << 4;
-		if (str[i*2] >= 'A' && str[i*2] <= 'F') c += (10 + str[i*2] - 'A') << 4;
-		if (str[i*2+1] >= '0' && str[i*2+1] <= '9') c += (str[i*2+1] - '0');
-		if (str[i*2+1] >= 'a' && str[i*2+1] <= 'f') c += (10 + str[i*2+1] - 'a');
-		if (str[i*2+1] >= 'A' && str[i*2+1] <= 'F') c += (10 + str[i*2+1] - 'A');
-		buf[i] = c;
-	}
-	return buf;
+    uint8_t c;
+    for (size_t i = 0; i < len; i++) {
+        c = 0;
+        if (str[i*2] >= '0' && str[i*2] <= '9') c += (str[i*2] - '0') << 4;
+        if (str[i*2] >= 'a' && str[i*2] <= 'f') c += (10 + str[i*2] - 'a') << 4;
+        if (str[i*2] >= 'A' && str[i*2] <= 'F') c += (10 + str[i*2] - 'A') << 4;
+        if (str[i*2+1] >= '0' && str[i*2+1] <= '9') c += (str[i*2+1] - '0');
+        if (str[i*2+1] >= 'a' && str[i*2+1] <= 'f') c += (10 + str[i*2+1] - 'a');
+        if (str[i*2+1] >= 'A' && str[i*2+1] <= 'F') c += (10 + str[i*2+1] - 'A');
+        buf[i] = c;
+    }
+    return buf;
 }
 
 /**
@@ -106,13 +105,13 @@ uint8_t *fromnhex(const char *str, uint8_t *buf, size_t len)
 char *tohex(const uint8_t *bin, size_t l, char *buf)
 {
 //	char *buf = (char *)malloc(l * 2 + 1);
-	static char digits[] = "0123456789abcdef";
-	for (size_t i = 0; i < l; i++) {
-		buf[i*2  ] = digits[(bin[i] >> 4) & 0xF];
-		buf[i*2+1] = digits[bin[i] & 0xF];
-	}
-	buf[l * 2] = 0;
-	return buf;
+    static char digits[] = "0123456789abcdef";
+    for (size_t i = 0; i < l; i++) {
+        buf[i*2  ] = digits[(bin[i] >> 4) & 0xF];
+        buf[i*2+1] = digits[bin[i] & 0xF];
+    }
+    buf[l * 2] = 0;
+    return buf;
 }
 
 /**
@@ -127,22 +126,87 @@ char *tohex(const uint8_t *bin, size_t l, char *buf)
  */
 uint32_t ser_length(uint32_t len, uint8_t *out)
 {
-	if (len < 253) {
-		out[0] = len & 0xFF;
-		return 1;
-	}
-	if (len < 0x10000) {
-		out[0] = 253;
-		out[1] = len & 0xFF;
-		out[2] = (len >> 8) & 0xFF;
-		return 3;
-	}
-	out[0] = 254;
-	out[1] = len & 0xFF;
-	out[2] = (len >> 8) & 0xFF;
-	out[3] = (len >> 16) & 0xFF;
-	out[4] = (len >> 24) & 0xFF;
-	return 5;
+    if (len < 253) {
+        out[0] = len & 0xFF;
+        return 1;
+    }
+    if (len < 0x10000) {
+        out[0] = 253;
+        out[1] = len & 0xFF;
+        out[2] = (len >> 8) & 0xFF;
+        return 3;
+    }
+    out[0] = 254;
+    out[1] = len & 0xFF;
+    out[2] = (len >> 8) & 0xFF;
+    out[3] = (len >> 16) & 0xFF;
+    out[4] = (len >> 24) & 0xFF;
+    return 5;
+}
+
+/**
+ * Initialize the bitcoin message hash
+ *
+ * @param[in]  message_len  total len of the message to be hashed (sum of all partial_len)
+ * @param[in]  ctx          cotntext to accumulate partial hashes
+ */
+void UID_hashMessage_init(size_t message_len, SHA256_CTX *ctx)
+{
+    sha256_Init(ctx);
+    sha256_Update(ctx, (const uint8_t *)"\x18" "Bitcoin Signed Message:" "\n", 25);
+    uint8_t varint[5];
+    uint32_t l = ser_length(message_len, varint);
+    sha256_Update(ctx, varint, l);
+}
+
+/**
+ * Update the hash context with new data
+ *
+ * @param[in]  partial_message  partial message data
+ * @param[in]  partial_len      size of the partial message data
+ * @param[in]  ctx              cotntext to accumulate partial hashes
+ */
+void UID_hashMessage_update(char *partial_message, size_t partial_len, SHA256_CTX *ctx)
+{
+    sha256_Update(ctx, (const uint8_t *)partial_message, partial_len);
+}
+
+/**
+ * Evaluate the hash of the message
+ *
+ * @param[out] hash buffer to be filled with the hash
+ * @param[in]  ctx  cotntext to accumulate partial hashes
+ */
+void UID_hashMessage_final(uint8_t hash[32], SHA256_CTX *ctx)
+{
+    sha256_Final(ctx, hash);
+    sha256_Raw(hash, 32, hash);
+}
+
+/**
+ * Compute the bitcoin message signature \@specific BIP32 path from the hash
+ *
+ * @param[in]  hash         hash of the message to be signed
+ * @param[in]  path         BIP32 path
+ * @param[out] b64signature buffer to be filled with the signature (base64 coded NULL terminated string)
+ * @param[in]  ssize        size of the b64signature buffer
+ *
+ * @return                  UID_SIGN_OK if no error
+ */
+int UID_signMessageHash(uint8_t hash[32], UID_Bip32Path *path, char *b64signature, size_t ssize)
+{
+    uint8_t signature[65] = {0};
+    uint8_t pby;
+    //int result = ecdsa_sign_digest(&secp256k1, privkey, hash, signature + 1, &pby);
+    int result = UID_signAt(path, hash, signature + 1, &pby);
+    if (result != UID_SIGN_OK) return UID_SIGN_FAILED;
+    signature[0] = 27 + pby + 4;
+
+    size_t olen = 0;
+    int ret;
+    ret = mbedtls_base64_encode((unsigned char *)b64signature, ssize, &olen, signature, sizeof(signature));
+    if (0 == ret) return UID_SIGN_OK;
+    return UID_SIGN_SMALL_BUFFER;
 }
 
 /**
@@ -158,30 +222,14 @@ uint32_t ser_length(uint32_t len, uint8_t *out)
 int UID_signMessage(char *message, UID_Bip32Path *path, char *b64signature, size_t ssize)
 {
     SHA256_CTX ctx;
-	size_t message_len;
-	uint8_t signature[65] = {0};
+    size_t message_len;
+    uint8_t hash[32];
 
-	message_len = strlen(message);
-	sha256_Init(&ctx);
-	sha256_Update(&ctx, (const uint8_t *)"\x18" "Bitcoin Signed Message:" "\n", 25);
-	uint8_t varint[5];
-	uint32_t l = ser_length(message_len, varint);
-	sha256_Update(&ctx, varint, l);
-	sha256_Update(&ctx, (const uint8_t *)message, message_len);
-	uint8_t hash[32];
-	sha256_Final(&ctx, hash);
-	sha256_Raw(hash, 32, hash);
-	uint8_t pby;
-	//int result = ecdsa_sign_digest(&secp256k1, privkey, hash, signature + 1, &pby);
-	int result = UID_signAt(path, hash, signature + 1, &pby);
-	if (result != UID_SIGN_OK) return UID_SIGN_FAILED;
-	signature[0] = 27 + pby + 4;
-
-	size_t olen = 0;
-	int ret;
-	ret = mbedtls_base64_encode((unsigned char *)b64signature, ssize, &olen, signature, sizeof(signature));
-	if (0 == ret) return UID_SIGN_OK;
-	return UID_SIGN_SMALL_BUFFER;
+    message_len = strlen(message);
+    UID_hashMessage_init(message_len, &ctx);
+    UID_hashMessage_update(message, message_len, &ctx);
+    UID_hashMessage_final(hash, &ctx);
+    return UID_signMessageHash(hash, path, b64signature, ssize);
 }
 
 /**
@@ -197,21 +245,21 @@ int UID_signMessage(char *message, UID_Bip32Path *path, char *b64signature, size
 int cryptoMessageSign(const uint8_t *message, size_t message_len, const uint8_t *privkey, uint8_t *signature)
 {
     SHA256_CTX ctx;
-	sha256_Init(&ctx);
-	sha256_Update(&ctx, (const uint8_t *)"\x18" "Bitcoin Signed Message:" "\n", 25);
-	uint8_t varint[5];
-	uint32_t l = ser_length(message_len, varint);
-	sha256_Update(&ctx, varint, l);
-	sha256_Update(&ctx, message, message_len);
-	uint8_t hash[32];
-	sha256_Final(&ctx, hash);
-	sha256_Raw(hash, 32, hash);
-	uint8_t pby;
-	int result = ecdsa_sign_digest(&secp256k1, privkey, hash, signature + 1, &pby);
-	if (result == 0) {
-		signature[0] = 27 + pby + 4;
-	}
-	return result;
+    sha256_Init(&ctx);
+    sha256_Update(&ctx, (const uint8_t *)"\x18" "Bitcoin Signed Message:" "\n", 25);
+    uint8_t varint[5];
+    uint32_t l = ser_length(message_len, varint);
+    sha256_Update(&ctx, varint, l);
+    sha256_Update(&ctx, message, message_len);
+    uint8_t hash[32];
+    sha256_Final(&ctx, hash);
+    sha256_Raw(hash, 32, hash);
+    uint8_t pby;
+    int result = ecdsa_sign_digest(&secp256k1, privkey, hash, signature + 1, &pby);
+    if (result == 0) {
+        signature[0] = 27 + pby + 4;
+    }
+    return result;
 }
 
 /**
@@ -225,15 +273,77 @@ int cryptoMessageSign(const uint8_t *message, size_t message_len, const uint8_t 
  */
 int UID_verifyMessage(char *message, char *b64signature, char *address)
 {
-	uint8_t signature_bin[65] = {0};
-	size_t size = 0;
-	int ret;
+    uint8_t signature_bin[65] = {0};
+    size_t size = 0;
+    int ret;
 
-	ret = mbedtls_base64_decode(signature_bin, sizeof(signature_bin), &size, (unsigned char *)b64signature, strlen(b64signature));
-	if(MBEDTLS_ERR_BASE64_BUFFER_TOO_SMALL == ret) return UID_SIGN_SMALL_BUFFER;
-	if(0 != ret) return UID_SIGN_INVALID_CHARACTER;
-	ret = cryptoMessageVerify((uint8_t *)message, strlen(message), address, signature_bin);
-	return (0 == ret ? UID_SIGN_OK : UID_SIGN_VERIFY_ERROR);
+    ret = mbedtls_base64_decode(signature_bin, sizeof(signature_bin), &size, (unsigned char *)b64signature, strlen(b64signature));
+    if(MBEDTLS_ERR_BASE64_BUFFER_TOO_SMALL == ret) return UID_SIGN_SMALL_BUFFER;
+    if(0 != ret) return UID_SIGN_INVALID_CHARACTER;
+    ret = cryptoMessageVerify((uint8_t *)message, strlen(message), address, signature_bin);
+    return (0 == ret ? UID_SIGN_OK : UID_SIGN_VERIFY_ERROR);
+}
+
+/**
+ * Recover the address from the ash and signature
+ *
+ * @param[in]  hash         hash that was signed
+ * @param[in]  b64signature recovery byte + signature base64 coded
+ * @param[out] address      buffer to be filled with the address
+ *
+ * @return                  UID_SIGN_OK == address succesfully recovered
+ */
+int UID_addressFromSignedHash(uint8_t hash[32], char *b64signature, BTC_Address address)
+{
+    bignum256 r, s, e;
+    curve_point cp, cp2;
+    uint8_t pubkey[65];
+    uint8_t signature[65] = {0};
+    int ret;
+    size_t size = 0;
+
+    // decode signature
+    ret = mbedtls_base64_decode(signature, sizeof(signature), &size, (unsigned char *)b64signature, strlen(b64signature));
+    if(MBEDTLS_ERR_BASE64_BUFFER_TOO_SMALL == ret) return UID_SIGN_SMALL_BUFFER;
+    if(0 != ret) return UID_SIGN_INVALID_CHARACTER;
+
+  uint8_t nV = signature[0];
+  if (nV < 27 || nV >= 35) {
+          return UID_SIGN_INVALID_RECOVERY_BYTE;
+  }
+  bool compressed;
+  compressed = (nV >= 31);
+  if (compressed) {
+          nV -= 4;
+  }
+  uint8_t recid = nV - 27;
+  // read r and s
+  bn_read_be(signature + 1, &r);
+  bn_read_be(signature + 33, &s);
+  // x = r
+  memcpy(&cp.x, &r, sizeof(bignum256));
+  // compute y from x
+  uncompress_coords(&secp256k1, recid % 2, &cp.x, &cp.y);
+    // e = -hash
+    bn_read_be(hash, &e);
+    bn_subtract(&secp256k1.order, &e, &e);
+    // r = r^-1
+    bn_inverse(&r, &secp256k1.order);
+    point_multiply(&secp256k1, &s, &cp, &cp);
+    scalar_multiply(&secp256k1, &e, &cp2);
+    point_add(&secp256k1, &cp2, &cp);
+    point_multiply(&secp256k1, &r, &cp, &cp);
+    pubkey[0] = 0x04;
+    bn_write_be(&cp.x, pubkey + 1);
+    bn_write_be(&cp.y, pubkey + 33);
+    // check if the address is correct
+    if (compressed) {
+        pubkey[0] = 0x02 | (cp.y.val[0] & 0x01);
+    }
+
+    ecdsa_get_address(pubkey, /*version*/ NETWORK_BYTE, address, sizeof(BTC_Address));
+
+    return UID_SIGN_OK;
 }
 
 /**

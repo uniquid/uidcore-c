@@ -30,6 +30,8 @@
 #include "UID_message.h"
 #include "UID_bchainBTC.h"
 #include "UID_dispatch.h"
+#include "UID_time.h"
+#include "UID_utils.h"
 
 /**
  * Create the context for the user to talk with the
@@ -42,21 +44,49 @@
  *                        (contract informations and may be encryption context)
  * @return                0 == no error
  */
-int UID_createChannel(char *destMachine, UID_ClientChannelCtx *ctx)
+int UID_createChannel(char *destMachine, UID_ClientChannelCtx *channel_ctx)
 {
-    UID_ClientProfile *provider;
+    UID_ClientProfile *contract;
 
-	if (NULL == (provider = UID_matchProvider(destMachine))) return UID_MSG_NOT_FOUND;
-    strncpy(ctx->myid, provider->serviceUserAddress, sizeof(ctx->myid));
-    strncpy(ctx->peerid, provider->serviceProviderAddress, sizeof(ctx->peerid));
+    if (NULL == (contract = UID_matchProvider(destMachine))) return UID_MSG_NOT_FOUND;
+    memcpy(&(channel_ctx->contract), contract, sizeof(channel_ctx->contract));
 
     return UID_MSG_OK;
+}
+
+/*
+ * hash the serialization. Can be used for both request and response.
+ *
+ * serialization:
+ * sprintf(serializeData,"%d%s%" PRId64 "", method, params, id) for the request
+ * sprintf(serializeData,"%d%s%" PRId64 "", error, result, id)  for the response
+ *
+ * es:
+ * char serializeData[] = "31param-string1551443586389"
+ */
+static void hashSerializeddata(int method, char *params, int64_t sID, uint8_t hash[32])
+{
+    char s_method[5] = {0};
+    size_t l_method = 0;
+    char s_sID[21] = {0};
+    size_t l_sID = 0;
+    size_t l_params = strlen(params);
+    SHA256_CTX ctx;
+    l_method = snprintf(s_method, sizeof(s_method), "%d", method);
+    l_sID = snprintf(s_sID, sizeof(s_sID), "%" PRId64, sID);
+    // hash the serialized data
+    UID_hashMessage_init(l_method+l_params+l_sID, &ctx);
+    UID_hashMessage_update(s_method, l_method, &ctx);
+    UID_hashMessage_update(params, l_params, &ctx);
+    UID_hashMessage_update(s_sID, l_sID, &ctx);
+    UID_hashMessage_final(hash, &ctx);
+
 }
 
 /**
  * Format the RPC request message
  *
- * @param[in]     sender string containing the sender address
+ * @param[in]     path   BIP32 path of the sender address
  * @param[in]     method the requested RPC method
  * @param[in]     params the RPC params string
  * @param[out]    msg    pointer to a buffer to be filled with the formatted message
@@ -65,14 +95,14 @@ int UID_createChannel(char *destMachine, UID_ClientChannelCtx *ctx)
  *
  * @return               0 == no error
  */
-int UID_formatReqMsg(char *sender, int method, char *params, uint8_t *msg, size_t *size, int64_t *sID)
+int UID_formatReqMsg(UID_Bip32Path *path, int method, char *params, uint8_t *msg, size_t *size, int64_t *sID)
 {
     yajl_gen g;
     const uint8_t *json;
     size_t sz;
     int ret;
 
-    *sID = time(NULL);
+    *sID = UID_getTime();
 
     g = yajl_gen_alloc(NULL);
     if (NULL == g) return UID_MSG_GEN_ALLOC_FAIL;
@@ -99,7 +129,15 @@ int UID_formatReqMsg(char *sender, int method, char *params, uint8_t *msg, size_
     ret = UID_MSG_GEN_FAIL;
     if (yajl_gen_status_ok != yajl_gen_string(g, (uint8_t *)params, strlen(params))) goto clean;
     if (yajl_gen_status_ok != yajl_gen_get_buf(g, &json, &sz)) goto clean; //format params string
-    sz = snprintf((char *)msg, *size, "{\"sender\":\"%s\",\"body\":{\"method\":%d,\"params\":%s,\"id\":%" PRId64 "}}", sender, method, json, *sID);
+
+    // hash the data
+    BTC_Signature signature = {0};
+    uint8_t hash[32] = {0};
+    hashSerializeddata(method, params, *sID, hash);
+    ret = UID_signMessageHash(hash, path, signature, sizeof(signature));
+    if (UID_SIGN_OK != ret) goto clean;
+
+    sz = snprintf((char *)msg, *size, "{\"body\":{\"method\":%d,\"params\":%s,\"id\":%" PRId64 "},\"signature\":\"%s\"}", method, json, *sID, signature);
     ret = UID_MSG_SMALL_BUFFER;
     if (sz >= *size) goto clean;
     *size = sz + 1;  // add the end of string
@@ -136,19 +174,55 @@ int UID_accept_channel(uint8_t *in_msg, size_t in_size, UID_ServerChannelCtx *ch
     char *s;
     UID_SecurityProfile *contract;
     int ret;
+    const char * _id[] = { "body", "id", (const char *) 0 };
+    const char * _method[] = { "body", "method", (const char *) 0 };
+    const char * _params[] = { "body", "params", (const char *) 0 };
+    const char * _signature[] = { "signature", (const char *) 0 };
 
     // parse message
-	node = yajl_tree_parse((char *)in_msg, NULL, 0);
+    node = yajl_tree_parse((char *)in_msg, NULL, 0);
     if (node == NULL) return UID_MSG_JPARSE_ERROR;
 
+// get the sID
     ret = UID_MSG_JPARSE_ERROR;
-    const char * sender[] = { "sender", (const char *) 0 };
-    v = yajl_tree_get(node, sender, yajl_t_string);
+    v = yajl_tree_get(node, _id, yajl_t_number);
+    if (v == NULL) goto clean_return;
+
+    int64_t sID = YAJL_GET_INTEGER(v);
+
+    int64_t td = UID_getTime() - sID;
+    ret = UID_MSG_ID_MISMATCH;
+    if (td > UID_MSG_TWINDOW ) goto clean_return;
+    if (td < -UID_MSG_TWINDOW ) goto clean_return;
+
+// get the method
+    ret = UID_MSG_JPARSE_ERROR;
+    v = yajl_tree_get(node, _method, yajl_t_number);
+    if (v == NULL) goto clean_return;
+
+    int method = YAJL_GET_INTEGER(v);
+
+//get the params
+    ret = UID_MSG_JPARSE_ERROR;
+    v = yajl_tree_get(node, _params, yajl_t_string);
     if (v == NULL) goto clean_return;
     s =  YAJL_GET_STRING(v);
 
+//get the signature
+    ret = UID_MSG_JPARSE_ERROR;
+    v = yajl_tree_get(node, _signature, yajl_t_string);
+    if (v == NULL) goto clean_return;
+    char *b64signature =  YAJL_GET_STRING(v);
+
+// recover the address
+    uint8_t hash[32] = {0};
+    BTC_Address address = {0};
+    hashSerializeddata(method, s, sID, hash);
+    ret = UID_addressFromSignedHash(hash, b64signature, address);
+    if(UID_SIGN_OK != ret) goto clean_return;
+
     ret = UID_MSG_NO_CONTRACT;  // We dont have a contract. we dont send any answer...
-    contract = UID_matchContract(s);
+    contract = UID_matchContract(address);
     if (NULL == contract) goto clean_return;
     memcpy(&(channel_ctx->contract), contract, sizeof(channel_ctx->contract));
 
@@ -170,8 +244,6 @@ clean_return:
  *
  * @param[in]  msg	  message
  * @param[in]  size   size in byte of the message
- * @param[out] sender pointer to a buffer to be filled with the sender address
- * @param[in]  ssize  size of the sender buffer
  * @param[out] method pointer to an int variable to be filled with the method
  * @param[out] params pointer to a buffer filled with the RPC parameter string
  * @param[in]  psize  size of the params buffer
@@ -179,30 +251,19 @@ clean_return:
  *
  * @return     0 == no error
  */
-int UID_parseReqMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int *method, char *params, size_t psize, int64_t *sID)
+int UID_parseReqMsg(uint8_t *msg, size_t size, int *method, char *params, size_t psize, int64_t *sID)
 {
 (void)size;
     yajl_val node, v;
     int ret;
     char *s;
-    const char * _sender[] = { "sender", (const char *) 0 };
     const char * _id[] = { "body", "id", (const char *) 0 };
     const char * _method[] = { "body", "method", (const char *) 0 };
     const char * _params[] = { "body", "params", (const char *) 0 };
 
     // parse message
-	node = yajl_tree_parse((char *)msg, NULL, 0);
+    node = yajl_tree_parse((char *)msg, NULL, 0);
     if (node == NULL) return UID_MSG_JPARSE_ERROR;
-
-// get the sender
-    ret = UID_MSG_JPARSE_ERROR;
-    v = yajl_tree_get(node, _sender, yajl_t_string);
-    if (v == NULL) goto clean_return;
-    s =  YAJL_GET_STRING(v);
-
-    ret = UID_MSG_SMALL_BUFFER;
-    if (strlen(s) >= ssize) goto clean_return;
-    strncpy(sender, s, ssize);
 
 // get the sID
     ret = UID_MSG_JPARSE_ERROR;
@@ -237,7 +298,7 @@ clean_return:
 /**
  * Format the RPC response message
  *
- * @param[in]     sender string containing the sender address
+ * @param[in]     path   BIP32 path of the sender address
  * @param[in]     result the RPC result string
  * @param[in]     error  error
  * @param[in]     sID    session ID
@@ -246,7 +307,7 @@ clean_return:
  *
  * @return        0 == no error
  */
-int UID_formatRespMsg(char *sender, char *result, int error, int64_t sID, uint8_t *msg, size_t *size)
+int UID_formatRespMsg(UID_Bip32Path *path, char *result, int error, int64_t sID, uint8_t *msg, size_t *size)
 {
     int ret;
     yajl_gen g = NULL;
@@ -261,7 +322,15 @@ int UID_formatRespMsg(char *sender, char *result, int error, int64_t sID, uint8_
     ret = UID_MSG_GEN_FAIL;
     if (yajl_gen_status_ok != yajl_gen_string(g, (uint8_t *)result, strlen(result))) goto clean_return;
     if (yajl_gen_status_ok != yajl_gen_get_buf(g, &json, &sz)) goto clean_return; //get the buffer
-    sz = snprintf((char *)msg, *size, "{\"sender\":\"%s\",\"body\":{\"result\":%s,\"error\":%d,\"id\":%" PRId64 "}}", sender, json, error, sID);
+
+    // hash the data
+    BTC_Signature signature = {0};
+    uint8_t hash[32] = {0};
+    hashSerializeddata(error, result, sID, hash);
+    ret = UID_signMessageHash(hash, path, signature, sizeof(signature));
+    if (UID_SIGN_OK != ret) goto clean_return;
+
+    sz = snprintf((char *)msg, *size, "{\"body\":{\"result\":%s,\"error\":%d,\"id\":%" PRId64 "},\"signature\":\"%s\"}", json, error, sID, signature);
     ret = UID_MSG_SMALL_BUFFER;
     if (sz >= *size) goto clean_return;
     *size = sz + 1;  // add the end of string
@@ -296,24 +365,15 @@ int UID_parseRespMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int 
     yajl_val node, v;
     int ret;
     char *s;
-    const char * _sender[] = { "sender", (const char *) 0 };
     const char * _id[] = { "body", "id", (const char *) 0 };
     const char * _error[] = { "body", "error", (const char *) 0 };
     const char * _result[] = { "body", "result", (const char *) 0 };
+    const char * _signature[] = { "signature", (const char *) 0 };
 
     // parse message
-	node = yajl_tree_parse((char *)msg, NULL, 0);
+    node = yajl_tree_parse((char *)msg, NULL, 0);
     if (node == NULL) return UID_MSG_JPARSE_ERROR;
 
-// get the sender
-    ret = UID_MSG_JPARSE_ERROR;
-    v = yajl_tree_get(node, _sender, yajl_t_string);
-    if (v == NULL) goto clean_return;
-    s =  YAJL_GET_STRING(v);
-
-    ret = UID_MSG_SMALL_BUFFER;
-    if (strlen(s) >= ssize) goto clean_return;
-    strncpy(sender, s, ssize);
 
 // get the sID
     ret = UID_MSG_JPARSE_ERROR;
@@ -338,6 +398,20 @@ int UID_parseRespMsg(uint8_t *msg, size_t size, char *sender, size_t ssize, int 
     ret = UID_MSG_SMALL_BUFFER;
     if (strlen(s) >= rsize) goto clean_return;
     strncpy(result, s, rsize);
+
+//get the signature
+    ret = UID_MSG_JPARSE_ERROR;
+    v = yajl_tree_get(node, _signature, yajl_t_string);
+    if (v == NULL) goto clean_return;
+    char *b64signature =  YAJL_GET_STRING(v);
+
+//recover the sender
+    ret = UID_MSG_SMALL_BUFFER;
+    if (sizeof(BTC_Address) > ssize) goto clean_return;
+    uint8_t hash[32] = {0};
+    hashSerializeddata(*error, result, *sID, hash);
+    ret = UID_addressFromSignedHash(hash, b64signature, sender);
+    if(UID_SIGN_OK != ret) goto clean_return;
 
     ret = UID_MSG_OK;
 clean_return:

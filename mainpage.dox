@@ -38,6 +38,11 @@
  - UID_tprvFromSeed()
  - UID_signMessage()
  - UID_verifyMessage()
+ - UID_hashMessage_init()
+ - UID_hashMessage_update()
+ - UID_hashMessage_final()
+ - UID_signMessageHash()
+ - UID_addressFromSignedHash()
  - cryptoMessageSign()
  - cryptoMessageVerify()
 
@@ -45,10 +50,10 @@
  ## RPC message structure:##
 
  __request__\n
- {"sender":"sender-address", "body":{"method":n, "params":"param-string", "id":nonce} }
+ {"body":{"method":n, "params":"param-string", "id":nonce}, "signature":"base64-signature-string" }
 
  __response__\n
- {"sender":"sender-address", "body":{"result":"res-string", "error":err, "id":nonce} }
+ {"body":{"result":"res-string", "error":err, "id":nonce}, "signature":"base64-signature-string" }
 
 \n
  ## Code examples ##
