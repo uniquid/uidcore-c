@@ -138,6 +138,20 @@ void test_case_identity4(void)
         CU_ASSERT_STRING_EQUAL(b58addr, "mkSgTpuGsFdQkm4i1rNuydB87AVY1K6CHG");
     }
 
+    {
+        char b58addr[BTC_ADDRESS_MAX_LENGHT] = {0};
+        UID_Bip32Path path = {2, 3, 7};
+        UID_getAddressAt(&path, b58addr, sizeof(b58addr));
+        CU_ASSERT_STRING_EQUAL(b58addr, "mpPNrDEwy4iTdbPBJta4EZtSFsuSNsPBYw");
+    }
+
+    {
+        char b58addr[BTC_ADDRESS_MAX_LENGHT] = {0};
+        UID_Bip32Path path = {2, 0, 0};
+        UID_getAddressAt(&path, b58addr, sizeof(b58addr));
+        CU_ASSERT_STRING_EQUAL(b58addr, "mxBdYXztBWgvnFNpjJPJyVduCcBFSDrdCZ");
+    }
+
     unlink("identity.db");
 }
 
