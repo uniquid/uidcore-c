@@ -104,7 +104,7 @@ int UID_receiveProviderCapability(UID_UniquidCapability *cap)
 }
 
 /**
- * Valdate the capabiliy and insert the information in the User Contract cache
+ * Valdate the capabiliy and insert the information in the User Client cache
  *
  * @param[in] cap                 the capability
  * @param[in] serviceProviderName Provider name associated to the Capability
