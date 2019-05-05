@@ -220,6 +220,23 @@ UID_ClientProfile *UID_matchProvider(char *name)
     }
 
     pthread_mutex_unlock(&(ptr->in_use));  // unlock the resource
+    if (NULL != ret_val)
+        return ret_val;
+
+    ptr = capDBp;
+    pthread_mutex_lock(&(ptr->in_use));  // lock the resource
+
+    for(i=0; i<(ptr->validClientEntries); i++)
+    {
+        if (strcmp((ptr->clientCache)[i].serviceProviderName, name) == 0)
+        {   // found the contract
+            memcpy(&clientContract,  (ptr->clientCache) + i, sizeof(clientContract)); // copy to clientContract
+            ret_val = &clientContract; // return pointer to it
+            break;
+        }
+    }
+
+    pthread_mutex_unlock(&(ptr->in_use));  // unlock the resource
     return ret_val;
 }
 
@@ -230,12 +247,27 @@ UID_ClientProfile *UID_matchProvider(char *name)
  *
  * @return          UID_CDB_OK if no error
  */
-int UID_insertProvideChannel(UID_SecurityProfile *channel)
+int UID_insertProviderChannel(UID_SecurityProfile *channel)
 {
-    (void)channel;
     pthread_mutex_lock(&(capDBp->in_use));  // lock the resource
     memcpy(&(capDBp->contractsCache[0]), channel, sizeof(UID_SecurityProfile));
     capDBp->validCacheEntries = 1;
+    pthread_mutex_unlock(&(capDBp->in_use));  // unlock the resource
+    return UID_CDB_OK;
+}
+
+/**
+ * Insert a channel in the user contract DataBase
+ *
+ * @param[] channel channel to be inserted
+ *
+ * @return          UID_CDB_OK if no error
+ */
+int UID_insertUserChannel(UID_ClientProfile *channel)
+{
+    pthread_mutex_lock(&(capDBp->in_use));  // lock the resource
+    memcpy(&(capDBp->clientCache[0]), channel, sizeof(UID_ClientProfile));
+    capDBp->validClientEntries = 1;
     pthread_mutex_unlock(&(capDBp->in_use));  // unlock the resource
     return UID_CDB_OK;
 }
