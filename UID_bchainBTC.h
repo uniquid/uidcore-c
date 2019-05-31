@@ -83,7 +83,8 @@ typedef struct {
 int UID_getContracts(cache_buffer **cache);
 UID_SecurityProfile *UID_matchContract(BTC_Address serviceUserAddress);
 UID_ClientProfile *UID_matchProvider(char *name);
-int UID_insertProvideChannel(UID_SecurityProfile *channel);
+int UID_insertProviderChannel(UID_SecurityProfile *channel);
+int UID_insertUserChannel(UID_ClientProfile *channel);
 
 #endif
 

@@ -138,6 +138,20 @@ void test_case_identity4(void)
         CU_ASSERT_STRING_EQUAL(b58addr, "mkSgTpuGsFdQkm4i1rNuydB87AVY1K6CHG");
     }
 
+    {
+        char b58addr[BTC_ADDRESS_MAX_LENGHT] = {0};
+        UID_Bip32Path path = {2, 3, 7};
+        UID_getAddressAt(&path, b58addr, sizeof(b58addr));
+        CU_ASSERT_STRING_EQUAL(b58addr, "mpPNrDEwy4iTdbPBJta4EZtSFsuSNsPBYw");
+    }
+
+    {
+        char b58addr[BTC_ADDRESS_MAX_LENGHT] = {0};
+        UID_Bip32Path path = {2, 0, 0};
+        UID_getAddressAt(&path, b58addr, sizeof(b58addr));
+        CU_ASSERT_STRING_EQUAL(b58addr, "mxBdYXztBWgvnFNpjJPJyVduCcBFSDrdCZ");
+    }
+
     unlink("identity.db");
 }
 
@@ -892,6 +906,35 @@ void test_case_getTime(void)
     //CU_ASSERT('y' == getchar());
 }
 
+void test_case_receiveUserCapability(void)
+{
+    UID_UniquidCapability capability = {
+        "mxPfocydybywS8xgcwkQMosRBgMtP9oh7L",  // UID_Bip32Path {1,1,0}
+        "mp246b2KBN5xncctJxtj7UHiEo5GfiewMT",
+        "muHxM95hVya42de3Q37KzZwWHEpzXZ4W5q",  // UID_Bip32Path {2,0,0}
+        {0,{0,0xFE}},
+        1556987570719,
+        1556987670719,
+        "H496BM+y2wETZ4c6n+y2gWVBY3NVGWHqW7d/vokH02jDdkebrxoWaJJMokoWITaFkLIfUle5ujNf+ysDz8DSjlk=" };
+
+    // BTC_Address serviceUserAddress = {0};
+    // UID_Bip32Path path = {2,0,0};
+    // UID_getAddressAt(&path, serviceUserAddress, sizeof(serviceUserAddress));
+    // printf("----> <%s>\n", serviceUserAddress);
+    // char buffer[UID_SERIALIZED_CAPABILITY_SIZE];
+    // UID_prepareToSign(&capability, buffer, sizeof(buffer));
+    // char signature[256];
+    // UID_signMessage(buffer, &path, signature, sizeof(signature));
+    // printf("----> <%s>\n", signature);
+
+    UID_Bip32Path userPath = {2,0,0};
+    CU_ASSERT(UID_CAPBAC_OK == UID_receiveUserCapability(&capability, "METER102022559158", &userPath));
+    UID_ClientChannelCtx ctx;
+    CU_ASSERT(UID_MSG_OK == UID_createChannel("METER102022559158", &ctx));
+    CU_ASSERT(0 == strcmp(capability.resourceID, ctx.contract.serviceProviderAddress));
+    CU_ASSERT(0 == strcmp(capability.assignee, ctx.contract.serviceUserAddress));
+}
+
 /************* Test Runner Code goes here **************/
 
 int main ( void )
@@ -985,7 +1028,8 @@ int main ( void )
 
    /* add the tests to the suite */
    if ( (NULL == CU_add_test(pSuite, "test_case_prepareToSign", test_case_prepareToSign)) ||
-        (NULL == CU_add_test(pSuite, "test_case_getTime", test_case_getTime))
+        (NULL == CU_add_test(pSuite, "test_case_getTime", test_case_getTime)) ||
+        (NULL == CU_add_test(pSuite, "test_case_receiveUserCapability", test_case_receiveUserCapability))
       )
    {
       CU_cleanup_registry();

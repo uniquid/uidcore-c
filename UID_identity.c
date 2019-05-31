@@ -83,12 +83,21 @@ static HDNode node_m_44H_0H_0_x[2][2];
         // provider/user________|  |
         // intern/extern___________|
 
+static HDNode *UID_deriveAtfull(UID_Bip32Path *path, HDNode *node)
+{
+    memcpy( node, &node_m_44H_0H_0, sizeof(HDNode) );
+    hdnode_private_ckd(node, path->p_u);
+    hdnode_private_ckd(node, path->account);
+    hdnode_private_ckd(node, path->n);
+    return node;
+}
+
 static HDNode *UID_deriveAt(UID_Bip32Path *path, HDNode *node)
 {
     if (path->p_u > 1 )
-        return NULL;
+        return UID_deriveAtfull(path, node);
     if (path->account > 1 )
-        return NULL;
+        return UID_deriveAtfull(path, node);
     memcpy( node, &node_m_44H_0H_0_x[path->p_u][path->account], sizeof(HDNode));
     hdnode_private_ckd(node, path->n);
 //    hdnode_fill_public_key(node);

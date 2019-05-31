@@ -94,9 +94,52 @@ int UID_receiveProviderCapability(UID_UniquidCapability *cap)
     memcpy(&(channel.path), &(profile->path), sizeof(channel.path));
     channel.profile.since = cap->since;
     channel.profile.until = cap->until;
-    ret = UID_insertProvideChannel(&channel);
+    ret = UID_insertProviderChannel(&channel);
     if (ret != UID_CDB_OK) {
         UID_log(UID_LOG_ERROR, "In func <%s> " "UID_insertProvideChannel() return %d\n", __func__, ret);
+        return ret;
+    }
+
+    return UID_CAPBAC_OK;
+}
+
+/**
+ * Valdate the capabiliy and insert the information in the User Client cache
+ *
+ * @param[in] cap                 the capability
+ * @param[in] serviceProviderName Provider name associated to the Capability
+ * @param[in] userPath            Bip32 path of the user (assignee)
+ *
+ * @return        UID_CAPBAC_OK if no error
+ */
+int UID_receiveUserCapability(UID_UniquidCapability *cap, char *serviceProviderName, UID_Bip32Path *userPath)
+{
+    char buffer[UID_SERIALIZED_CAPABILITY_SIZE];
+    UID_ClientProfile channel = {0};
+    int ret;
+
+    // Verify the signature
+    UID_prepareToSign(cap, buffer, sizeof(buffer));
+    ret = UID_verifyMessage(buffer, cap->assignerSignature, cap->assigner);
+    if (UID_SIGN_OK != ret) {
+        UID_log(UID_LOG_ERROR, "In func <%s> " "UID_verifyMessage() return %d\n", __func__, ret);
+        return ret;
+    }
+
+    BTC_Address serviceUserAddress = {0};
+    UID_getAddressAt(userPath, serviceUserAddress, sizeof(serviceUserAddress));
+    if (0 != strncmp(serviceUserAddress, cap->assignee, sizeof(BTC_Address))) {
+        UID_log(UID_LOG_ERROR, "In func <%s> " "assignee and userPath mismatch\n", __func__);
+        return UID_CAPBAC_MALFORMED;
+    }
+
+    memcpy(channel.serviceProviderAddress, cap->resourceID, sizeof(BTC_Address));
+    memcpy(channel.serviceUserAddress, cap->assignee, sizeof(BTC_Address));
+    strncpy(channel.serviceProviderName, serviceProviderName, sizeof(UID_Rights));
+    memcpy(&(channel.path), userPath, sizeof(channel.path));
+    ret = UID_insertUserChannel(&channel);
+    if (ret != UID_CDB_OK) {
+        UID_log(UID_LOG_ERROR, "In func <%s> " "UID_insertUserChannel() return %d\n", __func__, ret);
         return ret;
     }
 

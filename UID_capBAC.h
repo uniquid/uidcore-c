@@ -48,5 +48,6 @@ typedef struct {
 
 int UID_prepareToSign(UID_UniquidCapability *cap, char *buffer, size_t size);
 int UID_receiveProviderCapability(UID_UniquidCapability *cap);
+int UID_receiveUserCapability(UID_UniquidCapability *cap, char *serviceProviderName, UID_Bip32Path *userPath);
 
 #endif

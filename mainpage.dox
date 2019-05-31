@@ -31,6 +31,12 @@
  - UID_parseRespMsg()
  - UID_closeChannel()
 
+ __Capability functions__
+ - UID_prepareToSign()
+ - UID_receiveProviderCapability()
+ - UID_receiveUserCapability()
+
+
  __Secondary functions__
  - UID_signAt()
  - UID_getPubkeyAt()
