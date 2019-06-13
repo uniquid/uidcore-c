@@ -15,7 +15,6 @@
 #include <string.h>
 #include <stdio.h>
 #include "UID_httpal.h"
-//#include "UID_log.h"
 
 
 
@@ -38,7 +37,20 @@
 #include "mbedtls/debug.h"
 #include "mbedtls/timing.h"
 
-#define SUCCESS 0
+
+#define ENABLE_IOT_DEBUG 1
+#ifdef ENABLE_IOT_DEBUG
+#define UID_LOGLEVEL UID_LOG_DEBUG
+#define MBEDTLS_DEBUG_BUFFER_SIZE 2048
+#else
+//#define UID_LOGLEVEL UID_LOG_ERROR
+#endif
+#include "UID_log.h"
+
+#define PROTO_HTTP  0
+#define PROTO_HTTPS 1
+
+
 #define NETWORK_SSL_READ_ERROR         41
 #define NETWORK_SSL_NOTHING_TO_READ    42
 #define NETWORK_SSL_READ_TIMEOUT_ERROR 43
@@ -52,14 +64,15 @@
 #define NETWORK_ERR_NET_CONNECT_FAILED 51
 #define SSL_CONNECTION_ERROR 52
 
-#define ROOT_CA_LOCATION  "./amazon2.pem"
-/**
- * @brief TLS Connection Parameters
- *
- * Defines a type containing TLS specific parameters to be passed down to the
- * TLS networking layer to create a TLS secured socket.
- */
-typedef struct _TLSDataParams {
+/* This is the value used for ssl read timeout */
+#define IOT_SSL_READ_TIMEOUT 10
+
+#define ROOT_CA_LOCATION  "../testssl/rootCA.crt"
+//#define ROOT_CA_LOCATION  "./amazon2.pem"
+
+typedef struct {
+	bool active;
+	int proto;
 	mbedtls_net_context server_fd;
 	mbedtls_ssl_context ssl;
 	mbedtls_ssl_config conf;
@@ -68,61 +81,57 @@ typedef struct _TLSDataParams {
 
 	mbedtls_entropy_context entropy;
 	uint32_t flags;
-//	mbedtls_x509_crt clicert;
-//	mbedtls_pk_context pkey;
-}TLSDataParams;
-
-typedef struct {
-	bool active;
-	TLSDataParams fd;
 } UID_HttpSession;
 
-int _UID_connect(int *conn_fd, char *server, char *port)
+static int tlsClose(UID_HttpSession *httpSession);
+static int tcpClose(UID_HttpSession *httpSession);
+
+static int tcpConnect(UID_HttpSession *httpSession, char *server, char *port)
 {
-(void)server;(void)port;
-    struct addrinfo hints, *result = NULL;
-    int ret = 1;
+    int ret = UID_HTTP_GET_ERROR;
 
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
+	UID_log(UID_LOG_DEBUG," ok\n");
+	UID_log(UID_LOG_DEBUG,"  . Connecting to %s/%s...", server, port);
+	if((ret = mbedtls_net_connect(&(httpSession->server_fd), server,
+								  port, MBEDTLS_NET_PROTO_TCP)) != 0) {
+		UID_log(UID_LOG_ERROR," failed\n  ! mbedtls_net_connect returned -0x%x\n\n", -ret);
+		switch(ret) {
+			case MBEDTLS_ERR_NET_SOCKET_FAILED:
+				ret = NETWORK_ERR_NET_SOCKET_FAILED;
+				goto clean;
+			case MBEDTLS_ERR_NET_UNKNOWN_HOST:
+				ret = NETWORK_ERR_NET_UNKNOWN_HOST;
+				goto clean;
+			case MBEDTLS_ERR_NET_CONNECT_FAILED:
+			default:
+				ret = NETWORK_ERR_NET_CONNECT_FAILED;
+				goto clean;
+		};
+	}
 
+    // set receive timeout
+    struct timeval tv = { .tv_sec = IOT_SSL_READ_TIMEOUT, .tv_usec = 0};
+    setsockopt(httpSession->server_fd.fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
-    if (0 != getaddrinfo(server, port, &hints, &result)) goto clean;
+	ret = UID_HTTP_OK;
 
-    // Create socket after retrieving the inet protocol to use (getaddrinfo)
-    if (0 > (*conn_fd = socket(result->ai_family,SOCK_STREAM,0))) goto clean;
-    if (0 != connect(*conn_fd, result->ai_addr, result->ai_addrlen) ) goto clean;
-
-    ret = 0;
 clean:
-    if (NULL != result) freeaddrinfo(result);
-    return ret;
+	httpSession->active = true;
+	if ( UID_HTTP_OK != ret) {
+		tcpClose(httpSession);
+	}
+	UID_log(UID_LOG_DEBUG, "#### return %d socket %d\n", ret, httpSession->server_fd.fd);
+	return ret;
 }
 
-//#define ENABLE_IOT_DEBUG 1
-#ifdef ENABLE_IOT_DEBUG
-#define IOT_DEBUG(...)    \
-	{\
-	printf("DEBUG:   %s L#%d ", __func__, __LINE__);  \
-	printf(__VA_ARGS__); \
-	printf("\n"); \
-	}
-#define MBEDTLS_DEBUG_BUFFER_SIZE 2048
-#else
-#define IOT_DEBUG(...)
-#endif
 
-#define IOT_ERROR IOT_DEBUG
 
 //  https://tls.mbed.org/discussions/generic/mbedtls-takes-long-connection-time
 
 
-int UID_connect(TLSDataParams *tlsDataParams, char *server, char *port) {
+static int tlsConnect(UID_HttpSession *httpSession, char *server, char *port) {
 	int ret = 0;
 	const char *pers = "aws_iot_tls_wrapper";
-//	TLSDataParams *tlsDataParams = NULL;
-//	char portBuffer[6];
 	char vrfy_buf[512];
 	const char *alpnProtocols[] = { "http/1.1", NULL };
 
@@ -130,178 +139,191 @@ int UID_connect(TLSDataParams *tlsDataParams, char *server, char *port) {
 	unsigned char buf[MBEDTLS_DEBUG_BUFFER_SIZE];
 #endif
 
-//	if(NULL == pNetwork) {
-//		return NULL_VALUE_ERROR;
-//	}
-//
-//	if(NULL != params) {
-//		_iot_tls_set_connect_params(pNetwork, params->pRootCALocation, params->pDeviceCertLocation,
-//									params->pDevicePrivateKeyLocation, params->pDestinationURL,
-//									params->DestinationPort, params->timeout_ms, params->ServerVerificationFlag);
-//	}
-//
-//	tlsDataParams = &(pNetwork->tlsDataParams);
+	mbedtls_net_init(&(httpSession->server_fd));
+	mbedtls_ssl_init(&(httpSession->ssl));
+	mbedtls_ssl_config_init(&(httpSession->conf));
+	mbedtls_ctr_drbg_init(&(httpSession->ctr_drbg));
+	mbedtls_x509_crt_init(&(httpSession->cacert));
 
-	mbedtls_net_init(&(tlsDataParams->server_fd));
-	mbedtls_ssl_init(&(tlsDataParams->ssl));
-	mbedtls_ssl_config_init(&(tlsDataParams->conf));
-	mbedtls_ctr_drbg_init(&(tlsDataParams->ctr_drbg));
-	mbedtls_x509_crt_init(&(tlsDataParams->cacert));
-//	mbedtls_x509_crt_init(&(tlsDataParams->clicert));
-//	mbedtls_pk_init(&(tlsDataParams->pkey));
 
-	IOT_DEBUG("\n  . Seeding the random number generator...");
-	mbedtls_entropy_init(&(tlsDataParams->entropy));
-	if((ret = mbedtls_ctr_drbg_seed(&(tlsDataParams->ctr_drbg), mbedtls_entropy_func, &(tlsDataParams->entropy),
+
+	UID_log(UID_LOG_DEBUG,"\n  . Seeding the random number generator...");
+	mbedtls_entropy_init(&(httpSession->entropy));
+	if((ret = mbedtls_ctr_drbg_seed(&(httpSession->ctr_drbg), mbedtls_entropy_func, &(httpSession->entropy),
 									(const unsigned char *) pers, strlen(pers))) != 0) {
-		IOT_ERROR(" failed\n  ! mbedtls_ctr_drbg_seed returned -0x%x\n", -ret);
-		return NETWORK_MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED;
+		UID_log(UID_LOG_ERROR," failed\n  ! mbedtls_ctr_drbg_seed returned -0x%x\n", -ret);
+		ret = NETWORK_MBEDTLS_ERR_CTR_DRBG_ENTROPY_SOURCE_FAILED;
+		goto clean;
 	}
 
-	IOT_DEBUG("  . Loading the CA root certificate ...");
-	ret = mbedtls_x509_crt_parse_file(&(tlsDataParams->cacert), ROOT_CA_LOCATION);
+
+
+
+	UID_log(UID_LOG_DEBUG,"  . Loading the CA root certificate ...");
+	ret = mbedtls_x509_crt_parse_file(&(httpSession->cacert), ROOT_CA_LOCATION);
 	if(ret < 0) {
-		IOT_ERROR(" failed\n  !  mbedtls_x509_crt_parse returned -0x%x while parsing root cert\n\n", -ret);
-		return NETWORK_X509_ROOT_CRT_PARSE_ERROR;
+		UID_log(UID_LOG_ERROR," failed\n  !  mbedtls_x509_crt_parse returned -0x%x while parsing root cert\n\n", -ret);
+		ret = NETWORK_X509_ROOT_CRT_PARSE_ERROR;
+		goto clean;
 	}
-	IOT_DEBUG(" ok (%d skipped)\n", ret);
+	UID_log(UID_LOG_DEBUG," ok (%d skipped)\n", ret);
 
-	IOT_DEBUG(" ok\n");
-//	snprintf(portBuffer, 6, "%d", pNetwork->tlsConnectParams.DestinationPort);
-	IOT_DEBUG("  . Connecting to %s/%s...", server, port);
-	if((ret = mbedtls_net_connect(&(tlsDataParams->server_fd), server,
+
+
+
+	UID_log(UID_LOG_DEBUG," ok\n");
+	UID_log(UID_LOG_DEBUG,"  . Connecting to %s/%s...", server, port);
+	if((ret = mbedtls_net_connect(&(httpSession->server_fd), server,
 								  port, MBEDTLS_NET_PROTO_TCP)) != 0) {
-		IOT_ERROR(" failed\n  ! mbedtls_net_connect returned -0x%x\n\n", -ret);
+		UID_log(UID_LOG_ERROR," failed\n  ! mbedtls_net_connect returned -0x%x\n\n", -ret);
 		switch(ret) {
 			case MBEDTLS_ERR_NET_SOCKET_FAILED:
-				return NETWORK_ERR_NET_SOCKET_FAILED;
+				ret = NETWORK_ERR_NET_SOCKET_FAILED;
+				goto clean;
 			case MBEDTLS_ERR_NET_UNKNOWN_HOST:
-				return NETWORK_ERR_NET_UNKNOWN_HOST;
+				ret = NETWORK_ERR_NET_UNKNOWN_HOST;
+				goto clean;
 			case MBEDTLS_ERR_NET_CONNECT_FAILED:
 			default:
-				return NETWORK_ERR_NET_CONNECT_FAILED;
+				ret = NETWORK_ERR_NET_CONNECT_FAILED;
+				goto clean;
 		};
 	}
 
-	ret = mbedtls_net_set_block(&(tlsDataParams->server_fd));
+	ret = mbedtls_net_set_block(&(httpSession->server_fd));
 	if(ret != 0) {
-		IOT_ERROR(" failed\n  ! net_set_(non)block() returned -0x%x\n\n", -ret);
-		return SSL_CONNECTION_ERROR;
-	} IOT_DEBUG(" ok\n");
+		UID_log(UID_LOG_ERROR," failed\n  ! net_set_(non)block() returned -0x%x\n\n", -ret);
+		ret = SSL_CONNECTION_ERROR;
+		goto clean;
+	} UID_log(UID_LOG_DEBUG," ok\n");
 
-	IOT_DEBUG("  . Setting up the SSL/TLS structure...");
-	if((ret = mbedtls_ssl_config_defaults(&(tlsDataParams->conf), MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM,
+	UID_log(UID_LOG_DEBUG,"  . Setting up the SSL/TLS structure...");
+	if((ret = mbedtls_ssl_config_defaults(&(httpSession->conf), MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM,
 										  MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
-		IOT_ERROR(" failed\n  ! mbedtls_ssl_config_defaults returned -0x%x\n\n", -ret);
-		return SSL_CONNECTION_ERROR;
+		UID_log(UID_LOG_ERROR," failed\n  ! mbedtls_ssl_config_defaults returned -0x%x\n\n", -ret);
+		ret = SSL_CONNECTION_ERROR;
+		goto clean;
 	}
 
-//	mbedtls_ssl_conf_verify(&(tlsDataParams->conf), _iot_tls_verify_cert, NULL);
-//	if(pNetwork->tlsConnectParams.ServerVerificationFlag == true) {
-		mbedtls_ssl_conf_authmode(&(tlsDataParams->conf), MBEDTLS_SSL_VERIFY_REQUIRED);
-//	} else {
-//		mbedtls_ssl_conf_authmode(&(tlsDataParams->conf), MBEDTLS_SSL_VERIFY_OPTIONAL);
-//	}
-	mbedtls_ssl_conf_rng(&(tlsDataParams->conf), mbedtls_ctr_drbg_random, &(tlsDataParams->ctr_drbg));
+//	mbedtls_ssl_conf_verify(&(httpSession->conf), _iot_tls_verify_cert, NULL);
+	mbedtls_ssl_conf_authmode(&(httpSession->conf), MBEDTLS_SSL_VERIFY_REQUIRED);
 
-	mbedtls_ssl_conf_ca_chain(&(tlsDataParams->conf), &(tlsDataParams->cacert), NULL);
-	// if((ret = mbedtls_ssl_conf_own_cert(&(tlsDataParams->conf), &(tlsDataParams->clicert), &(tlsDataParams->pkey))) !=
-	//    0) {
-	// 	IOT_ERROR(" failed\n  ! mbedtls_ssl_conf_own_cert returned %d\n\n", ret);
-	// 	return SSL_CONNECTION_ERROR;
-	// }
+	mbedtls_ssl_conf_rng(&(httpSession->conf), mbedtls_ctr_drbg_random, &(httpSession->ctr_drbg));
 
-//	mbedtls_ssl_conf_read_timeout(&(tlsDataParams->conf), pNetwork->tlsConnectParams.timeout_ms);
+	mbedtls_ssl_conf_ca_chain(&(httpSession->conf), &(httpSession->cacert), NULL);
+
+//	mbedtls_ssl_conf_read_timeout(&(httpSession->conf), timeout_ms);
 
 	/* Use the AWS IoT ALPN extension for MQTT if port 443 is requested. */
 	if(  !strcmp( "443",port)) {
-		if((ret = mbedtls_ssl_conf_alpn_protocols(&(tlsDataParams->conf), alpnProtocols)) != 0) {
-			IOT_ERROR(" failed\n  ! mbedtls_ssl_conf_alpn_protocols returned -0x%x\n\n", -ret);
-			return SSL_CONNECTION_ERROR;
+		if((ret = mbedtls_ssl_conf_alpn_protocols(&(httpSession->conf), alpnProtocols)) != 0) {
+			UID_log(UID_LOG_ERROR," failed\n  ! mbedtls_ssl_conf_alpn_protocols returned -0x%x\n\n", -ret);
+			ret = SSL_CONNECTION_ERROR;
+			goto clean;
 		}
 	}
 
 	/* Assign the resulting configuration to the SSL context. */
-	if((ret = mbedtls_ssl_setup(&(tlsDataParams->ssl), &(tlsDataParams->conf))) != 0) {
-		IOT_ERROR(" failed\n  ! mbedtls_ssl_setup returned -0x%x\n\n", -ret);
-		return SSL_CONNECTION_ERROR;
+	if((ret = mbedtls_ssl_setup(&(httpSession->ssl), &(httpSession->conf))) != 0) {
+		UID_log(UID_LOG_ERROR," failed\n  ! mbedtls_ssl_setup returned -0x%x\n\n", -ret);
+		ret = SSL_CONNECTION_ERROR;
+		goto clean;
 	}
-	if((ret = mbedtls_ssl_set_hostname(&(tlsDataParams->ssl), server)) != 0) {
-		IOT_ERROR(" failed\n  ! mbedtls_ssl_set_hostname returned %d\n\n", ret);
-		return SSL_CONNECTION_ERROR;
+	if((ret = mbedtls_ssl_set_hostname(&(httpSession->ssl), server)) != 0) {
+		UID_log(UID_LOG_ERROR," failed\n  ! mbedtls_ssl_set_hostname returned %d\n\n", ret);
+		ret = SSL_CONNECTION_ERROR;
+		goto clean;
 	}
-	IOT_DEBUG("\n\nSSL state connect : %d ", tlsDataParams->ssl.state);
-	mbedtls_ssl_set_bio(&(tlsDataParams->ssl), &(tlsDataParams->server_fd), mbedtls_net_send, NULL,
+	UID_log(UID_LOG_DEBUG,"\n\nSSL state connect : %d ", httpSession->ssl.state);
+	mbedtls_ssl_set_bio(&(httpSession->ssl), &(httpSession->server_fd), mbedtls_net_send, NULL,
 						mbedtls_net_recv_timeout);
-	IOT_DEBUG(" ok\n");
+	UID_log(UID_LOG_DEBUG," ok\n");
 
-	IOT_DEBUG("\n\nSSL state connect : %d ", tlsDataParams->ssl.state);
-	IOT_DEBUG("  . Performing the SSL/TLS handshake...");
-printf("------------>");
-	while((ret = mbedtls_ssl_handshake(&(tlsDataParams->ssl))) != 0) {
-printf("@");
+	UID_log(UID_LOG_DEBUG,"\n\nSSL state connect : %d ", httpSession->ssl.state);
+	UID_log(UID_LOG_DEBUG,"  . Performing the SSL/TLS handshake...");
+	while((ret = mbedtls_ssl_handshake(&(httpSession->ssl))) != 0) {
 		if(ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
-			IOT_ERROR(" failed\n  ! mbedtls_ssl_handshake returned -0x%x\n", -ret);
+			UID_log(UID_LOG_ERROR," failed\n  ! mbedtls_ssl_handshake returned -0x%x\n", -ret);
 			if(ret == MBEDTLS_ERR_X509_CERT_VERIFY_FAILED) {
-				IOT_ERROR("    Unable to verify the server's certificate. "
+				UID_log(UID_LOG_ERROR,"    Unable to verify the server's certificate. "
 							  "Either it is invalid,\n"
 							  "    or you didn't set ca_file or ca_path "
 							  "to an appropriate value.\n"
 							  "    Alternatively, you may want to use "
 							  "auth_mode=optional for testing purposes.\n");
 			}
-			return SSL_CONNECTION_ERROR;
-		}
-	}
-printf("<------------\n");
-
-	IOT_DEBUG(" ok\n    [ Protocol is %s ]\n    [ Ciphersuite is %s ]\n", mbedtls_ssl_get_version(&(tlsDataParams->ssl)),
-		  mbedtls_ssl_get_ciphersuite(&(tlsDataParams->ssl)));
-	if((ret = mbedtls_ssl_get_record_expansion(&(tlsDataParams->ssl))) >= 0) {
-		IOT_DEBUG("    [ Record expansion is %d ]\n", ret);
-	} else {
-		IOT_DEBUG("    [ Record expansion is unknown (compression) ]\n");
-	}
-
-	IOT_DEBUG("  . Verifying peer X.509 certificate...");
-
-//	if(pNetwork->tlsConnectParams.ServerVerificationFlag == true) {
-		if((tlsDataParams->flags = mbedtls_ssl_get_verify_result(&(tlsDataParams->ssl))) != 0) {
-			IOT_ERROR(" failed\n");
-			mbedtls_x509_crt_verify_info(vrfy_buf, sizeof(vrfy_buf), "  ! ", tlsDataParams->flags);
-			IOT_ERROR("%s\n", vrfy_buf);
 			ret = SSL_CONNECTION_ERROR;
-		} else {
-			IOT_DEBUG(" ok\n");
-			ret = SUCCESS;
+			goto clean;
 		}
-//	} else {
-//		IOT_DEBUG(" Server Verification skipped\n");
-//		ret = SUCCESS;
-//	}
+	}
+
+	UID_log(UID_LOG_DEBUG," ok\n    [ Protocol is %s ]\n    [ Ciphersuite is %s ]\n", mbedtls_ssl_get_version(&(httpSession->ssl)),
+		  mbedtls_ssl_get_ciphersuite(&(httpSession->ssl)));
+	if((ret = mbedtls_ssl_get_record_expansion(&(httpSession->ssl))) >= 0) {
+		UID_log(UID_LOG_DEBUG,"    [ Record expansion is %d ]\n", ret);
+	} else {
+		UID_log(UID_LOG_DEBUG,"    [ Record expansion is unknown (compression) ]\n");
+	}
+
+UID_log(UID_LOG_DEBUG,"  . Verifying peer X.509 certificate...");
+
+	if((httpSession->flags = mbedtls_ssl_get_verify_result(&(httpSession->ssl))) != 0) {
+		UID_log(UID_LOG_ERROR," failed\n");
+		mbedtls_x509_crt_verify_info(vrfy_buf, sizeof(vrfy_buf), "  ! ", httpSession->flags);
+		UID_log(UID_LOG_ERROR,"%s\n", vrfy_buf);
+		ret = SSL_CONNECTION_ERROR;
+	} else {
+		UID_log(UID_LOG_DEBUG," ok\n");
+		ret = UID_HTTP_OK;
+	}
 
 #ifdef ENABLE_IOT_DEBUG
-	if (mbedtls_ssl_get_peer_cert(&(tlsDataParams->ssl)) != NULL) {
-		IOT_DEBUG("  . Peer certificate information    ...\n");
-		mbedtls_x509_crt_info((char *) buf, sizeof(buf) - 1, "      ", mbedtls_ssl_get_peer_cert(&(tlsDataParams->ssl)));
-		IOT_DEBUG("%s\n", buf);
+	if (mbedtls_ssl_get_peer_cert(&(httpSession->ssl)) != NULL) {
+		UID_log(UID_LOG_DEBUG,"  . Peer certificate information    ...\n");
+		mbedtls_x509_crt_info((char *) buf, sizeof(buf) - 1, "      ", mbedtls_ssl_get_peer_cert(&(httpSession->ssl)));
+		UID_log(UID_LOG_DEBUG,"%s\n", buf);
 	}
 #endif
 
-//	mbedtls_ssl_conf_read_timeout(&(tlsDataParams->conf), IOT_SSL_READ_TIMEOUT);
+	mbedtls_ssl_conf_read_timeout(&(httpSession->conf), IOT_SSL_READ_TIMEOUT*1000);
 
+clean:
+	httpSession->active = true;
+	if ( UID_HTTP_OK != ret) {
+		tlsClose(httpSession);
+	}
 	return ret;
 }
 
+static int UID_connect(UID_HttpSession *httpSession, char *server, char *port, int proto) {
 
-int UID_write(TLSDataParams *conn_fd, char *pMsg, size_t len) {
+	int ret;
+	if (httpSession->active) {
+		// TODO: check for the active session
+		return UID_HTTP_OK;
+	}
+	httpSession->proto = proto;
+	if(proto == PROTO_HTTP) {
+		ret = tcpConnect(httpSession, server, port);
+		return ret;
+	}
+	if(proto == PROTO_HTTPS) {
+		ret = tlsConnect(httpSession, server, port);
+		return ret;
+	}
+
+	return UID_HTTP_GET_ERROR; // unknown proto
+}
+
+
+static int tlsWrite(UID_HttpSession *httpSession, char *pMsg, size_t len) {
 	size_t written_so_far;
 	bool isErrorFlag = false;
 	int frags;
 	int ret = 0;
 
 	for(written_so_far = 0, frags = 0; written_so_far < len; written_so_far += ret, frags++) {
-		while( (ret = mbedtls_ssl_write(&(conn_fd->ssl), (unsigned char *)pMsg + written_so_far, len - written_so_far)) <= 0) {
+		while( (ret = mbedtls_ssl_write(&(httpSession->ssl), (unsigned char *)pMsg + written_so_far, len - written_so_far)) <= 0) {
 			if(ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
 				printf(" failed\n  ! mbedtls_ssl_write returned -0x%x\n\n", -ret);
 				/* All other negative return values indicate connection needs to be reset.
@@ -321,30 +343,76 @@ int UID_write(TLSDataParams *conn_fd, char *pMsg, size_t len) {
 		return NETWORK_SSL_WRITE_TIMEOUT_ERROR;
 	}
 
-	return SUCCESS;
+	return UID_HTTP_OK;
+}
+
+static int tcpWrite(UID_HttpSession *httpSession, char *pMsg, size_t len) {
+	size_t written_so_far;
+	bool isErrorFlag = false;
+	int frags;
+	int ret = 0;
+
+	for(written_so_far = 0, frags = 0; written_so_far < len; written_so_far += ret, frags++) {
+		while( (ret = write(httpSession->server_fd.fd, pMsg + written_so_far, len - written_so_far)) <= 0) {
+			if(ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+				printf(" failed\n  ! mbedtls_ssl_write returned -0x%x\n\n", -ret);
+				/* All other negative return values indicate connection needs to be reset.
+		 		* Will be caught in ping request so ignored here */
+				isErrorFlag = true;
+				break;
+			}
+		}
+		if(isErrorFlag) {
+			break;
+		}
+	}
+
+	if(isErrorFlag) {
+		return NETWORK_SSL_WRITE_ERROR;
+	} else if(written_so_far != len) {
+		return NETWORK_SSL_WRITE_TIMEOUT_ERROR;
+	}
+
+	return UID_HTTP_OK;
 }
 
 
-int UID_read(TLSDataParams *conn_fd, char *pMsg, size_t len, size_t *read_len)
-{
+static int UID_write(UID_HttpSession *httpSession, char *pMsg, size_t len) {
+	int ret;
+	if (!httpSession->active) {
+		return UID_HTTP_GET_ERROR;
+	}
+	if(httpSession->proto == PROTO_HTTPS) {
+		ret = tlsWrite(httpSession, pMsg, len);
+		return ret;
+	}
+	if(httpSession->proto == PROTO_HTTP) {
+		ret = tcpWrite(httpSession, pMsg, len);
+		return ret;
+	}
+
+	return UID_HTTP_GET_ERROR; // unknown proto
+}
+
+static int tlsRead(UID_HttpSession *httpSession, char *pMsg, size_t len, size_t *read_len) {
 	size_t rxLen = 0;
 	int ret;
 
 	while (len > 0) {
 		// This read will timeout after IOT_SSL_READ_TIMEOUT if there's no data to be read
-		ret = mbedtls_ssl_read(&(conn_fd->ssl), (unsigned char *)pMsg, len);
+		ret = mbedtls_ssl_read(&(httpSession->ssl), (unsigned char *)pMsg, len);
 		if (ret > 0) {
 			rxLen += ret;
 			pMsg += ret;
 			len -= ret;
-		} else if (ret == 0 || (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret != MBEDTLS_ERR_SSL_TIMEOUT)) {
+		} else if (ret == 0 || (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret /*!= MBEDTLS_ERR_SSL_TIMEOUT*/)) {
 			return NETWORK_SSL_READ_ERROR;
 		}
 	}
 
 	if (len == 0) {
 		*read_len = rxLen;
-		return SUCCESS;
+		return UID_HTTP_OK;
 	}
 
 	if (rxLen == 0) {
@@ -354,7 +422,110 @@ int UID_read(TLSDataParams *conn_fd, char *pMsg, size_t len, size_t *read_len)
 	}
 }
 
-int UID_readheader(TLSDataParams *conn_fd, char *pMsg, size_t len)
+static int tcpRead(UID_HttpSession *httpSession, char *pMsg, size_t len, size_t *read_len) {
+	size_t rxLen = 0;
+	int ret;
+
+	while (len > 0) {
+		// This read will timeout after IOT_SSL_READ_TIMEOUT if there's no data to be read
+		ret = read(httpSession->server_fd.fd, pMsg, len);
+		if (ret > 0) {
+			rxLen += ret;
+			pMsg += ret;
+			len -= ret;
+		} else if (ret == 0 || (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret /*!= MBEDTLS_ERR_SSL_TIMEOUT*/)) {
+			return NETWORK_SSL_READ_ERROR;
+		}
+	}
+
+	if (len == 0) {
+		*read_len = rxLen;
+		return UID_HTTP_OK;
+	}
+
+	if (rxLen == 0) {
+		return NETWORK_SSL_NOTHING_TO_READ;
+	} else {
+		return NETWORK_SSL_READ_TIMEOUT_ERROR;
+	}
+}
+
+static int UID_read(UID_HttpSession *httpSession, char *pMsg, size_t len, size_t *read_len) {
+	int ret;
+	if (!httpSession->active) {
+		return UID_HTTP_GET_ERROR;
+	}
+	if(httpSession->proto == PROTO_HTTPS) {
+		ret = tlsRead(httpSession, pMsg, len, read_len);
+		return ret;
+	}
+	if(httpSession->proto == PROTO_HTTP) {
+		ret = tcpRead(httpSession, pMsg, len, read_len);
+		return ret;
+	}
+
+	return UID_HTTP_GET_ERROR; // unknown proto
+}
+
+static int tcpClose(UID_HttpSession *httpSession)
+{
+
+	UID_log(UID_LOG_DEBUG,"tcpClose()\n");
+    if (httpSession->active) {
+
+		mbedtls_net_free(&(httpSession->server_fd));
+		httpSession->active = false;
+	}
+
+
+
+	return UID_HTTP_OK;
+}
+
+static int tlsClose(UID_HttpSession *httpSession)
+{
+	mbedtls_ssl_context *ssl = &(httpSession->ssl);
+	int ret = 0;
+
+	UID_log(UID_LOG_DEBUG,"tlsClose()\n");
+    if (httpSession->active) {
+		do {
+			ret = mbedtls_ssl_close_notify(ssl);
+		} while(ret == MBEDTLS_ERR_SSL_WANT_WRITE);
+
+		mbedtls_net_free(&(httpSession->server_fd));
+		mbedtls_x509_crt_free(&(httpSession->cacert));
+		mbedtls_ssl_free(&(httpSession->ssl));
+		mbedtls_ssl_config_free(&(httpSession->conf));
+		mbedtls_ctr_drbg_free(&(httpSession->ctr_drbg));
+		mbedtls_entropy_free(&(httpSession->entropy));
+		httpSession->active = false;
+	}
+
+
+	return UID_HTTP_OK;
+}
+
+static int UID_close(UID_HttpSession *httpSession)
+{
+	int ret;
+	if (!httpSession->active) {
+		return UID_HTTP_OK;
+	}
+	if(httpSession->proto == PROTO_HTTP) {
+		ret = tcpClose(httpSession);
+		return ret;
+	}
+	if(httpSession->proto == PROTO_HTTPS) {
+		ret = tlsClose(httpSession);
+		return ret;
+	}
+
+	return UID_HTTP_GET_ERROR; // unknown proto
+
+}
+
+static int httpReadHeader(UID_HttpSession *conn_fd, char *pMsg, size_t len)
 {
     size_t read_len = 0;
     int ret;
@@ -366,7 +537,7 @@ int UID_readheader(TLSDataParams *conn_fd, char *pMsg, size_t len)
         if (0 != ret) return ret;
         if (*pMsg == '\n') {
             *pMsg = 0;
-            return SUCCESS;
+            return UID_HTTP_OK;
         }
         if (*pMsg != '\r') {
             len--;
@@ -375,37 +546,7 @@ int UID_readheader(TLSDataParams *conn_fd, char *pMsg, size_t len)
     }
 }
 
-int _UID_close(int *conn_fd)
-{
-    if (*conn_fd >= 0) close(*conn_fd);
-    return 0;
-}
-
-int UID_close(TLSDataParams *tlsDataParams)
-{
-	mbedtls_ssl_context *ssl = &(tlsDataParams->ssl);
-	int ret = 0;
-	do {
-		ret = mbedtls_ssl_close_notify(ssl);
-	} while(ret == MBEDTLS_ERR_SSL_WANT_WRITE);
-
-	mbedtls_net_free(&(tlsDataParams->server_fd));
-
-//	mbedtls_x509_crt_free(&(tlsDataParams->clicert));
-//	mbedtls_pk_free(&(tlsDataParams->pkey));
-	mbedtls_x509_crt_free(&(tlsDataParams->cacert));
-	mbedtls_ssl_free(&(tlsDataParams->ssl));
-	mbedtls_ssl_config_free(&(tlsDataParams->conf));
-	mbedtls_ctr_drbg_free(&(tlsDataParams->ctr_drbg));
-	mbedtls_entropy_free(&(tlsDataParams->entropy));
-
-	return SUCCESS;
-}
-
-#define PROTO_HTTP  0
-#define PROTO_HTTPS 1
-
-static int parse_url(const char *url, char *server, size_t server_l, char *port, size_t port_l, char *page, size_t page_l, int *proto)
+static int parseUrl(const char *url, char *server, size_t server_l, char *port, size_t port_l, char *page, size_t page_l, int *proto)
 {
     unsigned start = 0;
     unsigned j = 0;
@@ -436,7 +577,7 @@ static int parse_url(const char *url, char *server, size_t server_l, char *port,
 
 //printf("########----> <%s> <%s> <%s>\n", server, port, page);
 
-    return SUCCESS;
+    return UID_HTTP_OK;
 }
 
 /**
@@ -459,50 +600,36 @@ int UID_httpget(UID_HttpOBJ *curl, char *url, char *buffer, size_t size)
 	int proto;
 
 printf("\n---> %s %p %zu\n", url, buffer, size);
-    parse_url(url, server, sizeof(server), port, sizeof(port), page, sizeof(page), &proto);
+    parseUrl(url, server, sizeof(server), port, sizeof(port), page, sizeof(page), &proto);
 
-if(proto == PROTO_HTTP) {
-	printf("cannot manage proto http\n");
-	return UID_HTTP_GET_ERROR;
-}
-	if (httpSession->active) {
 
-	}
 
-	if (!httpSession->active) {
-
-		ret = UID_connect(&httpSession->fd, server, port);
-printf("--- %d\n",ret);
-		if (SUCCESS != ret) goto clean;
-		httpSession->active = true;
-printf("connected\n");
-	}
+	ret = UID_connect(httpSession, server, port, proto);
+	if (UID_HTTP_OK != ret) goto clean;
 
     char request[512];
     size_t len = snprintf(request, sizeof(request), "GET %s HTTP/1.1\r\nHost: %s\r\nUser-agent: simple-http client\r\n\r\n", page, server);
-//    printf("\n=================================\n%s\n======================\n", request);
-    ret = UID_write(&httpSession->fd, request, len);
-    if (SUCCESS != ret) goto clean;
-printf("requested\n");
+    ret = UID_write(httpSession, request, len);
+    if (UID_HTTP_OK != ret) goto clean;
+
     char header[512];
     len = 0;
     for(;;)
     {
-        ret = UID_readheader(&(httpSession->fd), header, sizeof(header));
-        if (SUCCESS != ret) goto clean;
-//        printf("--- <%s>\n", header);
+        ret = httpReadHeader(httpSession, header, sizeof(header));
+        if (UID_HTTP_OK != ret) goto clean;
         if (*header == 0) break;
         sscanf(header, "Content-Length: %zd", &len);
     }
-printf("header\n");
+
+	ret = UID_HTTP_GET_ERROR;
     if (len >= size) goto clean;
 
-    ret = UID_read(&httpSession->fd, buffer, len, &len);
-    if (SUCCESS != ret) goto clean;
+    ret = UID_read(httpSession, buffer, len, &len);
+    if (UID_HTTP_OK != ret) goto clean;
     buffer[len] = 0;
-//    printf("\n=================================\n%s\n======================\n", buffer);
-printf("body\n");
-    ret = 0;
+
+    ret = UID_HTTP_OK;
 
 clean:
     return  ret;
@@ -520,7 +647,7 @@ int UID_httppost(UID_HttpOBJ *curl, char *url, char *postdata, char *ret, size_t
 
 UID_HttpOBJ *UID_httpinit()
 {
-    printf("---------------> init\n");
+    UID_log(UID_LOG_DEBUG,"--------------> init\n");
     return calloc(1, sizeof(UID_HttpSession));
 }
 
@@ -528,13 +655,11 @@ int UID_httpcleanup(UID_HttpOBJ *curl)
 {
     UID_HttpSession *httpSession = curl;
 
-    printf("---------------> cleanup\n");
+	UID_log(UID_LOG_DEBUG,"--------------> cleanup\n");
+	UID_close(httpSession);
 
-    if (httpSession->active) {
-		httpSession->active = false;
-		UID_close(&httpSession->fd);
-printf("closed\n");
-	}
+	UID_log(UID_LOG_DEBUG,"closed\n");
+
 	free(curl);
     return UID_HTTP_OK;
 }
