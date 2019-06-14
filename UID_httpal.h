@@ -18,6 +18,10 @@
 #include "UID_globals.h"
 typedef void  UID_HttpOBJ;
 
+// root CA chain for UID_httpget()
+#define DEFAULT_ROOT_CA_LOCATION  "./rootCA.crt"
+extern char *UID_rootCA; // = DEFAULT_ROOT_CA_LOCATION;
+
 
 int UID_httpget(UID_HttpOBJ *curl, char *url, char *buffer, size_t size);
 #ifdef UID_IMPLEMENTSENDTX

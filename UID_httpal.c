@@ -38,8 +38,8 @@
 #include "mbedtls/timing.h"
 
 
-#define ENABLE_IOT_DEBUG 1
-#ifdef ENABLE_IOT_DEBUG
+//#define ENABLE_HTTP_DEBUG 1
+#ifdef ENABLE_HTTP_DEBUG
 #define UID_LOGLEVEL UID_LOG_DEBUG
 #define MBEDTLS_DEBUG_BUFFER_SIZE 2048
 #else
@@ -65,10 +65,9 @@
 #define SSL_CONNECTION_ERROR 52
 
 /* This is the value used for ssl read timeout */
-#define IOT_SSL_READ_TIMEOUT 10
+#define IOT_SSL_READ_TIMEOUT 20
 
-#define ROOT_CA_LOCATION  "../testssl/rootCA.crt"
-//#define ROOT_CA_LOCATION  "./amazon2.pem"
+char *UID_rootCA = DEFAULT_ROOT_CA_LOCATION;
 
 typedef struct {
 	bool active;
@@ -135,7 +134,7 @@ static int tlsConnect(UID_HttpSession *httpSession, char *server, char *port) {
 	char vrfy_buf[512];
 	const char *alpnProtocols[] = { "http/1.1", NULL };
 
-#ifdef ENABLE_IOT_DEBUG
+#ifdef ENABLE_HTTP_DEBUG
 	unsigned char buf[MBEDTLS_DEBUG_BUFFER_SIZE];
 #endif
 
@@ -160,7 +159,7 @@ static int tlsConnect(UID_HttpSession *httpSession, char *server, char *port) {
 
 
 	UID_log(UID_LOG_DEBUG,"  . Loading the CA root certificate ...");
-	ret = mbedtls_x509_crt_parse_file(&(httpSession->cacert), ROOT_CA_LOCATION);
+	ret = mbedtls_x509_crt_parse_file(&(httpSession->cacert), UID_rootCA);
 	if(ret < 0) {
 		UID_log(UID_LOG_ERROR," failed\n  !  mbedtls_x509_crt_parse returned -0x%x while parsing root cert\n\n", -ret);
 		ret = NETWORK_X509_ROOT_CRT_PARSE_ERROR;
@@ -277,7 +276,7 @@ UID_log(UID_LOG_DEBUG,"  . Verifying peer X.509 certificate...");
 		ret = UID_HTTP_OK;
 	}
 
-#ifdef ENABLE_IOT_DEBUG
+#ifdef ENABLE_HTTP_DEBUG
 	if (mbedtls_ssl_get_peer_cert(&(httpSession->ssl)) != NULL) {
 		UID_log(UID_LOG_DEBUG,"  . Peer certificate information    ...\n");
 		mbedtls_x509_crt_info((char *) buf, sizeof(buf) - 1, "      ", mbedtls_ssl_get_peer_cert(&(httpSession->ssl)));
@@ -325,7 +324,7 @@ static int tlsWrite(UID_HttpSession *httpSession, char *pMsg, size_t len) {
 	for(written_so_far = 0, frags = 0; written_so_far < len; written_so_far += ret, frags++) {
 		while( (ret = mbedtls_ssl_write(&(httpSession->ssl), (unsigned char *)pMsg + written_so_far, len - written_so_far)) <= 0) {
 			if(ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
-				printf(" failed\n  ! mbedtls_ssl_write returned -0x%x\n\n", -ret);
+				UID_log(UID_LOG_ERROR," failed\n  ! mbedtls_ssl_write returned -0x%x\n\n", -ret);
 				/* All other negative return values indicate connection needs to be reset.
 		 		* Will be caught in ping request so ignored here */
 				isErrorFlag = true;
@@ -355,7 +354,7 @@ static int tcpWrite(UID_HttpSession *httpSession, char *pMsg, size_t len) {
 	for(written_so_far = 0, frags = 0; written_so_far < len; written_so_far += ret, frags++) {
 		while( (ret = write(httpSession->server_fd.fd, pMsg + written_so_far, len - written_so_far)) <= 0) {
 			if(ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
-				printf(" failed\n  ! mbedtls_ssl_write returned -0x%x\n\n", -ret);
+				UID_log(UID_LOG_ERROR," failed\n  ! mbedtls_ssl_write returned -0x%x\n\n", -ret);
 				/* All other negative return values indicate connection needs to be reset.
 		 		* Will be caught in ping request so ignored here */
 				isErrorFlag = true;
@@ -575,7 +574,7 @@ static int parseUrl(const char *url, char *server, size_t server_l, char *port, 
     for (j=start; j<strlen(url); j++) ;
     snprintf(page, page_l, "%.*s", j - start, url + start);
 
-//printf("########----> <%s> <%s> <%s>\n", server, port, page);
+//UID_log(UID_LOG_DEBUG,"########----> <%s> <%s> <%s>\n", server, port, page);
 
     return UID_HTTP_OK;
 }
@@ -599,7 +598,7 @@ int UID_httpget(UID_HttpOBJ *curl, char *url, char *buffer, size_t size)
     int ret = UID_HTTP_GET_ERROR;
 	int proto;
 
-printf("\n---> %s %p %zu\n", url, buffer, size);
+	UID_log(UID_LOG_DEBUG, "\n---> %s %p %zu\n", url, buffer, size);
     parseUrl(url, server, sizeof(server), port, sizeof(port), page, sizeof(page), &proto);
 
 
