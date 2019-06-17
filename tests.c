@@ -717,7 +717,7 @@ int init_cache_suite(void)
 {
     UID_pApplianceURL = "https://ltc-testnet.uniquid.co/insight-lite-api";
 //    UID_pApplianceURL = "http://insight-ltc-testnet.uniquid.co:3001/insight-lite-api";
-    UID_pRegistryURL = "http://none:98080/registry"; // no registry. providername will be ""
+    UID_pRegistryURL = "http://127.0.0.1:60080/registry"; // no registry. providername will be ""
     return 0;
 }
 
@@ -935,6 +935,51 @@ void test_case_receiveUserCapability(void)
     CU_ASSERT(0 == strcmp(capability.assignee, ctx.contract.serviceUserAddress));
 }
 
+/**************************** httpal test suite *******************************/
+
+/* Test Suite setup and cleanup functions: */
+
+int init_httpal_suite(void)
+{
+    return 0;
+}
+
+int clean_httpal_suite(void)
+{
+    return 0;
+}
+
+/************* Test case functions ****************/
+
+void test_case_httpget(void)
+{
+    int ret;
+    UID_HttpOBJ *curl = UID_httpinit();
+    CU_ASSERT_NOT_EQUAL(NULL, curl);
+
+    char buffer[2560] = {0};
+    ret = UID_httpget(curl, "https://ltc-testnet.uniquid.co/insight-lite-api/rawtx/801c59fda5e06d434cae251192f8001c9e51493d666579afbf6cc9495c86d47f", buffer, sizeof(buffer));
+    CU_ASSERT_EQUAL(ret, UID_HTTP_OK);
+    CU_ASSERT_STRING_EQUAL(buffer, "{\"rawtx\":\"010000000140f448f37eefd8e03ef2b9c199aec9ed4b4d448d6ea48311b0c6998e13426434030000006a47304402200aadfd7ddb008c53a19254528e5349cf21281f5374912a4705e63ae3be71d51802205cec3edcad23c809b752491f8406232ab12892d263b879e9c22668fba3dee77a012102dd27e46d2d63ac2c9902ea7bf31eadd0af0d21b1beaff4ed2afadeaa8e561391ffffffff04a0860100000000001976a914ec81430ce71e276ca20a54de9a7df1f840e6a2c688ac0000000000000000536a4c500000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e0930400000000001976a9145d9c55cfc1ec767f53bdc399e94e9a97fd69484188acd82e0300000000001976a91424e605033ba70dc67ccb2d5a95a5eb56f1b7b60788ac00000000\"}")
+
+    //char buffer[2560] = {0};
+    ret = UID_httpget(curl, "https://ltc-testnet.uniquid.co/insight-lite-api/rawtx/e04b18e21bf7fdacbdee07125b11bb7ad6350f7196237ef527fb631168c92414", buffer, sizeof(buffer));
+    CU_ASSERT_EQUAL(ret, UID_HTTP_OK);
+    CU_ASSERT_STRING_EQUAL(buffer, "{\"rawtx\":\"0100000001782e4522c5b0fc7c8d8761ab55a78daa2147c3983e2b851393e4b3346eb06d35010000006b483045022100be26a9bbd24712df012ad1b02a588154e11cb1dc2778350cbd9040d59f19dde7022074a7039160639214c939dce3a656106e44ed2092627675ddc9cf58fdcd91dfa10121022a46689268bb4b7082612f959279d251af357e86689a17687e3b52f6aa3362c6ffffffff02804f1200000000001976a91475ac20bae9aa67102ae4cfdb9ea3119b2ff07dfb88acb45b8600000000001976a9142cec1b41595806c52c472ff2a5b6565899f5539388ac00000000\"}")
+
+    //char buffer[2560] = {0};
+    ret = UID_httpget(curl, "http://insight-ltc-testnet.uniquid.co:3001/insight-lite-api/rawtx/346442138e99c6b01183a46e8d444d4bedc9ae99c1b9f23ee0d8ef7ef348f440", buffer, sizeof(buffer));
+    CU_ASSERT_EQUAL(ret, UID_HTTP_OK);
+    CU_ASSERT_STRING_EQUAL(buffer, "{\"rawtx\":\"01000000011424c9681163fb27f57e2396710f35d67abb115b1207eebdacfdf71be2184be0000000006b483045022100bbf8347b0f6032e6861ce14c2990335a0a6b88f08c7efb0881e30411e99701b4022032a9c38148a5fdc3efc39251ee30171d05c0c890b6ea0dfbce2eb871069dad6c01210250e64462e7366155f3d1c5753921896b996f96a801f362192804237878bdb1d0ffffffff04a0860100000000001976a9141429abd40bdb3a61d0442f346b4b3642ad60b20788ac0000000000000000536a4c500000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e0930400000000001976a9141429abd40bdb3a61d0442f346b4b3642ad60b20788ac2cbf0a00000000001976a914c30cd579aa0ede326b0838b0487961df545083d588ac00000000\"}")
+
+    //char buffer[2560] = {0};
+    ret = UID_httpget(curl, "http://insight-ltc-testnet.uniquid.co:3001/insight-lite-api/rawtx/be8395b40c3e0647e07de91e470f9879ae3e46236c961437c529964b37a9fdd0", buffer, sizeof(buffer));
+    CU_ASSERT_EQUAL(ret, UID_HTTP_OK);
+    CU_ASSERT_STRING_EQUAL(buffer, "{\"rawtx\":\"01000000011424c9681163fb27f57e2396710f35d67abb115b1207eebdacfdf71be2184be0010000006a473044022100fe5a4555708e4b7f242db35b2f151a2f362b584eb0808850e3adf96ba7b005f9021f43bfacb0968cd181341752fc003d76b7f9dc9299bf02d0c36867597c09da4f012103bc0ba2a4223e5e965f0ae7ac0cefab411ad6efc049039386822e2db658067b0fffffffff02804f1200000000001976a914cf0d7827d2eb53a854690366412177a835df7f9588ac082a7300000000001976a914ea596c76bb595972913824c1cceb82d202d66d2c88ac00000000\"}")
+
+    UID_httpcleanup(curl);
+}
+
 /************* Test Runner Code goes here **************/
 
 int main ( void )
@@ -1048,6 +1093,22 @@ int main ( void )
         (NULL == CU_add_test(pSuite, "test_case_cache2", test_case_cache2)) ||
         (NULL == CU_add_test(pSuite, "test_case_cache3", test_case_cache3)) ||
         (NULL == CU_add_test(pSuite, "test_case_signandsend", test_case_signandsend))
+      )
+   {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   /* add a suite to the registry */
+   pSuite = CU_add_suite( "httpal test suite", init_httpal_suite, clean_httpal_suite );
+   if ( NULL == pSuite ) {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   /* add the tests to the suite */
+   if (
+        (NULL == CU_add_test(pSuite, "test_case_httpget", test_case_httpget))
       )
    {
       CU_cleanup_registry();

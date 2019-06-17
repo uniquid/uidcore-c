@@ -50,6 +50,8 @@
 #define PROTO_HTTP  0
 #define PROTO_HTTPS 1
 
+// maximum length of a DNS name
+#define MAX_DOMAIN_NAME_LENGHT 256
 
 #define NETWORK_SSL_READ_ERROR         41
 #define NETWORK_SSL_NOTHING_TO_READ    42
@@ -72,6 +74,8 @@ char *UID_rootCA = DEFAULT_ROOT_CA_LOCATION;
 typedef struct {
 	bool active;
 	int proto;
+	char server[MAX_DOMAIN_NAME_LENGHT];
+	uint16_t port;
 	mbedtls_net_context server_fd;
 	mbedtls_ssl_context ssl;
 	mbedtls_ssl_config conf;
@@ -84,6 +88,7 @@ typedef struct {
 
 static int tlsClose(UID_HttpSession *httpSession);
 static int tcpClose(UID_HttpSession *httpSession);
+static int UID_close(UID_HttpSession *httpSession);
 
 static int tcpConnect(UID_HttpSession *httpSession, char *server, char *port)
 {
@@ -298,10 +303,21 @@ static int UID_connect(UID_HttpSession *httpSession, char *server, char *port, i
 
 	int ret;
 	if (httpSession->active) {
-		// TODO: check for the active session
-		return UID_HTTP_OK;
+		if (httpSession->proto == proto &&
+			httpSession->port == atoi(port) &&
+			0 == strncmp(httpSession->server, server, sizeof(httpSession->server)) ) {
+			// same session. return
+			return UID_HTTP_OK;
+		}
+		else {
+			// different session. close
+			UID_close(httpSession);
+		}
 	}
+
 	httpSession->proto = proto;
+	httpSession->port = atoi(port);
+	strncpy(httpSession->server, server, sizeof(httpSession->server));
 	if(proto == PROTO_HTTP) {
 		ret = tcpConnect(httpSession, server, port);
 		return ret;
@@ -631,6 +647,9 @@ int UID_httpget(UID_HttpOBJ *curl, char *url, char *buffer, size_t size)
     ret = UID_HTTP_OK;
 
 clean:
+	if (ret != UID_HTTP_OK) {
+		UID_close(httpSession);
+	}
     return  ret;
 }
 

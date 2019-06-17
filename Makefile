@@ -38,8 +38,9 @@ OBJS   = $(SRCS:.c=.o)
 
 HEADERS   := $(shell find -maxdepth 1 -name "UID_*.h")
 
-MBED_TLS_BASE := ../mbedtls
+MBED_TLS_BASE := ../mbedTLS
 TLS_LIB_DIR := $(MBED_TLS_BASE)/library
+TLS_LIBS := $(TLS_LIB_DIR)/libmbedx509.a $(TLS_LIB_DIR)/libmbedtls.a $(TLS_LIB_DIR)/libmbedcrypto.a
 
 #CFLAGS +=
 #CFLAGS += -D MG_ENABLE_FILESYSTEM=0 -D MG_ENABLE_SSL=1 -D MG_SSL_MBED_DUMMY_RANDOM=1 -I../mongoose -Wno-redundant-decls -Wno-format-nonliteral -Wno-strict-prototypes
@@ -65,11 +66,17 @@ $(LIB-TREZOR):
 libuidcore-c.so: $(SRCS) $(HEADERS) Makefile $(LIB-YAJL) $(LIB-TREZOR)
 	$(CC) $(CFLAGS) -fPIC -shared $(SRCS) -Wl,-rpath='$$ORIGIN' $(LIBS) -o libuidcore-c.so
 
-tests: tests.c $(SRCS) $(HEADERS) Makefile $(LIB-YAJL) $(LIB-TREZOR)
-#	$(CC) $(CFLAGS) tests.c $(SRCS) $(LIBS) $(RPATH) -lcurl -lcunit -ftest-coverage -fprofile-arcs -o tests
-#	$(CC) $(CFLAGS) tests.c ../mongoose/mongoose.c $(SRCS) $(LIBS) $(RPATH) -lssl -lcrypto -lcunit -ftest-coverage -fprofile-arcs -o tests
-#	$(CC) $(CFLAGS) tests.c ../mongoose/mongoose.c $(SRCS) $(LIBS) $(RPATH) $(TLS_LIB_DIR)/libmbedx509.a $(TLS_LIB_DIR)/libmbedtls.a $(TLS_LIB_DIR)/libmbedcrypto.a -lcunit -ftest-coverage -fprofile-arcs -o tests
-	$(CC) $(CFLAGS) tests.c $(SRCS) $(LIBS) $(RPATH) $(TLS_LIB_DIR)/libmbedx509.a $(TLS_LIB_DIR)/libmbedtls.a $(TLS_LIB_DIR)/libmbedcrypto.a -lcunit -ftest-coverage -fprofile-arcs -o tests
+$(TLS_LIB_DIR)/libmbedx509.a:
+	make -C $(MBED_TLS_BASE) lib
+
+$(TLS_LIB_DIR)/libmbedtls.a:
+	make -C $(MBED_TLS_BASE) lib
+
+$(TLS_LIB_DIR)/libmbedcrypto.a:
+	make -C $(MBED_TLS_BASE) lib
+
+tests: tests.c $(SRCS) $(HEADERS) Makefile $(LIB-YAJL) $(LIB-TREZOR) $(TLS_LIBS)
+	$(CC) $(CFLAGS) tests.c $(SRCS) $(LIBS) $(RPATH) $(TLS_LIBS) -lcunit -ftest-coverage -fprofile-arcs -o tests
 
 run-tests: tests
 	./tests
@@ -87,3 +94,12 @@ clean:
 	make -C trezor-crypto clean
 	rm -rf docs
 	rm -f *.gcda *.gcno *.gcov
+	if [ -f '$(MBED_TLS_BASE)/Makefile' ]; then make -C $(MBED_TLS_BASE) clean; fi
+
+.PHONY: clean_repo
+clean_repo:
+	rm -rf $(MBED_TLS_BASE)
+
+.PHONY: clone_repo
+clone_repo:
+	git clone --recurse-submodules https://github.com/ARMmbed/mbedtls.git $(MBED_TLS_BASE) -b mbedtls-2.16.1
