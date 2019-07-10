@@ -41,7 +41,7 @@
 extern char *UID_pApplianceURL;
 
 #define UID_SMARTC_INITIALIZER {0,{0},{0},0,0}
-#define UID_CACHE_BUFFER_INITIALIZER { { { {0},{0},UID_SMARTC_INITIALIZER,{0} } }, 0, { { {0},{0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER }
+#define UID_CACHE_BUFFER_INITIALIZER { { { {0},{0},UID_SMARTC_INITIALIZER,{0},{0} } }, 0, { { {0},{0},{0},{0},{0} } }, 0, PTHREAD_MUTEX_INITIALIZER }
 
 typedef struct {
     uint8_t version;
@@ -56,12 +56,15 @@ typedef struct {
 /// trick to raise a compiler error if the size of the struct is different than expected
 typedef char assertion_on_mystruct[(   sizeof(UID_smart_contract)==PROFILE_SIZE   )*2-1 ];
 
+typedef uint8_t BTC_txID[32];
+
 typedef struct
 {
     BTC_Address serviceUserAddress;
     BTC_Address serviceProviderAddress;
     UID_smart_contract profile;
     UID_Bip32Path path;
+    BTC_txID txID;
 } UID_SecurityProfile;
 
 typedef struct
@@ -70,6 +73,7 @@ typedef struct
     BTC_Address serviceProviderAddress;
     BTC_Address serviceUserAddress;
     UID_Bip32Path path;
+    BTC_txID txID;
 } UID_ClientProfile;
 
 typedef struct {

@@ -314,6 +314,7 @@ static int check_contract(UID_HttpOBJ *curl, cache_buffer *secondb, char * tx, c
             // fill the provider field
             strncpy(sp->serviceProviderAddress, address, sizeof(sp->serviceProviderAddress));
             memcpy(&(sp->path), bip32p, sizeof(sp->path));
+            fromhex(tx, sp->txID, sizeof(BTC_txID));
 
             if (parse_imprinting(jnode, sp))
                 secondb->validCacheEntries++;
@@ -323,6 +324,7 @@ static int check_contract(UID_HttpOBJ *curl, cache_buffer *secondb, char * tx, c
             // fill the provider field
             strncpy(sp->serviceProviderAddress, address, sizeof(sp->serviceProviderAddress));
             memcpy(&(sp->path), bip32p, sizeof(sp->path));
+            fromhex(tx, sp->txID, sizeof(BTC_txID));
 
             if (parse_provider(jnode, sp))
                 secondb->validCacheEntries++;
@@ -331,6 +333,7 @@ static int check_contract(UID_HttpOBJ *curl, cache_buffer *secondb, char * tx, c
             UID_ClientProfile *cp = &(secondb->clientCache)[secondb->validClientEntries];
             strncpy(cp->serviceUserAddress, address, sizeof(cp->serviceUserAddress));
             memcpy(&(cp->path), bip32p, sizeof(cp->path));
+            fromhex(tx, cp->txID, sizeof(BTC_txID));
 
             if (parse_user(jnode, cp))
                 secondb->validClientEntries++;

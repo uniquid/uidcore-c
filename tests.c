@@ -734,6 +734,7 @@ void test_case_cache1(void)
     cache_buffer *cache;
     UID_ClientProfile *profile = NULL;
     UID_SecurityProfile *contract = NULL;
+    char hexbuf[2*sizeof(BTC_txID)+1]= {0};
 
     unlink("identity.db");
     UID_getLocalIdentity("tprv8ZgxMBicQKsPdmiNfKZ4V3HEZT75ujmJG5RWJP2LzJJg8N2x3Dr9XzZiWoZjQZp7mtykkr1QfGUWjtLeSHRQPvS1NaQrjGWFrZNBK91tHEU");
@@ -745,12 +746,14 @@ void test_case_cache1(void)
     profile = UID_matchProvider(""); // get first usercontract because of lack of registry
     CU_ASSERT(NULL != profile);
     if (NULL != profile) CU_ASSERT_STRING_EQUAL(profile->serviceProviderAddress, "mxZCxV38AdxkPJH4kB5Efw3GxgBwJqMAfg");
+    if (NULL != profile) CU_ASSERT_STRING_EQUAL("67013d870f6ccde811edd66f51e9b18f3930f0f88de4ba66492db8db0372ac99", tohex(profile->txID, sizeof(BTC_txID), hexbuf));
 
     contract = UID_matchContract("mhMZjFqg2t8oCTXeAbyFE6DcaDuuZRhhy6");
     CU_ASSERT(NULL != contract);
     if (NULL != contract) {
         CU_ASSERT_STRING_EQUAL(contract->serviceProviderAddress, "mrF9Z9iFB8E1Phy7heFD8nFydg5ae33tYp");
         CU_ASSERT_EQUAL(0x40, contract->profile.bit_mask[3]);
+        CU_ASSERT_STRING_EQUAL("346442138e99c6b01183a46e8d444d4bedc9ae99c1b9f23ee0d8ef7ef348f440", tohex(contract->txID, sizeof(BTC_txID), hexbuf));
     }
 
     contract = UID_matchContract("n2Sx8LPpBUVcrowAMMrCZVH9tpGXcyDtMX");
@@ -758,6 +761,7 @@ void test_case_cache1(void)
     if (NULL != contract) {
         CU_ASSERT_STRING_EQUAL(contract->serviceProviderAddress, "mit4Azz8im9hwLyDKFhHzKE23Y8GT3SGPx");
         CU_ASSERT_EQUAL(0x3e, contract->profile.bit_mask[4]);
+        CU_ASSERT_STRING_EQUAL("3aa9de3427465e05bbd93f4c76482a2d7ab0b7f5300a7b316b8ff8e49321bcf7", tohex(contract->txID, sizeof(BTC_txID), hexbuf));
     }
 }
 
