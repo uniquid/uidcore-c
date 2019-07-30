@@ -3,7 +3,7 @@
 #OPTFLAGS  = -O3 -g
 OPTFLAGS = -O0 -g -gdwarf-3
 
-CFLAGS   += $(OPTFLAGS) \
+CFLAGS   += $(OPTFLAGS) $(DEF_OVERRIDE)\
 			-std=gnu99 \
 			-W \
 			-Wall \

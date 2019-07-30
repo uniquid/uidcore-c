@@ -192,8 +192,8 @@ int UID_accept_channel(uint8_t *in_msg, size_t in_size, UID_ServerChannelCtx *ch
 
     int64_t td = UID_getTime() - sID;
     ret = UID_MSG_ID_MISMATCH;
-    if (td > UID_MSG_TWINDOW ) goto clean_return;
-    if (td < -UID_MSG_TWINDOW ) goto clean_return;
+    if (td > UID_MSG_ID_NOTAFTER ) goto clean_return;
+    if (td < -UID_MSG_ID_NOTBEFORE ) goto clean_return;
 
 // get the method
     ret = UID_MSG_JPARSE_ERROR;

@@ -20,7 +20,12 @@
 #include "UID_globals.h"
 #include "UID_bchainBTC.h"
 
-#define UID_MSG_TWINDOW 60000
+#ifndef UID_MSG_ID_NOTAFTER
+    #define UID_MSG_ID_NOTAFTER 60000 // milliseconds after which the ID is rejected
+#endif // #ifndef UID_MSG_ID_NOTAFTER
+#ifndef UID_MSG_ID_NOTBEFORE
+    #define UID_MSG_ID_NOTBEFORE 60000 // milliseconds before which the ID is rejected
+#endif // #ifndef UID_MSG_ID_NOTBEFORE
 
 typedef struct {
     UID_ClientProfile contract;
